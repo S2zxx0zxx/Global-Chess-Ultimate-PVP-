@@ -144,7 +144,7 @@ export default function RoyalStudio({screen,navigate,openPage,begin,guest,saveGu
   let content:ReactNode=null;
   switch(screen) {
     case 'splash':
-      content=<div className="rv-splash"><div className="rv-crown">♛</div><div className="rv-splash-figure"><img src="/art/sheet-gold-knight.svg" alt="Original golden knight artwork from your UI design sheet"/></div><K>PREMIUM CHESS EXPERIENCE</K><h1>GLOBAL CHESS<br/><span>ULTIMATE</span></h1><p>Think · Play · Improve</p><Action onClick={()=>navigateTo('welcome')}>ENTER THE KINGDOM ›</Action><small>No account needed to play</small></div>;
+      content=<div className="rv-splash"><div className="rv-crown">♛</div><div className="rv-splash-figure"><img src="/art/sheet-gold-knight.svg" alt="Original golden knight artwork from your UI design sheet"/></div><div className="royal-splash-backdrop" aria-hidden="true"><span>♜</span><span>♔</span><span>♟</span></div><K>PREMIUM CHESS EXPERIENCE</K><h1>GLOBAL CHESS<br/><span>ULTIMATE</span></h1><p>Think · Play · Improve</p><Action onClick={()=>navigateTo('welcome')}>ENTER THE KINGDOM ›</Action><small>No account needed to play</small></div>;
       break;
     case 'welcome':
     case 'onboard-play':
@@ -155,7 +155,11 @@ export default function RoyalStudio({screen,navigate,openPage,begin,guest,saveGu
         {title:'Play Your Way',description:'Play offline with friends, challenge the computer or enter a private online room when its server is available.',symbol:'♞'},
         {title:'Learn & Grow',description:'Complete real chess puzzles, review local matches and track progress from actual games.',symbol:'♗'},
       ];
-      content=<div className="rv-onboarding"><div className="rv-onboard-illustration"><span>{pages[index].symbol}</span></div><K>INTRODUCTION · {index+1} / 3</K><h1>{pages[index].title}</h1><p>{pages[index].description}</p><div className="rv-dots">{pages.map((_,i)=><span key={i} className={i===index?'active':''}/>)}</div><div className="rv-two-actions"><Action secondary onClick={()=>navigateTo('tutorial')}>TUTORIAL</Action><Action secondary onClick={doneIntro}>SKIP</Action><Action onClick={()=>index===2?navigateTo('register'):navigateTo(['onboard-play','onboard-learn'][index] as RoyalScreen)}>{index===2?'CONTINUE':'NEXT ›'}</Action></div></div>;
+      content=<div className="rv-onboarding"><div className={'rv-onboard-illustration onboarding-art-'+index}>
+          {index===0?<img src="/art/sheet-gold-knight.svg" alt="Gold knight from the supplied Royal design sheet"/>:
+          index===1?<div className="royal-onboard-trio"><img src="/pieces/w-k.svg" alt=""/><img src="/pieces/b-n.svg" alt=""/><img src="/pieces/w-q.svg" alt=""/></div>:
+          <span className="royal-onboard-book" aria-hidden="true">♜ ♗ ♘</span>}
+        </div><K>INTRODUCTION · {index+1} / 3</K><h1>{pages[index].title}</h1><p>{pages[index].description}</p><div className="rv-dots">{pages.map((_,i)=><span key={i} className={i===index?'active':''}/>)}</div><div className="rv-two-actions"><Action secondary onClick={()=>navigateTo('tutorial')}>TUTORIAL</Action><Action secondary onClick={doneIntro}>SKIP</Action><Action onClick={()=>index===2?navigateTo('register'):navigateTo(['onboard-play','onboard-learn'][index] as RoyalScreen)}>{index===2?'CONTINUE':'NEXT ›'}</Action></div></div>;
       break;
     }
     case 'tutorial':
