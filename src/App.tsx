@@ -47,6 +47,9 @@ export default function App() {
   const [message, setMessage] = useState('');
   const [menu, setMenu] = useState(false);
   const [resignDialog, setResignDialog] = useState(false);
+  const [drawDialog, setDrawDialog] = useState(false);
+  const [emoteOpen, setEmoteOpen] = useState(false);
+  const [emoteFeedback, setEmoteFeedback] = useState('');
   const [puzzleDone, setPuzzleDone] = useState(false);
   const [currentPuzzle, setCurrentPuzzle] = useState<Puzzle>(PUZZLES[0]);
   const [solvedPuzzles, setSolvedPuzzles] = useState<string[]>(() => loadJSON<string[]>(PUZZLE_PROGRESS_KEY, []));
@@ -110,6 +113,9 @@ export default function App() {
     setLastMove(null);
     setPage('game');
     setMenu(false);
+    setDrawDialog(false);
+    setEmoteOpen(false);
+    setEmoteFeedback('');
     setMessage('');
     persist(nextMode, true, [600, 600], timed && nextMode !== 'puzzle');
   };
@@ -242,6 +248,21 @@ export default function App() {
     if (!active || mode === 'puzzle' || endResult) { setResignDialog(false); return; }
     setResignDialog(false);
     recordEnd(game.current.turn() === 'w' ? 'black' : 'white', mode);
+  };
+  const offerDraw = () => {
+    if (!active || mode === 'puzzle' || endResult) return;
+    if (mode === 'computer') { notify('The offline computer does not support draw negotiation.'); return; }
+    setDrawDialog(true);
+  };
+  const confirmDraw = () => {
+    if (!active || mode !== 'local' || endResult) { setDrawDialog(false); return; }
+    setDrawDialog(false);
+    recordEnd('draw', mode);
+  };
+  const sendLocalEmote = (emoji: string) => {
+    setEmoteOpen(false);
+    setEmoteFeedback(emoji);
+    notify('Local emote: ' + emoji + ' (not sent online)');
   };
   const undo = () => {
     if (!active || mode === 'puzzle') return;
@@ -376,6 +397,17 @@ export default function App() {
     </div>
     {replayRecord && <Suspense fallback={<div role="status">Loading match replay…</div>}><ReplayViewer key={replayRecord.id} record={replayRecord} onClose={() => setReplayRecord(null)}/></Suspense>}
     {menu && <div className="modal-mask" onClick={() => setMenu(false)}><div className="action-sheet" role="dialog" aria-modal="true" aria-label="Match menu" onClick={e => e.stopPropagation()}><div className="sheet-heading"><h2>Match Menu</h2><button onClick={() => setMenu(false)} aria-label="Close menu"><Icon name="close" size={28}/></button></div><button type="button" onClick={() => { setMenu(false); undo(); }} disabled={!active || mode === 'puzzle'}>↶ Undo last move</button><button type="button" onClick={() => { setMenu(false); setSettings(p => ({ ...p, flipped: !p.flipped })); }}>⇅ Flip board</button><button type="button" onClick={saveAndExit}>▤ Save and exit</button><button type="button" className="destructive" onClick={() => { if (mode === 'puzzle') saveAndExit(); else resign(); }}>{mode === 'puzzle' ? '↩ Exit puzzle' : '⚑ Resign match'}</button></div></div>}
+    {drawDialog && <div className="modal-mask" onClick={()=>setDrawDialog(false)}>
+      <section className="rv-resign-dialog royal-draw-dialog" role="alertdialog" aria-modal="true" aria-labelledby="royal-draw-title" onClick={e=>e.stopPropagation()}>
+        <span className="rv-resign-emblem" aria-hidden="true">♛</span>
+        <h2 id="royal-draw-title">Offer Draw?</h2>
+        <p>In Pass &amp; Play, the other player must agree on this device. No online request is sent.</p>
+        <div className="rv-resign-actions">
+          <button type="button" autoFocus onClick={()=>setDrawDialog(false)}>DECLINE</button>
+          <button type="button" onClick={confirmDraw}>ACCEPT DRAW</button>
+        </div>
+      </section>
+    </div>}
     {resignDialog && <div className="modal-mask" onClick={() => setResignDialog(false)}>
       <section className="rv-resign-dialog" role="alertdialog" aria-modal="true" aria-labelledby="resign-dialog-title" aria-describedby="resign-dialog-desc" onClick={e => e.stopPropagation()} onKeyDown={e => { if (e.key === "Escape") setResignDialog(false); }}>
         <span className="rv-resign-emblem" aria-hidden="true">⚑</span>
