@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Chess, type Square } from 'chess.js';
 import { chooseComputerMove, FILES, loadJSON, PIECE_GLYPHS, resultOf, saveJSON, shortResult, SQUARES, STORAGE_KEYS, type GameResult, type MatchRecord, type PlayMode } from './game';
 import { PUZZLES, PUZZLE_PROGRESS_KEY, isPuzzleSolution, type Puzzle } from './academy';
+import { newClock, advanceClock, changeTurn, displayClock } from './clock';
 
 const ChessBoard3D = lazy(() => import('./ChessBoard3D'));
 const AnimationShowcase = lazy(() => import('./AnimationShowcase'));
@@ -11,7 +12,7 @@ type ThreeTheme = 'deco' | 'bauhaus' | 'scifi' | 'egypt' | 'classic';
 type Page = 'home' | 'play' | 'game' | 'history' | 'training' | 'profile' | 'settings' | 'about';
 type Promotion = { from: Square; to: Square };
 type Settings = { flipped: boolean; reducedMotion: boolean; hints: boolean; modelTheme?: ThreeTheme; useLibraryAssets?: boolean };
-type Snapshot = { fen: string; mode: PlayMode; pgn: string; active: boolean; seconds: [number, number] };
+type Snapshot = { fen: string; mode: PlayMode; pgn: string; active: boolean; seconds: [number, number]; timed?: boolean; remainingMs?: [number, number] };
 const DEFAULT_SETTINGS: Settings = { flipped: false, reducedMotion: false, hints: true };
 const initials = (text: string) => text.trim().slice(0, 2).toUpperCase() || 'GC';
 function randomGuest() { return 'Royal Guest ' + Math.floor(1000 + Math.random() * 9000); }
@@ -30,6 +31,8 @@ const Icon = ({ name, size = 20 }: { name: string; size?: number }) => {
 
 export default function App() {
   const game = useRef(new Chess());
+  const clockRef = useRef(newClock(Date.now()));
+  const endedRef = useRef(false);
   const stored = useRef(loadJSON<Snapshot | null>(STORAGE_KEYS.lastMatch, null));
   const [page, setPage] = useState<Page>('home');
   const [mode, setMode] = useState<PlayMode>('local');
@@ -63,12 +66,14 @@ export default function App() {
   const gameOver = game.current.isGameOver();
 
   const notify = (text: string) => { setMessage(text); };
-  const persist = (currentMode: PlayMode, currentActive: boolean, currentSeconds: [number, number]) => {
-    const ok = saveJSON(STORAGE_KEYS.lastMatch, { fen: game.current.fen(), pgn: game.current.pgn(), mode: currentMode, active: currentActive, seconds: currentSeconds } satisfies Snapshot);
-    if (!ok) setStorageWarning(true);
+  const persist = (currentMode: PlayMode, currentActive: boolean, currentSeconds: [number, number], timed = clockEnabled) => {
+    const next: Snapshot = { fen: game.current.fen(), pgn: game.current.pgn(), mode: currentMode, active: currentActive, seconds: currentSeconds, timed, remainingMs: [...clockRef.current.remainingMs] };
+    stored.current = next;
+    if (!saveJSON(STORAGE_KEYS.lastMatch, next)) setStorageWarning(true);
   };
   const recordEnd = (outcome: GameResult, currentMode: PlayMode) => {
-    if (completedId) return;
+    if (endedRef.current) return;
+    endedRef.current = true;
     const id = Date.now() + '-' + Math.random().toString(36).slice(2, 7);
     setCompletedId(id);
     const item: MatchRecord = { id, endedAt: new Date().toISOString(), mode: currentMode, result: outcome, pgn: game.current.pgn(), moves: game.current.history().length };
@@ -101,6 +106,8 @@ export default function App() {
     setSelected(null);
     setEndResult(null);
     setCompletedId(null);
+    endedRef.current = false;
+    clockRef.current = newClock(Date.now());
     setPromotion(null);
     setPuzzleDone(false);
     setSeconds([600, 600]);
@@ -110,7 +117,7 @@ export default function App() {
     setPage('game');
     setMenu(false);
     setMessage('');
-    persist(nextMode, true, [600, 600]);
+    persist(nextMode, true, [600, 600], timed && nextMode !== 'puzzle');
   };
   const resume = () => {
     const old = stored.current;
@@ -124,7 +131,10 @@ export default function App() {
       setMode(old.mode);
       setActive(true);
       setSeconds(old.seconds || [600, 600]);
-      setClockEnabled(false);
+      const ms = old.remainingMs || [old.seconds[0] * 1000, old.seconds[1] * 1000];
+      clockRef.current = { remainingMs: [...ms], turn: restored.turn(), lastAt: Date.now() };
+      endedRef.current = false;
+      setClockEnabled(Boolean(old.timed));
       setLastMove(null);
       setPage('game');
     } catch { notify('Saved game could not be restored. Your other games are untouched.'); }
@@ -138,8 +148,14 @@ export default function App() {
       return;
     }
     try {
+      if (clockEnabled) {
+        const ticked = advanceClock(clockRef.current, Date.now());
+        clockRef.current = ticked.state;
+        if (ticked.flagged) { recordEnd(ticked.flagged === 'w' ? 'timeout-white' : 'timeout-black', mode); return; }
+      }
       const moved = game.current.move({ from, to, promotion: promote });
       if (!moved) { setSelected(null); return; }
+      clockRef.current = { ...clockRef.current, turn: game.current.turn(), lastAt: Date.now() };
       if (mode === 'puzzle') {
         setPuzzleDone(true);
         setSolvedPuzzles(old => {
@@ -177,7 +193,13 @@ export default function App() {
     const timer = window.setTimeout(() => {
       const next = chooseComputerMove(game.current);
       if (next) {
+        if (clockEnabled) {
+          const ticked = advanceClock(clockRef.current, Date.now());
+          clockRef.current = ticked.state;
+          if (ticked.flagged) { recordEnd('timeout-black', 'computer'); return; }
+        }
         game.current.move(next);
+        clockRef.current = { ...clockRef.current, turn: game.current.turn(), lastAt: Date.now() };
         refresh('computer');
       }
     }, 480);
@@ -186,24 +208,19 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fen, mode, active, page, endResult, gameOver, turn]);
 
-  // Browser clocks do not run while the app is backgrounded; real-time clock
-  // reconciliation and server authority are deliberately NOT claimed here.
+  // Local clocks are wall-time reconciled to avoid drift after a throttled/background tab.
+  // Network/rated clocks must still use a server-authoritative clock.
   useEffect(() => {
     if (!clockEnabled || !active || page !== 'game' || endResult || mode === 'puzzle') return;
-    const timer = window.setInterval(() => {
-      setSeconds(previous => {
-        const side = game.current.turn() === 'w' ? 0 : 1;
-        const next: [number, number] = [...previous] as [number, number];
-        next[side] = Math.max(0, next[side] - 1);
-        if (next[side] === 0) {
-          window.clearInterval(timer);
-          const outcome: GameResult = side === 0 ? 'timeout-white' : 'timeout-black';
-          window.setTimeout(() => recordEnd(outcome, mode), 0);
-        }
-        return next;
-      });
-    }, 1000);
-    return () => window.clearInterval(timer);
+    const tick = () => {
+      const current = advanceClock(clockRef.current, Date.now());
+      clockRef.current = current.state;
+      setSeconds([Math.ceil(current.state.remainingMs[0] / 1000), Math.ceil(current.state.remainingMs[1] / 1000)]);
+      if (current.flagged) recordEnd(current.flagged === 'w' ? 'timeout-white' : 'timeout-black', mode);
+    };
+    const timer = window.setInterval(tick, 250);
+    document.addEventListener('visibilitychange', tick);
+    return () => { window.clearInterval(timer); document.removeEventListener('visibilitychange', tick); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clockEnabled, active, page, mode, endResult]);
 
@@ -215,11 +232,16 @@ export default function App() {
     const rewind = mode === 'computer' && game.current.turn() === 'w' ? 2 : 1;
     let changed = false;
     for (let i = 0; i < rewind; i++) changed = Boolean(game.current.undo()) || changed;
-    if (changed) { setEndResult(null); setCompletedId(null); refresh(mode); }
+    if (changed) { clockRef.current = { ...clockRef.current, turn: game.current.turn(), lastAt: Date.now() }; setEndResult(null); setCompletedId(null); refresh(mode); }
   };
-  const saveAndExit = () => { persist(mode, active, seconds); stored.current = { fen: game.current.fen(), pgn: game.current.pgn(), mode, active, seconds }; setMenu(false); setPage('home'); };
+  const saveAndExit = () => {
+    if (clockEnabled && active) clockRef.current = advanceClock(clockRef.current, Date.now()).state;
+    persist(mode, active, seconds);
+    setMenu(false);
+    setPage('home');
+  };
   const abandon = () => { setMenu(false); if (active && mode !== 'puzzle') recordEnd(turn === 'w' ? 'black' : 'white', mode); setActive(false); setPage('home'); };
-  const formatTime = (secs: number) => Math.floor(secs / 60) + ':' + String(secs % 60).padStart(2, '0');
+  const formatTime = (secs: number) => displayClock(secs * 1000);
   const labelResult = (result: GameResult) => result === 'draw' ? 'A royal draw' : result.startsWith('timeout') ? 'Time expired' : result === 'white' ? 'White triumphs' : 'Black triumphs';
 
   const screen = (target: Page) => { setPage(target); setMenu(false); setMessage(''); };
