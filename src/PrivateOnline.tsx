@@ -17,7 +17,7 @@ export default function PrivateOnline(){
   const [code,setCode]=useState(()=>new URLSearchParams(location.search).get('room')?.toUpperCase()||'');
   const [state,setState]=useState<RoomState|null>(null);
   const [selected,setSelected]=useState<Square|null>(null);
-  const [status,setStatus]=useState(ENDPOINT?'Create a room or enter your friend's invite code.':'Online service has not been deployed. Local chess still works.');
+  const [status,setStatus]=useState(ENDPOINT?'Create a room or enter your friend invite code.':'Online service has not been deployed. Local chess still works.');
   const [busy,setBusy]=useState(false);
   const [connected,setConnected]=useState(false);
   const socket=useRef<WebSocket|null>(null);
