@@ -17,12 +17,12 @@ Status definitions: **WORKING-CODE** = implementation exists and can be exercise
 | Online PvP / invitation matchmaking | NOT-BUILT | Durable Objects, idempotency, real two-client sessions |
 | Friends / leaderboards / season pass / rewards | NOT-BUILT | Product spec / privacy / abuse & economy |
 | Deep analysis / puzzles / coaching | NOT-BUILT | Engine + licensed training dataset |
-| 3D model renderer | NOT-BUILT | Babylon separate optional bundle and GPU QA |
+| 3D model renderer | PARTIAL | Three.js lazy interactive scene implemented; optional real GLB/FBX assets not shipped in repo, GPU QA / move FX / LOD pending |
 | AAB Play Store build | NOT-BUILT | HTTPS deployment + TWA/Bubblewrap / signing / Play Console |
 | Android real-device QA | NOT-BUILT | Phone compatibility and accessibility |
 | Secure cloud accounts | NOT-BUILT | Design + authorization and consent |
 | Live payment / purchases | NOT-BUILT | Entitlements/tax/store policies |
-| CDN / asset bandwidth budgets | NOT-BUILT | Real benchmarks after art production |
+| CDN / asset bandwidth budgets | PARTIAL | 48 GLBs texture-resized into optional external archive; real CDN bandwidth and device memory benchmarks pending |
 | External audio / speech | OUT-OF-SCOPE | User intentionally excluded |
 
 ## Build milestones
