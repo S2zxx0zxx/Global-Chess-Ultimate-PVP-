@@ -1,10 +1,12 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Chess, type Square } from 'chess.js';
 import { chooseComputerMove, FILES, loadJSON, PIECE_GLYPHS, PRACTICE, resultOf, saveJSON, shortResult, SQUARES, STORAGE_KEYS, type GameResult, type MatchRecord, type PlayMode } from './game';
 
+const ChessBoard3D = lazy(() => import('./ChessBoard3D'));
+type ThreeTheme = 'deco' | 'bauhaus' | 'scifi' | 'egypt' | 'classic';
 type Page = 'home' | 'play' | 'game' | 'history' | 'training' | 'profile' | 'settings' | 'about';
 type Promotion = { from: Square; to: Square };
-type Settings = { flipped: boolean; reducedMotion: boolean; hints: boolean };
+type Settings = { flipped: boolean; reducedMotion: boolean; hints: boolean; modelTheme?: ThreeTheme; useLibraryAssets?: boolean };
 type Snapshot = { fen: string; mode: PlayMode; pgn: string; active: boolean; seconds: [number, number] };
 const DEFAULT_SETTINGS: Settings = { flipped: false, reducedMotion: false, hints: true };
 const initials = (text: string) => text.trim().slice(0, 2).toUpperCase() || 'GC';
@@ -27,6 +29,7 @@ export default function App() {
   const stored = useRef(loadJSON<Snapshot | null>(STORAGE_KEYS.lastMatch, null));
   const [page, setPage] = useState<Page>('home');
   const [mode, setMode] = useState<PlayMode>('local');
+  const [view3D, setView3D] = useState(false);
   const [fen, setFen] = useState(game.current.fen());
   const [active, setActive] = useState(false);
   const [selected, setSelected] = useState<Square | null>(null);
@@ -264,7 +267,8 @@ export default function App() {
           </div>
 
           <div className="player-strip opponent"><span className="player-shield">{mode === 'computer' ? '♞' : 'B'}</span><div><strong>{mode === 'computer' ? 'Royal Computer' : 'Black Monarch'}</strong><small>{turn === 'b' ? '● To move' : 'Waiting'}</small></div><span className={'clock ' + (turn === 'b' ? 'running' : '')}>{mode === 'puzzle' ? '—' : clockEnabled ? formatTime(seconds[1]) : '∞'}</span></div>
-          <div className="board-surround">
+          <div className="render-switch" role="group" aria-label="Board display mode"><button type="button" className={!view3D ? "active" : ""} onClick={() => setView3D(false)} aria-pressed={!view3D}>2D BOARD</button><button type="button" className={view3D ? "active" : ""} onClick={() => setView3D(true)} aria-pressed={view3D}>3D BOARD</button></div>
+          {view3D ? <Suspense fallback={<div className="board3d-loading" role="status">Loading 3D renderer…</div>}><ChessBoard3D fen={fen} selected={selected} legal={settings.hints ? legal : []} lastMove={lastMove} theme={settings.modelTheme || "deco"} useLibraryAssets={Boolean(settings.useLibraryAssets)} flipped={settings.flipped} reducedMotion={settings.reducedMotion} onSquare={onSquare}/></Suspense> : <div className="board-surround">
             <div className="board" role="grid" aria-label="Chess board. Select a piece then a destination.">
               {Array.from({ length: 64 }, (_, idx) => {
                 const r = Math.floor(idx / 8), c = idx % 8;
@@ -285,7 +289,7 @@ export default function App() {
                 </button>;
               })}
             </div>
-          </div>
+          </div>}
           <div className="player-strip self"><span className="player-shield light-shield">{mode === 'puzzle' ? '♙' : 'W'}</span><div><strong>{mode === 'puzzle' ? 'Royal Scholar' : guest}</strong><small>{turn === 'w' ? '● To move' : 'Waiting'}</small></div><span className={'clock ' + (turn === 'w' ? 'running' : '')}>{mode === 'puzzle' ? '—' : clockEnabled ? formatTime(seconds[0]) : '∞'}</span></div>
           <div className="board-status">{puzzleDone ? '✦ TACTIC SOLVED ✦' : endResult ? labelResult(endResult) : gameOver ? 'Match finished' : inCheck ? 'CHECK — defend your king' : mode === 'puzzle' ? PRACTICE.instruction : turn === 'w' ? 'White to move' : 'Black to move'}</div>
           <div className="game-actions">
@@ -307,7 +311,7 @@ export default function App() {
 
         {page === 'profile' && <><section className="heading-block"><p className="eyebrow">THE ROYAL PROFILE</p><h1>Your <em>Legacy.</em></h1></section><div className="profile-card"><div className="profile-crest">{initials(guest)}</div><h2>{guest}</h2><p>Local guest profile · No sign-in needed</p></div><div className="stats-grid"><div className="stat"><span>MATCHES</span><strong>{history.length}</strong></div><div className="stat"><span>TACTICS</span><strong>{loadJSON('gcu.puzzles.v1', 0)}</strong></div><div className="stat"><span>ONLINE ELO</span><strong>—</strong></div></div><label className="form-label" htmlFor="playername">Display name</label><div className="name-row"><input id="playername" value={newName} maxLength={25} onChange={e => setNewName(e.target.value)}/><button type="button" className="btn btn-small" onClick={() => { const value = newName.trim(); if (value) { setGuest(value); notify('Display name saved locally.'); } }}>SAVE</button></div></>}
 
-        {page === 'settings' && <><section className="heading-block"><p className="eyebrow">PREFERENCES</p><h1>Your <em>Kingdom.</em></h1></section><div className="setting-group"><label><span><strong>Flip board</strong><small>Show Black at the bottom</small></span><input type="checkbox" checked={settings.flipped} onChange={e => setSettings(p => ({ ...p, flipped: e.target.checked }))}/></label><label><span><strong>Reduce motion</strong><small>Disable ornamental effects</small></span><input type="checkbox" checked={settings.reducedMotion} onChange={e => setSettings(p => ({ ...p, reducedMotion: e.target.checked }))}/></label><label><span><strong>Legal move hints</strong><small>Highlight valid destinations</small></span><input type="checkbox" checked={settings.hints} onChange={e => setSettings(p => ({ ...p, hints: e.target.checked }))}/></label></div><div className="disclaimer"><strong>Privacy</strong><p>Matches, preferences and guest name are stored locally on your device. No account, voice access, microphone permission, analytics or advertising SDK is included in this build.</p></div><button className="btn btn-secondary" type="button" onClick={() => screen('about')}>ABOUT & LICENSES</button></>}
+        {page === 'settings' && <><section className="heading-block"><p className="eyebrow">PREFERENCES</p><h1>Your <em>Kingdom.</em></h1></section><div className="setting-group"><label><span><strong>Flip board</strong><small>Show Black at the bottom</small></span><input type="checkbox" checked={settings.flipped} onChange={e => setSettings(p => ({ ...p, flipped: e.target.checked }))}/></label><label><span><strong>Reduce motion</strong><small>Disable ornamental effects</small></span><input type="checkbox" checked={settings.reducedMotion} onChange={e => setSettings(p => ({ ...p, reducedMotion: e.target.checked }))}/></label><label><span><strong>Legal move hints</strong><small>Highlight valid destinations</small></span><input type="checkbox" checked={settings.hints} onChange={e => setSettings(p => ({ ...p, hints: e.target.checked }))}/></label><label><span><strong>Premium 3D theme</strong><small>Choose one of the supplied chess sets</small></span><select value={settings.modelTheme || "deco"} onChange={e => setSettings(s => ({...s,modelTheme:e.target.value as ThreeTheme}))}><option value="deco">Art Deco</option><option value="bauhaus">Bauhaus</option><option value="scifi">Sci-fi</option><option value="egypt">Egyptian</option><option value="classic">ChessSet FBX</option></select></label><label><span><strong>Load supplied 3D library</strong><small>Use optimized installed assets; fall back if unavailable</small></span><input type="checkbox" checked={Boolean(settings.useLibraryAssets)} onChange={e => setSettings(s => ({...s,useLibraryAssets:e.target.checked}))}/></label></div><div className="disclaimer"><strong>Privacy</strong><p>Matches, preferences and guest name are stored locally on your device. No account, voice access, microphone permission, analytics or advertising SDK is included in this build.</p></div><button className="btn btn-secondary" type="button" onClick={() => screen('about')}>ABOUT & LICENSES</button></>}
         {page === 'about' && <><section className="heading-block"><p className="eyebrow">ABOUT THE PROJECT</p><h1>Built to <em>Play.</em></h1><p>Global Chess Ultimate · Prototype 0.1.0</p></section><div className="disclaimer"><h3>What's working</h3><p>Local chess, legal-move validation via chess.js, a basic computer opponent, one tactics position, PGN history export, original responsive visual design and installable PWA shell.</p><h3>What's not production-ready</h3><p>Public multiplayer, ranked ratings, full computer engine, monetization, production puzzle catalog, cloud accounts, Android AAB signing and device acceptance.</p><h3>Attribution</h3><p>chess.js is an open-source project licensed under BSD-2-Clause. Verify all dependency notices before distribution. This original UI is not affiliated with Miniclip or Chess Clash.</p></div></>}
       </main>
       <nav className="bottom-nav" aria-label="Main navigation">
