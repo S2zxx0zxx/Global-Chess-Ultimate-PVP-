@@ -105,8 +105,6 @@ export default function RoyalStudio({screen,navigate,openPage,begin,guest,saveGu
   const doneIntro=()=>{save({...local,completedIntro:true});navigate('home');};
   const moves=history.reduce((acc,h)=>acc+h.moves,0);
   const computerWins=history.filter(h=>h.mode==='computer'&&h.result==='white').length;
-  const localWins=history.filter(h=>h.mode==='local'&&h.result==='white').length;
-  const currentStreak=history.filter(h=>h.mode==='computer').slice(0,20).reduce((n,h)=>n===-1?-1:h.result==='white'?n+1:-1,0);
   const achievementList=[
     {name:'First Match',desc:'Complete your first chess game',value:history.length,total:1},
     {name:'Win Streak',desc:'Win three computer games',value:computerWins,total:3},
