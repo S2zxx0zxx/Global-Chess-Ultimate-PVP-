@@ -5,6 +5,8 @@ import { PUZZLES, PUZZLE_PROGRESS_KEY, isPuzzleSolution, type Puzzle } from './a
 
 const ChessBoard3D = lazy(() => import('./ChessBoard3D'));
 const AnimationShowcase = lazy(() => import('./AnimationShowcase'));
+const ReplayViewer = lazy(() => import('./ReplayViewer'));
+
 type ThreeTheme = 'deco' | 'bauhaus' | 'scifi' | 'egypt' | 'classic';
 type Page = 'home' | 'play' | 'game' | 'history' | 'training' | 'profile' | 'settings' | 'about';
 type Promotion = { from: Square; to: Square };
@@ -33,6 +35,7 @@ export default function App() {
   const [mode, setMode] = useState<PlayMode>('local');
   const [view3D, setView3D] = useState(false);
   const [showAvatarAnimations, setShowAvatarAnimations] = useState(false);
+  const [replayRecord, setReplayRecord] = useState<MatchRecord | null>(null);
   const [fen, setFen] = useState(game.current.fen());
   const [active, setActive] = useState(false);
   const [selected, setSelected] = useState<Square | null>(null);
@@ -319,7 +322,7 @@ export default function App() {
 
         {page === 'history' && <><section className="heading-block"><p className="eyebrow">THE ARCHIVES</p><h1>Match <em>History.</em></h1><p>Recent results are stored locally in this browser only.</p></section>
           {history.length === 0 ? <div className="empty-state"><span>♜</span><h3>No matches yet</h3><p>Finish a game to build your legacy.</p><button type="button" className="btn btn-primary" onClick={() => screen('play')}>PLAY A MATCH</button></div> :
-            <div className="history-list">{history.map(record => <article key={record.id} className="history-card"><span className="history-token">{record.result === 'draw' ? '½' : '♛'}</span><div><strong>{record.mode === 'computer' ? 'VS Computer' : 'Pass & Play'}</strong><small>{new Date(record.endedAt).toLocaleDateString()} · {record.moves} plies</small></div><span className="history-score">{shortResult(record.result)}</span><button type="button" onClick={() => { navigator.clipboard?.writeText(record.pgn).then(() => notify('PGN copied.')).catch(() => notify('Clipboard unavailable in this browser.')); }} aria-label="Copy game PGN">COPY PGN</button></article>)}</div>}
+            <div className="history-list">{history.map(record => <article key={record.id} className="history-card"><span className="history-token">{record.result === 'draw' ? '½' : '♛'}</span><div><strong>{record.mode === 'computer' ? 'VS Computer' : 'Pass & Play'}</strong><small>{new Date(record.endedAt).toLocaleDateString()} · {record.moves} plies</small></div><span className="history-score">{shortResult(record.result)}</span><button type="button" onClick={() => { navigator.clipboard?.writeText(record.pgn).then(() => notify('PGN copied.')).catch(() => notify('Clipboard unavailable in this browser.')); }} aria-label="Copy game PGN">COPY PGN</button><button type="button" onClick={() => setReplayRecord(record)} aria-label="Replay saved game">REPLAY GAME</button></article>)}</div>}
         </>}
 
         {page === 'training' && <><section className="heading-block"><p className="eyebrow">THE ACADEMY</p><h1>Sharpen your <em>Mind.</em></h1><p>{solvedPuzzles.length} of {PUZZLES.length} original tactics solved. Progress is saved on this device.</p></section><div className="puzzle-list">{PUZZLES.map((puzzle, index) => <article className="puzzle-entry" key={puzzle.id}><div className="puzzle-number">{String(index + 1).padStart(2, '0')}</div><div><span className="eyebrow">{puzzle.level.toUpperCase()}{solvedPuzzles.includes(puzzle.id) ? ' · SOLVED' : ''}</span><h3>{puzzle.title}</h3><p>{puzzle.prompt}</p></div><button type="button" className="btn btn-small" onClick={() => start('puzzle', false, puzzle)}>{solvedPuzzles.includes(puzzle.id) ? 'REPLAY' : 'PLAY'}</button></article>)}</div></>}
@@ -333,6 +336,7 @@ export default function App() {
         {tab('home', 'home', 'Home')}{tab('play', 'sword', 'Play')}{tab('training', 'book', 'Learn')}{tab('history', 'history', 'History')}{tab('settings', 'settings', 'Settings')}
       </nav>
     </div>
+    {replayRecord && <Suspense fallback={<div role="status">Loading match replay…</div>}><ReplayViewer key={replayRecord.id} record={replayRecord} onClose={() => setReplayRecord(null)}/></Suspense>}
     {menu && <div className="modal-mask" onClick={() => setMenu(false)}><div className="action-sheet" role="dialog" aria-modal="true" aria-label="Match menu" onClick={e => e.stopPropagation()}><div className="sheet-heading"><h2>Match Menu</h2><button onClick={() => setMenu(false)} aria-label="Close menu"><Icon name="close" size={28}/></button></div><button type="button" onClick={() => { setMenu(false); undo(); }} disabled={!active || mode === 'puzzle'}>↶ Undo last move</button><button type="button" onClick={() => { setMenu(false); setSettings(p => ({ ...p, flipped: !p.flipped })); }}>⇅ Flip board</button><button type="button" onClick={saveAndExit}>▤ Save and exit</button><button type="button" className="destructive" onClick={() => { if (window.confirm('Resign or leave this match?')) abandon(); }}>⚑ Resign / abandon</button></div></div>}
     {promotion && <div className="modal-mask"><div className="promotion-modal" role="dialog" aria-modal="true" aria-label="Choose a promotion piece"><h2>ROYAL PROMOTION</h2><p>Choose a piece</p><div className="promotion-options">{(['q','r','b','n'] as const).map(type => <button type="button" key={type} onClick={() => { const { from, to } = promotion; setPromotion(null); execute(from, to, type); }} aria-label={'Promote to ' + ({q:'queen',r:'rook',b:'bishop',n:'knight'}[type])}>{royalSymbol(type, turn)}</button>)}</div></div></div>}
   </div>;
