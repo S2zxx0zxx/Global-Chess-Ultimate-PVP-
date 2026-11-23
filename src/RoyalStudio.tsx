@@ -320,7 +320,25 @@ export default function RoyalStudio({screen,navigate,openPage,begin,guest,saveGu
     case 'shop':
     case 'inventory':
     case 'customize':
-      content=<><Header eyebrow="COSMETICS" title={screen==='shop'?'Chess Shop':screen==='inventory'?'My Inventory':'Customize Your Game'} icon="shop" subtitle="All four board palettes are free local CSS themes. Paid purchases and locked items are not simulated."/><div className="rv-tabs"><button className={screen==='shop'?'active':''} onClick={()=>navigateTo('shop')}>BOARDS</button><button onClick={()=>navigateTo('inventory')} className={screen==='inventory'?'active':''}>MY INVENTORY</button><button onClick={()=>navigateTo('customize')} className={screen==='customize'?'active':''}>3D PIECES</button></div><Section title="Available Board Themes">{renderSkins()}</Section><Section title="3D Model Families" note="On-demand models">{renderModels()}</Section><div className="rv-note">The premium GLB/FBX files must be installed on the hosting origin before the 3D family can render. The base SVG chess set always remains available.</div></>;
+      content=<div className="royal-shop-page">
+        <Header eyebrow="ROYAL COLLECTION" title={screen==='shop'?'Chess Shop':screen==='inventory'?'My Inventory':'Customize Your Game'} icon="shop" subtitle="Four free chessboard styles, your original chess pieces and local cosmetic selections."/>
+        <div className="rv-tabs royal-shop-tabs">{(['pieces','boards','frames','avatars'] as const).map(tab=><button type="button" key={tab} className={shopTab===tab?'active':''} onClick={()=>setShopTab(tab)}>{tab.toUpperCase()}</button>)}</div>
+        {screen==='inventory'&&<div className="royal-inventory-summary">
+          <div><RoyalIcon name="check" size={20}/><span>Active board</span><strong>{SKINS.find(x=>x.id===local.skin)?.label||'Classic Wood'}</strong></div>
+          <div><RoyalIcon name="profile" size={20}/><span>Avatar</span><strong>{avatarOptions.find(x=>x.id===local.avatar)?.label}</strong></div>
+          <div><RoyalIcon name="star" size={20}/><span>Frame</span><strong>{frameOptions.find(x=>x.id===local.frame)?.label}</strong></div>
+        </div>}
+        {shopTab==='pieces'?<Section title="Royal Chess Pieces" note="Original, always free">
+          <div className="royal-shop-showcase"><div><img src="/pieces/w-k.svg" alt="White king"/><img src="/pieces/w-q.svg" alt="White queen"/><img src="/pieces/w-n.svg" alt="White knight"/></div><strong>Global Chess Original Set</strong><small>Already equipped in your real playable game</small></div>
+          <div className="rv-note">Alternate 3D models load only when the corresponding asset packs are installed. No unverified purchases or wallet balances.</div>
+          <Action onClick={()=>navigateTo('customize')}>3D MODEL FAMILIES</Action>
+        </Section>
+        :shopTab==='boards'?<Section title="Select Your Board">{renderSkins()}</Section>
+        :shopTab==='frames'?<Section title="Profile Frames">{renderFrames()}</Section>
+        :<Section title="Player Avatars">{renderAvatars()}</Section>}
+        {screen==='customize'&&<Section title="3D Piece Families" note="Availability depends on installed models">{renderModels()}</Section>}
+        <div className="royal-shop-footer"><Action secondary onClick={()=>navigateTo('inventory')}>MY INVENTORY</Action><Action secondary onClick={()=>navigateTo('profile')}>VIEW PROFILE</Action></div>
+      </div>;
       break;
     case 'membership':
     case 'checkout':
