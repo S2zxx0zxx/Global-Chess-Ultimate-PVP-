@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Chess, type Square } from 'chess.js';
 import { chooseComputerMove, FILES, loadJSON, PIECE_GLYPHS, resultOf, saveJSON, shortResult, SQUARES, STORAGE_KEYS, type GameResult, type MatchRecord, type PlayMode } from './game';
 import { PUZZLES, PUZZLE_PROGRESS_KEY, isPuzzleSolution, type Puzzle } from './academy';
-import { newClock, advanceClock, changeTurn, displayClock } from './clock';
+import { newClock, advanceClock, displayClock } from './clock';
 
 const ChessBoard3D = lazy(() => import('./ChessBoard3D'));
 const AnimationShowcase = lazy(() => import('./AnimationShowcase'));
@@ -57,7 +57,6 @@ export default function App() {
   const [clockEnabled, setClockEnabled] = useState(false);
   const [storageWarning, setStorageWarning] = useState(false);
   const [lastMove, setLastMove] = useState<[Square, Square] | null>(null);
-  const [completedId, setCompletedId] = useState<string | null>(null);
 
   const turn = game.current.turn();
   const legal = useMemo(() => selected ? game.current.moves({ square: selected, verbose: true }).map(m => m.to) : [], [selected, fen]);
@@ -75,7 +74,6 @@ export default function App() {
     if (endedRef.current) return;
     endedRef.current = true;
     const id = Date.now() + '-' + Math.random().toString(36).slice(2, 7);
-    setCompletedId(id);
     const item: MatchRecord = { id, endedAt: new Date().toISOString(), mode: currentMode, result: outcome, pgn: game.current.pgn(), moves: game.current.history().length };
     setHistory(old => {
       const next = [item, ...old].slice(0, 100);
@@ -105,7 +103,6 @@ export default function App() {
     setFen(game.current.fen());
     setSelected(null);
     setEndResult(null);
-    setCompletedId(null);
     endedRef.current = false;
     clockRef.current = newClock(Date.now());
     setPromotion(null);
@@ -232,7 +229,7 @@ export default function App() {
     const rewind = mode === 'computer' && game.current.turn() === 'w' ? 2 : 1;
     let changed = false;
     for (let i = 0; i < rewind; i++) changed = Boolean(game.current.undo()) || changed;
-    if (changed) { clockRef.current = { ...clockRef.current, turn: game.current.turn(), lastAt: Date.now() }; setEndResult(null); setCompletedId(null); refresh(mode); }
+    if (changed) { clockRef.current = { ...clockRef.current, turn: game.current.turn(), lastAt: Date.now() }; setEndResult(null); refresh(mode); }
   };
   const saveAndExit = () => {
     if (clockEnabled && active) clockRef.current = advanceClock(clockRef.current, Date.now()).state;
