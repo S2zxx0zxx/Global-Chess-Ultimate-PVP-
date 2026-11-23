@@ -3,6 +3,7 @@ import { Chess, type Square } from 'chess.js';
 import { chooseComputerMove, FILES, loadJSON, PIECE_GLYPHS, resultOf, saveJSON, shortResult, SQUARES, STORAGE_KEYS, type GameResult, type MatchRecord, type PlayMode } from './game';
 import { PUZZLES, PUZZLE_PROGRESS_KEY, isPuzzleSolution, type Puzzle } from './academy';
 import RoyalStudio, { type RoyalScreen } from './RoyalStudio';
+import RoyalIcon from './RoyalIcon';
 import { newClock, advanceClock, displayClock } from './clock';
 
 const ChessBoard3D = lazy(() => import('./ChessBoard3D'));
@@ -17,19 +18,10 @@ type Settings = { flipped: boolean; reducedMotion: boolean; hints: boolean; mode
 type Snapshot = { fen: string; mode: PlayMode; pgn: string; active: boolean; seconds: [number, number]; timed?: boolean; remainingMs?: [number, number] };
 const DEFAULT_SETTINGS: Settings = { flipped: false, reducedMotion: false, hints: true };
 const initials = (text: string) => text.trim().slice(0, 2).toUpperCase() || 'GC';
-function randomGuest() { return 'Royal Guest ' + Math.floor(1000 + Math.random() * 9000); }
+function randomGuest() { return 'Chess Guest ' + Math.floor(1000 + Math.random() * 9000); }
 function royalSymbol(piece: string, color: 'w' | 'b') { return PIECE_GLYPHS[color][piece] ?? ''; }
 
-const Icon = ({ name, size = 20 }: { name: string; size?: number }) => {
-  const icons: Record<string, string> = {
-    crown: '♛', chess: '♞', trophy: '♜', back: '←', menu: '☰',
-    home: '⌂', sword: '⚔', book: '◈', profile: '♙',
-    settings: '⚙', time: '◷', star: '✦', arrow: '›',
-    close: '×', undo: '↶', flip: '⇅', check: '✓', history: '▤',
-    pause: 'Ⅱ', play: '▶', flag: '⚑', alert: '!', lock: '◇',
-  };
-  return <span aria-hidden="true" style={{ fontSize: size, lineHeight: 1 }} className="icon">{icons[name] ?? '✦'}</span>;
-};
+const Icon = ({name,size=20}:{name:string;size?:number}) => <RoyalIcon name={name} size={size}/>;
 
 export default function App() {
   const game = useRef(new Chess());
