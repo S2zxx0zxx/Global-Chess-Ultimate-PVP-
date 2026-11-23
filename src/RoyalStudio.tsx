@@ -2,9 +2,10 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { MatchRecord, PlayMode } from './game';
 import { loadJSON, saveJSON } from './game';
 import RoyalIcon from './RoyalIcon';
+import RoyalTutorial from './RoyalTutorial';
 
 export const ROYAL_SCREEN_GROUPS = {
-  journey: ['splash', 'welcome', 'onboard-play', 'onboard-learn', 'sign-in', 'register'],
+  journey: ['splash', 'welcome', 'onboard-play', 'onboard-learn', 'tutorial', 'sign-in', 'register'],
   arena: ['home', 'modes', 'match-setup', 'matchmaking', 'gameplay', 'match-result', 'review'],
   competition: ['tournaments', 'tournament-detail', 'bracket', 'daily', 'missions', 'season', 'events', 'news'],
   community: ['friends', 'player-search', 'player-card', 'club', 'invites', 'leaderboard'],
@@ -71,7 +72,7 @@ type LocalUi = {skin:typeof SKINS[number]['id'];haptics:boolean;contrast:boolean
 const defaultLocal:LocalUi={skin:'wood',haptics:false,contrast:false,readIds:[],completedIntro:false};
 function loadUi():LocalUi {const value=loadJSON<Partial<LocalUi>>(STORE_KEY,{});return {...defaultLocal,...value};}
 const descriptions: Record<RoyalScreen,string>={
-  splash:'Branded launch experience', welcome:'Welcome to the chess kingdom',
+  splash:'Branded launch experience', welcome:'Welcome to the chess kingdom',tutorial:'Interactive chess tutorial',
   'onboard-play':'Online and offline ways to play','onboard-learn':'Learn through real tactics',
   'sign-in':'Access options','register':'New local profile',
   home:'Home dashboard', modes:'Chess modes','match-setup':'Match configuration',matchmaking:'Online matchmaking',
@@ -154,9 +155,12 @@ export default function RoyalStudio({screen,navigate,openPage,begin,guest,saveGu
         {title:'Play Your Way',description:'Play offline with friends, challenge the computer or enter a private online room when its server is available.',symbol:'♞'},
         {title:'Learn & Grow',description:'Complete real chess puzzles, review local matches and track progress from actual games.',symbol:'♗'},
       ];
-      content=<div className="rv-onboarding"><div className="rv-onboard-illustration"><span>{pages[index].symbol}</span></div><K>INTRODUCTION · {index+1} / 3</K><h1>{pages[index].title}</h1><p>{pages[index].description}</p><div className="rv-dots">{pages.map((_,i)=><span key={i} className={i===index?'active':''}/>)}</div><div className="rv-two-actions"><Action secondary onClick={doneIntro}>SKIP</Action><Action onClick={()=>index===2?navigateTo('register'):navigateTo(['onboard-play','onboard-learn'][index] as RoyalScreen)}>{index===2?'CONTINUE':'NEXT ›'}</Action></div></div>;
+      content=<div className="rv-onboarding"><div className="rv-onboard-illustration"><span>{pages[index].symbol}</span></div><K>INTRODUCTION · {index+1} / 3</K><h1>{pages[index].title}</h1><p>{pages[index].description}</p><div className="rv-dots">{pages.map((_,i)=><span key={i} className={i===index?'active':''}/>)}</div><div className="rv-two-actions"><Action secondary onClick={()=>navigateTo('tutorial')}>TUTORIAL</Action><Action secondary onClick={doneIntro}>SKIP</Action><Action onClick={()=>index===2?navigateTo('register'):navigateTo(['onboard-play','onboard-learn'][index] as RoyalScreen)}>{index===2?'CONTINUE':'NEXT ›'}</Action></div></div>;
       break;
     }
+    case 'tutorial':
+      content=<RoyalTutorial onComplete={()=>navigateTo('modes')}/>;
+      break;
     case 'sign-in':
     case 'register':
     case 'account':
@@ -324,6 +328,7 @@ export default function RoyalStudio({screen,navigate,openPage,begin,guest,saveGu
     case 'help':
       content=<><Header eyebrow="ASSISTANCE" title="Help Center" icon="info" subtitle="Documented guidance for implemented features."/><div className="rv-list">{[
         ['How do I make a move?','Tap a piece, then a highlighted legal destination. Your move record updates after the move.'],
+        ['Can I practice the rules interactively?','Open the five-step Move Tutorial from Onboarding or the Learn section.'],
         ['How does computer chess work?','The offline opponent uses a simple chess.js-based move heuristic; it is not an expert chess engine.'],
         ['How do I replay my games?','Finish a match and open History. Select REPLAY GAME, then navigate through moves.'],
         ['How do I use 3D models?','Open a match and select 3D BOARD. Installed optional 3D models are loaded on demand.'],
