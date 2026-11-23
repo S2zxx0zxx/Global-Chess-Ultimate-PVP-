@@ -1,5 +1,5 @@
-const CACHE = 'global-chess-ultimate-v3-ui';
-const CORE = ['/', '/manifest.webmanifest', '/icon.svg'];
+const CACHE = 'global-chess-ultimate-v5-sheets';
+const CORE = ['/', '/manifest.webmanifest', '/icon.svg', '/art/sheet-gold-knight.svg'];
 self.addEventListener('install', event => { event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE))); self.skipWaiting(); });
 self.addEventListener('activate', event => { event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))); self.clients.claim(); });
 self.addEventListener('fetch', event => {
