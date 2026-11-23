@@ -269,3 +269,13 @@ body,.app{background:#0d0a07!important}
 .rv-bracket-match>span{display:block;min-height:35px;border-bottom:1px solid #715332;padding:8px 6px;color:#cabaa3;font-size:11px}
 .rv-bracket-match>span:last-child{border-bottom:0}
 @media(max-width:620px){.rv-bracket{grid-template-columns:repeat(3,minmax(145px,1fr));justify-content:start}.rv-bracket-round{min-height:330px}}
+
+/* In-app destructive action confirmation replaces browser-native dialogs. */
+.rv-resign-dialog{width:min(440px,100%);border:2px solid #c6a065;border-radius:18px;background:#35251a;padding:25px 22px;text-align:center;color:#f6e8d0;box-shadow:0 14px 50px #000a}
+.rv-resign-dialog h2{font:500 29px Cinzel,Georgia,serif;margin:4px 0 12px}
+.rv-resign-dialog p{font-size:13px;line-height:1.55;color:#e0cdb5}
+.rv-resign-emblem{display:block;color:#e0b660;font-size:56px}
+.rv-resign-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;margin-top:20px}
+.rv-resign-actions button{min-height:50px;border:1.5px solid #af8652;border-radius:9px;background:#251a14;color:#f9e4c3;font-weight:850;font-size:11px;letter-spacing:.4px}
+.rv-resign-actions button:last-child{background:#aa3940;border-color:#d17e7c;color:#fff4e5}
+.rv-resign-actions button:focus-visible{outline:3px solid #ffdf94;outline-offset:2px}
