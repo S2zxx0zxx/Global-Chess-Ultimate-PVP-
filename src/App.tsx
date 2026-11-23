@@ -385,12 +385,12 @@ export default function App() {
     {replayRecord && <Suspense fallback={<div role="status">Loading match replay…</div>}><ReplayViewer key={replayRecord.id} record={replayRecord} onClose={() => setReplayRecord(null)}/></Suspense>}
     {menu && <div className="modal-mask" onClick={() => setMenu(false)}><div className="action-sheet" role="dialog" aria-modal="true" aria-label="Match menu" onClick={e => e.stopPropagation()}><div className="sheet-heading"><h2>Match Menu</h2><button onClick={() => setMenu(false)} aria-label="Close menu"><Icon name="close" size={28}/></button></div><button type="button" onClick={() => { setMenu(false); undo(); }} disabled={!active || mode === 'puzzle'}>↶ Undo last move</button><button type="button" onClick={() => { setMenu(false); setSettings(p => ({ ...p, flipped: !p.flipped })); }}>⇅ Flip board</button><button type="button" onClick={saveAndExit}>▤ Save and exit</button><button type="button" className="destructive" onClick={() => { if (mode === 'puzzle') saveAndExit(); else resign(); }}>{mode === 'puzzle' ? '↩ Exit puzzle' : '⚑ Resign match'}</button></div></div>}
     {resignDialog && <div className="modal-mask" onClick={() => setResignDialog(false)}>
-      <section className="rv-resign-dialog" role="alertdialog" aria-modal="true" aria-labelledby="resign-dialog-title" aria-describedby="resign-dialog-desc" onClick={e => e.stopPropagation()}>
+      <section className="rv-resign-dialog" role="alertdialog" aria-modal="true" aria-labelledby="resign-dialog-title" aria-describedby="resign-dialog-desc" onClick={e => e.stopPropagation()} onKeyDown={e => { if (e.key === "Escape") setResignDialog(false); }}>
         <span className="rv-resign-emblem" aria-hidden="true">⚑</span>
         <h2 id="resign-dialog-title">Leave this match?</h2>
         <p id="resign-dialog-desc">Resigning ends the current match and records a loss for the side whose turn it is. You can still review the recorded moves.</p>
         <div className="rv-resign-actions">
-          <button type="button" onClick={() => setResignDialog(false)}>CANCEL</button>
+          <button type="button" autoFocus onClick={() => setResignDialog(false)}>CANCEL</button>
           <button type="button" onClick={confirmResign}>RESIGN MATCH</button>
         </div>
       </section>
