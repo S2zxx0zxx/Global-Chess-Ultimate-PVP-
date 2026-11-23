@@ -173,6 +173,10 @@ export default function RoyalStudio({screen,navigate,openPage,begin,guest,saveGu
           <Tile icon="training" title="VS. Computer" detail="Real offline opponent · basic difficulty" onClick={()=>{setMode('computer');navigateTo('match-setup');}}/>
           <Tile icon="friends" title="Play with a Friend" detail="Pass & Play or private invite room" onClick={()=>navigateTo('modes')}/>
         </div></Section>
+        <Section title="Royal Rewards & Events" note="Verified availability"><div className="rv-grid">
+          <Tile icon="gift" title="Daily Reward" detail="Progress missions · no coins issued" onClick={()=>navigateTo('missions')}/>
+          <Tile icon="star" title="Lucky Box" detail="Cosmetics preview · not purchasable" onClick={()=>navigateTo('shop')}/>
+        </div></Section>
         <Section title="Your Progress"><div className="rv-metrics"><Metric label="MATCHES PLAYED" value={history.length}/><Metric label="TACTICS SOLVED" value={solved.length}/><Metric label="COMPUTER WINS" value={computerWins}/></div><div className="rv-spaced-action"><Action secondary onClick={()=>openPage('history')}>VIEW MATCH HISTORY & REPLAYS ›</Action></div></Section></>;
       break;
     case 'modes':
