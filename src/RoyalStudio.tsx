@@ -202,7 +202,7 @@ export default function RoyalStudio({screen,navigate,openPage,begin,guest,saveGu
         </div>
         <div className="royal-hub-rewards">
           <button type="button" onClick={()=>navigateTo('missions')}><RoyalIcon name="gift" size={25}/><strong>Daily Reward</strong><small>View missions</small></button>
-          <button type="button" onClick={()=>navigateTo('shop')}><RoyalIcon name="star" size={25}/><strong>Lucky Box</strong><small>Free cosmetics</small></button>
+          <button type="button" onClick={()=>navigateTo('shop')}><img className="royal-reward-chest" src="/art/sheet-reward-chest.svg" alt="" loading="lazy"/><strong>Lucky Box</strong><small>Free cosmetics</small></button>
           <button type="button" onClick={()=>navigateTo('events')}><RoyalIcon name="events" size={25}/><strong>Events</strong><small>Explore</small></button>
         </div>
         <div className="royal-home-divider"><span>CHOOSE YOUR NEXT CHALLENGE</span></div>
