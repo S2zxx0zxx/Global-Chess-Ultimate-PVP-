@@ -32,6 +32,8 @@ test('all key sheet sections and existing gameplay paths are connected', () => {
   assert.match(integration, /begin=\{\(nextMode,timed\) => start\(nextMode,timed\)\}/);
   assert.match(integration, /onSkinChange=\{skin => setBoardSkin\(skin\)\}/);
   assert.match(integration, /RESUME SAVED MATCH/);
+  assert.match(integration, /role="alertdialog"/);
+  assert.match(integration, /onClick=\{confirmResign\}/);
 });
 test('accessible visual tokens and responsive sheet breakpoints are present', () => {
   for(const token of ['#0d0a07','#281c12','#d4af37','#b8860b','#f5e9d6','#5c4028']) {
