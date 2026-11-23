@@ -68,8 +68,8 @@ const MODELS=[
   {id:'classic',name:'ChessSet Classic',notes:'FBX and PBR materials'},
 ] as const;
 const STORE_KEY = 'gcu.royal-ui.v1';
-type LocalUi = {skin:typeof SKINS[number]['id'];haptics:boolean;contrast:boolean;readIds:string[];completedIntro:boolean};
-const defaultLocal:LocalUi={skin:'wood',haptics:false,contrast:false,readIds:[],completedIntro:false};
+type LocalUi = {skin:typeof SKINS[number]['id'];haptics:boolean;contrast:boolean;readIds:string[];completedIntro:boolean;avatar:'king'|'knight'|'queen';frame:'gold'|'bronze'|'onyx'};
+const defaultLocal:LocalUi={skin:'wood',haptics:false,contrast:false,readIds:[],completedIntro:false,avatar:'king',frame:'gold'};
 function loadUi():LocalUi {const value=loadJSON<Partial<LocalUi>>(STORE_KEY,{});return {...defaultLocal,...value};}
 const descriptions: Record<RoyalScreen,string>={
   splash:'Branded launch experience', welcome:'Welcome to the chess kingdom',tutorial:'Interactive chess tutorial',
@@ -100,11 +100,19 @@ export default function RoyalStudio({screen,navigate,openPage,begin,guest,saveGu
   const [mode,setMode]=useState<'local'|'computer'|'online'>('local');
   const [minutes,setMinutes]=useState<'untimed'|'10'>('untimed');
   const [leaderboardTab,setLeaderboardTab]=useState<'global'|'country'|'friends'>('global');
+  const [profileTab,setProfileTab]=useState<'overview'|'stats'|'avatars'|'frames'>('overview');
+  const [shopTab,setShopTab]=useState<'boards'|'pieces'|'frames'|'avatars'>('boards');
   const [tournamentTab,setTournamentTab]=useState<'all'|'live'|'upcoming'|'finished'>('all');
   const [missionTab,setMissionTab]=useState<'daily'|'weekly'|'achievements'>('daily');
   const [toast,setToast]=useState('');
   const save=(next:LocalUi)=>{setLocal(next);saveJSON(STORE_KEY,next);};
   const setSkin=(skin:LocalUi['skin'])=>{save({...local,skin});onSkinChange(skin);setToast('Board appearance saved. New matches use the selected skin.');};
+  const avatarOptions=[{id:'king',label:'Royal King',file:'k'},{id:'knight',label:'Knight',file:'n'},{id:'queen',label:'Royal Queen',file:'q'}] as const;
+  const frameOptions=[{id:'gold',label:'Royal Gold'},{id:'bronze',label:'Classic Bronze'},{id:'onyx',label:'Stone Onyx'}] as const;
+  const renderAvatars=()=> <div className="rv-grid royal-avatar-picker">{avatarOptions.map(option=><button type="button" key={option.id} className={local.avatar===option.id?'active':''} aria-pressed={local.avatar===option.id} onClick={()=>{save({...local,avatar:option.id});setToast(option.label+' avatar saved locally.');}}>
+    <img src={'/pieces/w-'+option.file+'.svg'} alt=""/><strong>{option.label}</strong><small>{local.avatar===option.id?'✓ SELECTED':'CHOOSE'}</small></button>)}</div>;
+  const renderFrames=()=> <div className="rv-grid royal-frame-picker">{frameOptions.map(option=><button type="button" key={option.id} className={'frame-'+option.id+(local.frame===option.id?' active':'')} aria-pressed={local.frame===option.id} onClick={()=>{save({...local,frame:option.id});setToast(option.label+' frame selected.');}}>
+    <span>♛</span><strong>{option.label}</strong><small>{local.frame===option.id?'✓ SELECTED':'CHOOSE'}</small></button>)}</div>;
   const doneIntro=()=>{save({...local,completedIntro:true});navigate('home');};
   const moves=history.reduce((acc,h)=>acc+h.moves,0);
   const computerWins=history.filter(h=>h.mode==='computer'&&h.result==='white').length;
@@ -286,7 +294,25 @@ export default function RoyalStudio({screen,navigate,openPage,begin,guest,saveGu
       break;
     case 'profile':
     case 'stats':
-      content=<><Header eyebrow="PLAYER IDENTITY" title={screen==='stats'?'Game Statistics':'My Profile'} icon="profile" subtitle="Verified local records, with no fabricated Elo rating or online stats."/><div className="rv-profile-banner"><div className="rv-profile-portrait">{guest.slice(0,1).toUpperCase()}</div><div><h2>{guest}</h2><p>Guest · Local profile</p><small>Online Rank: Unrated</small></div><button type="button" onClick={()=>navigateTo('account')} aria-label="Edit profile">✎</button></div><div className="rv-metrics"><Metric label="MATCHES" value={history.length}/><Metric label="COMPUTER WINS" value={computerWins}/><Metric label="TACTICS" value={solved.length}/><Metric label="TOTAL PLIES" value={moves}/></div><div className="rv-list">{link('achievements','achievements','Achievements','Based on local progress')}{link('inventory','shop','Avatars, Boards, Pieces','Available cosmetic selection')}{link('friends','friends','Friends','Private invites available')}{link('account','profile','Edit Profile','Change local nickname')}<Tile icon="play" title="3D Character Animation Studio" detail="Preserved from existing app · opens legacy profile tools" onClick={()=>openPage('profile')}/></div></>;
+      content=<div className="royal-profile-page">
+        <Header eyebrow="ROYAL PLAYER IDENTITY" title={screen==='stats'?'My Statistics':'My Profile'} icon="profile"/>
+        <div className="royal-profile-card">
+          <div className={'royal-profile-photo frame-'+local.frame}><img src={'/pieces/w-'+({king:'k',knight:'n',queen:'q'}[local.avatar])+'.svg'} alt="Selected chess profile avatar"/></div>
+          <div className="royal-profile-identity"><strong>{guest}</strong><span>Guest Player</span><small>Rank: Beginner · Offline</small></div>
+          <button type="button" onClick={()=>navigateTo('account')} aria-label="Edit local profile">✎</button>
+        </div>
+        <div className="royal-profile-progress"><div><span>LOCAL CHESS PROGRESS</span><b>{Math.min(history.length,10)} / 10 matches</b></div><Bar value={history.length} total={10}/></div>
+        <div className="rv-tabs royal-profile-tabs">{(['overview','stats','avatars','frames'] as const).map(tab=><button key={tab} type="button" onClick={()=>setProfileTab(tab)} className={profileTab===tab||screen==='stats'&&tab==='stats'?'active':''}>{tab.toUpperCase()}</button>)}</div>
+        {screen==='stats'||profileTab==='stats'?<div className="rv-metrics"><Metric label="TOTAL GAMES" value={history.length}/><Metric label="BOT WINS" value={computerWins}/><Metric label="TACTICS" value={solved.length}/><Metric label="TOTAL PLIES" value={moves}/></div>
+        :profileTab==='avatars'?renderAvatars():profileTab==='frames'?renderFrames()
+        :<div className="royal-profile-summary">
+          <div><span>Completed Games</span><strong>{history.length}</strong></div>
+          <div><span>Computer Wins</span><strong>{computerWins}</strong></div>
+          <div><span>Win Rate vs Bot</span><strong>{history.filter(h=>h.mode==='computer').length?Math.round(100*computerWins/history.filter(h=>h.mode==='computer').length)+'%':'—'}</strong></div>
+          <div><span>Completed Tactics</span><strong>{solved.length} / 5</strong></div>
+        </div>}
+        <Section title="Your Kingdom"><div className="rv-list">{link('achievements','achievements','Achievements','Based on saved games')}{link('inventory','shop','Chess Collection','Boards, avatars and frames')}{link('friends','friends','Friends','Private online invites')}{link('account','profile','Edit Profile','Change local nickname')}<Tile icon="play" title="3D Character Animation Studio" detail="Open existing animation preview" onClick={()=>openPage('profile')}/></div></Section>
+      </div>;
       break;
     case 'achievements':
       content=<><Header eyebrow="COLLECTION & PROGRESS" title="Achievements" icon="achievements" subtitle="Earned statuses reflect your actual stored records."/><div className="rv-metrics"><Metric label="COMPLETED" value={achievementList.filter(a=>a.value>=a.total).length}/><Metric label="AVAILABLE" value={achievementList.length}/></div>{renderMissions(achievementList)}</>;
