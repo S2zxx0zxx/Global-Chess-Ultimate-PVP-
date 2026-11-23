@@ -27,3 +27,8 @@ GitHub Actions builds the \`dist/\` web/PWA preview artifact on pushes and PRs. 
 This is **not** a feature-complete port of the provided Chess Clash APK. That APK exposed asset indices, string-table layout references and metadata, not source code, full runtime wiring, matchmaking services, proprietary animations or legal rights. Our game does not ship APK-extracted images, fonts, code or audio. Ranked multiplayer, robust engine analysis, Android AAB, cloud accounts, accessibility device QA, security review and Play Store compliance remain open.
 
 See \`docs/FEATURE_MATRIX.md\`, \`docs/ORIGINALITY.md\`, and \`docs/ANDROID_RELEASE.md\`.
+
+
+## Optional 3D user-supplied asset library (follow-up PR)
+
+This branch adds a lazily loaded interactive Three.js board (2D remains the default), optional four complete high-detail GLB chess-piece styles, a ChessSet FBX+PBR path and a 43-clip humanoid animation preview in Profile. The uploads have been catalogued and texture-optimized in a separate, downloadable asset ZIP. That binary pack is not checked into the public repository: install it under public/assets/ following docs/INSTALL_USER_ASSETS.md. Run npm run assets:verify:strict after installation. A missing pack yields procedural 3D pieces, not source pack models. It does not add online multiplayer, Android AAB or Chess Clash source logic. See docs/ASSET_LIBRARY_IMPLEMENTATION.md.
