@@ -1,5 +1,6 @@
 import {useEffect, useRef, useState} from 'react';
 import {Chess, type Square} from 'chess.js';
+import type * as THREE from 'three';
 
 export type ThreeTheme = 'deco'|'bauhaus'|'scifi'|'egypt'|'classic';
 type Props = {fen:string;selected:Square|null;legal:Square[];lastMove:[Square,Square]|null;theme:ThreeTheme;useLibraryAssets:boolean;flipped:boolean;reducedMotion:boolean;onSquare:(square:Square)=>void};
