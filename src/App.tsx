@@ -271,7 +271,7 @@ export default function App() {
           <span className="brand-crest"><Icon name="crown" size={27}/></span>
           <span className="brand-copy"><b>GLOBAL CHESS</b><small>ULTIMATE</small></span>
         </button>
-        <button type="button" className="top-avatar" onClick={() => screen('profile')} aria-label="Open profile">{initials(guest)}</button>
+        <button type="button" className="top-avatar" onClick={() => openRoyal('profile')} aria-label="Open redesigned player profile">{initials(guest)}</button>
       </header>
 
       {storageWarning && <div role="alert" className="notice warn">Private mode or browser storage prevented saving. This session may not persist.</div>}
