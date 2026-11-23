@@ -255,3 +255,17 @@ body,.app{background:#0d0a07!important}
 .app .replay-dialog{background:#281c12}
 .app .board-status{min-height:24px}
 @media(max-width:340px){.app .game-actions{gap:5px}.app .game-actions button{font-size:10px;padding:9px 3px}}
+
+/* Tournament detail and knockout bracket have real empty entrant slots, never fake player data. */
+.rv-tournament-detail{text-align:center}
+.rv-tournament-detail .rv-cup-symbol{display:block;font:74px Georgia,serif;color:#dfbe70}
+.rv-tournament-detail .rv-metrics{margin:20px 0;grid-template-columns:repeat(3,minmax(0,1fr))}
+.rv-tournament-detail .rv-metric strong{font-size:19px}
+.rv-tournament-detail>.rv-action{width:100%;margin-top:8px}
+.rv-bracket{display:grid;grid-template-columns:repeat(3,minmax(180px,1fr));align-items:center;gap:12px;margin:18px 0;overflow:auto;padding:10px;background:#251a12;border:1px solid #906a42;border-radius:16px}
+.rv-bracket-round{display:grid;align-content:space-evenly;gap:13px;min-height:350px}
+.rv-bracket-round>strong{text-align:center;color:#e4c37b;letter-spacing:1px;font-size:11px}
+.rv-bracket-match{border:1px solid #8f693b;border-radius:10px;background:#3a291c;padding:7px;display:grid;gap:6px}
+.rv-bracket-match>span{display:block;min-height:35px;border-bottom:1px solid #715332;padding:8px 6px;color:#cabaa3;font-size:11px}
+.rv-bracket-match>span:last-child{border-bottom:0}
+@media(max-width:620px){.rv-bracket{grid-template-columns:repeat(3,minmax(145px,1fr));justify-content:start}.rv-bracket-round{min-height:330px}}
