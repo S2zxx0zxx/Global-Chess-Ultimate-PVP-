@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { MatchRecord, PlayMode } from './game';
 import { loadJSON, saveJSON } from './game';
+import RoyalIcon from './RoyalIcon';
 
 export const ROYAL_SCREEN_GROUPS = {
   journey: ['splash', 'welcome', 'onboard-play', 'onboard-learn', 'sign-in', 'register'],
@@ -37,7 +38,7 @@ const BUTTONS = {
   cup: '♜', star: '★', info: 'ⓘ', review: '▤', shield: '♧', gift: '❖',
 };
 type SymbolName = keyof typeof BUTTONS;
-const SN = ({name}: {name: SymbolName}) => <span className="rv-symbol" aria-hidden="true">{BUTTONS[name]}</span>;
+const SN = ({name}: {name: SymbolName}) => <RoyalIcon name={name} size={22}/>;
 const K = ({children}: {children: ReactNode}) => <span className="rv-kicker">{children}</span>;
 const Header = ({eyebrow, title, subtitle, icon}: {eyebrow: string; title: string; subtitle?: string; icon?: SymbolName}) => <header className="rv-page-head">
   {icon && <span className="rv-page-emblem"><SN name={icon}/></span>}
@@ -165,28 +166,56 @@ export default function RoyalStudio({screen,navigate,openPage,begin,guest,saveGu
         <div className="rv-note"><strong>Google / Email sign-in unavailable</strong><p>Cloud credentials, password handling and cross-device sync have not been deployed. We do not collect passwords in this preview.</p></div><Action secondary onClick={doneIntro}>CONTINUE AS GUEST</Action><button type="button" className="rv-text-link" onClick={()=>navigateTo(screen==='sign-in'?'register':'sign-in')}>{screen==='sign-in'?'CREATE A LOCAL PROFILE':'SEE SIGN-IN STATUS'}</button></div></>;
       break;
     case 'home':
-      content=<><div className="rv-userline"><button onClick={navigateMain('profile')} type="button" className="rv-account-pill"><span>{guest.slice(0,1).toUpperCase()}</span><b>{guest}</b><small>Guest · Local</small></button><div className="rv-user-actions"><button type="button" aria-label="Notifications" onClick={navigateMain('notifications')}><SN name="notifications"/>{unread>0&&<span className="rv-unread">{unread}</span>}</button><button type="button" aria-label="Settings" onClick={navigateMain('settings')}><SN name="settings"/></button></div></div>
-        <div className="rv-hero"><div className="rv-hero-chess"><img src="/pieces/b-n.svg" alt="Original obsidian chess knight"/></div><K>THE KINGDOM AWAITS</K><h1>Rule the Board.</h1><p>Play, learn and improve your strategy with every match.</p><Action onClick={()=>navigateTo('modes')}>♞ &nbsp; PLAY CHESS ›</Action></div>
-        <div className="rv-grid rv-shortcuts">{link('tournaments','cup','Tournaments','View competition status')}{link('daily','star','Daily Challenge','Solve a real puzzle')}{link('missions','missions','Missions','Progress from your games')}{link('events','events','Events','Activities and updates')}</div>
-        <Section title="Quick Battle" note="Available modes"><div className="rv-list">
-          <Tile icon="play" title="Classic Chess" detail="Local 10-minute chess or no-clock mode" onClick={()=>{setMode('local');navigateTo('match-setup');}}/>
-          <Tile icon="training" title="VS. Computer" detail="Real offline opponent · basic difficulty" onClick={()=>{setMode('computer');navigateTo('match-setup');}}/>
-          <Tile icon="friends" title="Play with a Friend" detail="Pass & Play or private invite room" onClick={()=>navigateTo('modes')}/>
-        </div></Section>
-        <Section title="Royal Rewards & Events" note="Verified availability"><div className="rv-grid">
-          <Tile icon="gift" title="Daily Reward" detail="Progress missions · no coins issued" onClick={()=>navigateTo('missions')}/>
-          <Tile icon="star" title="Lucky Box" detail="Cosmetics preview · not purchasable" onClick={()=>navigateTo('shop')}/>
-        </div></Section>
-        <Section title="Your Progress"><div className="rv-metrics"><Metric label="MATCHES PLAYED" value={history.length}/><Metric label="TACTICS SOLVED" value={solved.length}/><Metric label="COMPUTER WINS" value={computerWins}/></div><div className="rv-spaced-action"><Action secondary onClick={()=>openPage('history')}>VIEW MATCH HISTORY & REPLAYS ›</Action></div></Section></>;
+      content=<div className="royal-hub">
+        <div className="royal-player-panel">
+          <button className="royal-player-identity" type="button" onClick={()=>navigateTo('profile')}>
+            <span className="royal-avatar">{guest.slice(0,1).toUpperCase()}</span>
+            <span className="royal-identity-name"><strong>{guest}</strong><small>★ Beginner · Guest player</small></span>
+          </button>
+          <div className="royal-player-controls">
+            <button type="button" aria-label="Achievements" onClick={()=>navigateTo('achievements')}><RoyalIcon name="star" size={22}/></button>
+            <button type="button" aria-label="Notifications" onClick={()=>navigateTo('notifications')}><RoyalIcon name="notifications" size={21}/>{unread>0&&<i>{unread}</i>}</button>
+            <button type="button" aria-label="Settings" onClick={()=>navigateTo('settings')}><RoyalIcon name="settings" size={21}/></button>
+          </div>
+        </div>
+        <div className="royal-hub-emblem"><div className="royal-hub-crown"><RoyalIcon name="crown" size={27}/><span>GLOBAL CHESS</span></div><strong>ULTIMATE</strong><span>♟ &nbsp; PLAY • LEARN • COMPETE &nbsp; ♟</span></div>
+        <div className="royal-mode-primary">
+          <button className="royal-classic" type="button" onClick={()=>{setMode('local');setMinutes('untimed');navigateTo('match-setup');}}>
+            <span className="royal-mode-figure"><img src="/pieces/w-n.svg" alt=""/></span>
+            <span><small>THE ROYAL ARENA</small><strong>Classic Chess</strong><em>Standard rules · Pass &amp; Play</em></span>
+            <RoyalIcon name="arrow" size={21}/>
+          </button>
+          <button className="royal-quick" type="button" onClick={()=>{setMode('local');setMinutes('10');navigateTo('match-setup');}}>
+            <RoyalIcon name="time" size={27}/><span><strong>Quick Chess</strong><small>10-minute local match</small></span><RoyalIcon name="arrow" size={19}/>
+          </button>
+        </div>
+        <div className="royal-mode-secondary">
+          <button type="button" onClick={()=>{setMode('computer');setMinutes('untimed');navigateTo('match-setup');}}><span className="royal-small-pict"><img src="/pieces/b-k.svg" alt=""/></span><strong>VS. Computer</strong><small>Offline bot</small></button>
+          <button type="button" onClick={()=>navigateTo('modes')}><RoyalIcon name="friends" size={30}/><strong>Play With Friends</strong><small>Local or invite</small></button>
+        </div>
+        <div className="royal-hub-rewards">
+          <button type="button" onClick={()=>navigateTo('missions')}><RoyalIcon name="gift" size={25}/><strong>Daily Reward</strong><small>View missions</small></button>
+          <button type="button" onClick={()=>navigateTo('shop')}><RoyalIcon name="star" size={25}/><strong>Lucky Box</strong><small>Free cosmetics</small></button>
+          <button type="button" onClick={()=>navigateTo('events')}><RoyalIcon name="events" size={25}/><strong>Events</strong><small>Explore</small></button>
+        </div>
+        <div className="royal-home-divider"><span>CHOOSE YOUR NEXT CHALLENGE</span></div>
+        <div className="royal-hub-quests">
+          <button type="button" onClick={()=>navigateTo('daily')}><RoyalIcon name="training" size={22}/><span><strong>Daily Challenge</strong><small>{solved.length} of 5 real tactics solved</small></span><RoyalIcon name="arrow" size={17}/></button>
+          <button type="button" onClick={()=>navigateTo('tournaments')}><RoyalIcon name="cup" size={22}/><span><strong>Tournaments</strong><small>No live events scheduled</small></span><RoyalIcon name="arrow" size={17}/></button>
+          <button type="button" onClick={()=>openPage('history')}><RoyalIcon name="history" size={22}/><span><strong>Game Review</strong><small>{history.length} completed games</small></span><RoyalIcon name="arrow" size={17}/></button>
+        </div>
+        <div className="royal-hub-stats"><div><small>GAMES</small><strong>{history.length}</strong></div><div><small>COMPUTER WINS</small><strong>{computerWins}</strong></div><div><small>TACTICS</small><strong>{solved.length}<em>/5</em></strong></div></div>
+      </div>;
       break;
     case 'modes':
-      content=<><Header eyebrow="THE ARENA" title="Play Chess" subtitle="Choose a fully supported local mode, or open private online rooms if the service is configured." icon="play"/><div className="rv-list">
-        <Tile icon="play" title="Classic Chess" detail="Standard rules · 10-minute local clocks" onClick={()=>{setMode('local');setMinutes('10');navigateTo('match-setup');}}/>
-        <Tile icon="cup" title="Quick Chess" detail="10-minute local chess" onClick={()=>{setMode('local');setMinutes('10');navigateTo('match-setup');}}/>
-        <Tile icon="training" title="VS. Computer" detail="Offline basic opponent" onClick={()=>{setMode('computer');navigateTo('match-setup');}}/>
-        <Tile icon="friends" title="Online Match" detail="Private invite rooms · service deployment required" onClick={()=>navigateTo('matchmaking')}/>
-        <Tile icon="friends" title="Play with Friends" detail="Two players on one device" onClick={()=>{setMode('local');setMinutes('untimed');navigateTo('match-setup');}}/>
-      </div></>;
+      content=<div className="royal-modes-page"><Header eyebrow="THE ROYAL ARENA" title="Play Chess" subtitle="Choose a mode. Every available local option starts the real chess engine." icon="play"/>
+        <div className="royal-modes-stack">
+          <button type="button" onClick={()=>{setMode('local');setMinutes('untimed');navigateTo('match-setup');}}><span><img src="/pieces/w-n.svg" alt=""/></span><div><strong>Classic Chess</strong><small>Standard rules · No clock</small></div><RoyalIcon name="arrow"/></button>
+          <button type="button" onClick={()=>{setMode('local');setMinutes('10');navigateTo('match-setup');}}><span><RoyalIcon name="time" size={34}/></span><div><strong>Quick Chess</strong><small>Fast &amp; exciting · 10 min</small></div><RoyalIcon name="arrow"/></button>
+          <button type="button" onClick={()=>{setMode('computer');setMinutes('untimed');navigateTo('match-setup');}}><span><img src="/pieces/b-n.svg" alt=""/></span><div><strong>VS. Computer</strong><small>Offline · Basic AI</small></div><RoyalIcon name="arrow"/></button>
+          <button type="button" onClick={()=>navigateTo('matchmaking')}><span><RoyalIcon name="friends" size={35}/></span><div><strong>Online Match</strong><small>Private invites · Server required</small></div><RoyalIcon name="arrow"/></button>
+          <button type="button" onClick={()=>{setMode('local');setMinutes('untimed');navigateTo('match-setup');}}><span><RoyalIcon name="friends" size={35}/></span><div><strong>Play With Friends</strong><small>Two players on one device</small></div><RoyalIcon name="arrow"/></button>
+        </div></div>;
       break;
     case 'match-setup':
       content=<><Header eyebrow="GAME CONFIGURATION" title="Match Setup" icon="play" subtitle="These controls change the real chess mode. Computer games do not claim unavailable time settings."/><div className="rv-panel rv-form">
