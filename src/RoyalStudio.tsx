@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { MatchRecord, PlayMode } from './game';
 import { loadJSON, saveJSON } from './game';
 
@@ -28,6 +28,7 @@ type Props = {
   toggleSetting: (key: 'reducedMotion' | 'hints' | 'flipped', value: boolean) => void;
   modelTheme: 'deco' | 'bauhaus' | 'scifi' | 'egypt' | 'classic';
   setModelTheme: (theme: 'deco' | 'bauhaus' | 'scifi' | 'egypt' | 'classic') => void;
+  onSkinChange: (skin: 'wood' | 'ivory' | 'onyx' | 'stone') => void;
 };
 const BUTTONS = {
   home: '⌂', modes: '♘', events: '♛', club: '♟', shop: '♜', back: '‹',
@@ -37,17 +38,17 @@ const BUTTONS = {
 };
 type SymbolName = keyof typeof BUTTONS;
 const SN = ({name}: {name: SymbolName}) => <span className="rv-symbol" aria-hidden="true">{BUTTONS[name]}</span>;
-const K = ({children}: {children: React.ReactNode}) => <span className="rv-kicker">{children}</span>;
+const K = ({children}: {children: ReactNode}) => <span className="rv-kicker">{children}</span>;
 const Header = ({eyebrow, title, subtitle, icon}: {eyebrow: string; title: string; subtitle?: string; icon?: SymbolName}) => <header className="rv-page-head">
   {icon && <span className="rv-page-emblem"><SN name={icon}/></span>}
   <K>{eyebrow}</K><h1>{title}</h1>{subtitle && <p>{subtitle}</p>}
 </header>;
-const Action = ({children, onClick, secondary=false, disabled=false}: {children: React.ReactNode; onClick:()=>void; secondary?:boolean; disabled?:boolean}) =>
+const Action = ({children, onClick, secondary=false, disabled=false}: {children: ReactNode; onClick:()=>void; secondary?:boolean; disabled?:boolean}) =>
   <button type="button" disabled={disabled} onClick={onClick} className={'rv-action'+(secondary?' rv-outline':'')}>{children}</button>;
 const Tile = ({icon, title, detail, onClick, trailing}: {icon: SymbolName;title:string;detail:string;onClick:()=>void;trailing?:string}) =>
   <button type="button" className="rv-tile" onClick={onClick}><span className="rv-tile-icon"><SN name={icon}/></span><span className="rv-tile-copy"><strong>{title}</strong><small>{detail}</small></span><span className="rv-tile-trailing">{trailing || '›'}</span></button>;
-const Section = ({title, children, note}: {title:string;children:React.ReactNode;note?:string})=><section className="rv-section"><div className="rv-section-heading"><h2>{title}</h2>{note&&<small>{note}</small>}</div>{children}</section>;
-const Empty = ({symbol, title, text, children}: {symbol:SymbolName;title:string;text:string;children?:React.ReactNode})=>
+const Section = ({title, children, note}: {title:string;children:ReactNode;note?:string})=><section className="rv-section"><div className="rv-section-heading"><h2>{title}</h2>{note&&<small>{note}</small>}</div>{children}</section>;
+const Empty = ({symbol, title, text, children}: {symbol:SymbolName;title:string;text:string;children?:ReactNode})=>
   <div className="rv-empty"><span><SN name={symbol}/></span><h3>{title}</h3><p>{text}</p>{children}</div>;
 const Metric = ({label, value}: {label:string;value:string|number})=><div className="rv-metric"><small>{label}</small><strong>{value}</strong></div>;
 const Bar = ({value, total}: {value:number;total:number})=><div className="rv-progress" role="progressbar" aria-valuemin={0} aria-valuemax={total} aria-valuenow={Math.min(value,total)}><span style={{width:(total?Math.min(100,100*value/total):0)+'%'}}/></div>;
@@ -88,7 +89,7 @@ const descriptions: Record<RoyalScreen,string>={
 };
 export { descriptions as ROYAL_SCREEN_DESCRIPTIONS };
 
-export default function RoyalStudio({screen,navigate,openPage,begin,guest,saveGuest,history,solved,reducedMotion,hints,flipped,toggleSetting,modelTheme,setModelTheme}:Props) {
+export default function RoyalStudio({screen,navigate,openPage,begin,guest,saveGuest,history,solved,reducedMotion,hints,flipped,toggleSetting,modelTheme,setModelTheme,onSkinChange}:Props) {
   const [local,setLocal]=useState<LocalUi>(loadUi);
   const [draftName,setDraftName]=useState(guest);
   const [feedback,setFeedback]=useState('');
@@ -100,7 +101,7 @@ export default function RoyalStudio({screen,navigate,openPage,begin,guest,saveGu
   const [missionTab,setMissionTab]=useState<'daily'|'weekly'|'achievements'>('daily');
   const [toast,setToast]=useState('');
   const save=(next:LocalUi)=>{setLocal(next);saveJSON(STORE_KEY,next);};
-  const setSkin=(skin:LocalUi['skin'])=>{save({...local,skin});setToast('Board appearance saved. New matches use the selected skin.');};
+  const setSkin=(skin:LocalUi['skin'])=>{save({...local,skin});onSkinChange(skin);setToast('Board appearance saved. New matches use the selected skin.');};
   const doneIntro=()=>{save({...local,completedIntro:true});navigate('home');};
   const moves=history.reduce((acc,h)=>acc+h.moves,0);
   const computerWins=history.filter(h=>h.mode==='computer'&&h.result==='white').length;
@@ -140,7 +141,7 @@ export default function RoyalStudio({screen,navigate,openPage,begin,guest,saveGu
   const accountSave=()=>{const next=draftName.trim();if(next){saveGuest(next);setToast('Local display name saved on this device.');}else setToast('Enter a display name.');};
   const resetData=()=>{if(!window.confirm('Delete local chess history, puzzles, profile and preferences from this browser? This cannot be undone.'))return;['gcu.guest.v1','gcu.lastMatch.v1','gcu.history.v1','gcu.settings.v1','gcu.puzzles.solved.v1',STORE_KEY,'gcu.private-room.v1'].forEach(key=>{try{localStorage.removeItem(key);sessionStorage.removeItem(key);}catch{}});window.location.reload();};
 
-  let content:React.ReactNode=null;
+  let content:ReactNode=null;
   switch(screen) {
     case 'splash':
       content=<div className="rv-splash"><div className="rv-crown">♛</div><div className="rv-splash-figure"><img src="/pieces/w-k.svg" alt="Original Global Chess Ultimate king piece"/></div><K>PREMIUM CHESS EXPERIENCE</K><h1>GLOBAL CHESS<br/><span>ULTIMATE</span></h1><p>Think · Play · Improve</p><Action onClick={()=>navigateTo('welcome')}>ENTER THE KINGDOM ›</Action><small>No account needed to play</small></div>;
