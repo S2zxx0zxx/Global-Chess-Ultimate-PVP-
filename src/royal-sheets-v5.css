@@ -397,3 +397,23 @@ h1,h2,h3{font-family:var(--font-title);font-weight:600}
 .royal-tutorial-actions button{min-height:49px;flex:1;background:#3d2918;border:1px solid #ac7d42;border-radius:9px;color:#f5dcb2;font-weight:800}
 .royal-tutorial-actions button:last-child{background:linear-gradient(#f8dda9,#bd9048);color:#281505;border-color:#ffe1a0}
 @media(max-width:380px){.rv-onboarding .rv-two-actions{flex-wrap:wrap}.rv-onboarding .rv-two-actions>*{flex:1 1 43%;font-size:10px}}
+
+/* Sheet-02 game replay, heuristic analysis and piece art chooser */
+.royal-replay-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;margin:8px 0}
+.royal-replay-tabs button{min-height:44px;background:#3d271b;color:#e5c99f;border:1px solid #936c42;border-radius:7px;font-weight:800;font-size:11px}
+.royal-replay-tabs button.active{background:linear-gradient(#ffe3a7,#c18a3c);color:#2c190e;border-color:#f7d997}
+.royal-analysis-panel{margin:12px 0;display:grid;gap:8px;padding:14px;background:#23150e;border:1px solid #9e743e;border-radius:10px}
+.royal-analysis-panel strong{font:800 11px var(--font-body);color:#f6c978;letter-spacing:.75px}
+.royal-analysis-panel span{font:700 13px var(--font-body);color:#fbe9c7}
+.royal-analysis-panel small{font-size:11px;line-height:1.45;color:#c8b098}
+.replay-controls{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}
+.replay-controls button{min-width:0;padding:8px 3px;font-size:12px}
+.royal-promotion-piece{display:block;width:min(100%,70px);height:63px;object-fit:contain;margin:0 auto}
+.promotion-options button{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:2px;padding:4px 3px;font-size:11px}
+.promotion-options button small{font:700 10px var(--font-body);color:#f9e8c9}
+.result-card{overflow:hidden}
+.result-crown{display:block;animation:royal-crown-rise .7s ease-out}
+.result-card:before,.result-card:after{content:'✦';position:absolute;top:22%;left:15%;color:#e7b35d;font-size:29px;pointer-events:none;animation:royal-spark 1.2s ease-out both}
+.result-card:after{left:auto;right:15%;animation-delay:.3s}
+@keyframes royal-crown-rise{from{opacity:0;transform:translateY(20px) scale(.8)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes royal-spark{0%{transform:translateY(18px) scale(.5);opacity:0}45%{opacity:1}100%{transform:translateY(-30px) scale(1);opacity:0}}
