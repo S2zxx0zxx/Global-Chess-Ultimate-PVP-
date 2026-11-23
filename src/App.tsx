@@ -2,6 +2,8 @@ import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Chess, type Square } from 'chess.js';
 import { chooseComputerMove, FILES, loadJSON, PIECE_GLYPHS, resultOf, saveJSON, shortResult, SQUARES, STORAGE_KEYS, type GameResult, type MatchRecord, type PlayMode } from './game';
 import { PUZZLES, PUZZLE_PROGRESS_KEY, isPuzzleSolution, type Puzzle } from './academy';
+import RoyalStudio, { type RoyalScreen } from './RoyalStudio';
+import './royal-studio.css';
 import { newClock, advanceClock, displayClock } from './clock';
 
 const ChessBoard3D = lazy(() => import('./ChessBoard3D'));
@@ -10,7 +12,7 @@ const ReplayViewer = lazy(() => import('./ReplayViewer'));
 const PrivateOnline = lazy(() => import('./PrivateOnline'));
 
 type ThreeTheme = 'deco' | 'bauhaus' | 'scifi' | 'egypt' | 'classic';
-type Page = 'home' | 'play' | 'game' | 'history' | 'training' | 'profile' | 'settings' | 'about' | 'online';
+type Page = 'home' | 'play' | 'game' | 'history' | 'training' | 'profile' | 'settings' | 'about' | 'online' | 'studio';
 type Promotion = { from: Square; to: Square };
 type Settings = { flipped: boolean; reducedMotion: boolean; hints: boolean; modelTheme?: ThreeTheme; useLibraryAssets?: boolean };
 type Snapshot = { fen: string; mode: PlayMode; pgn: string; active: boolean; seconds: [number, number]; timed?: boolean; remainingMs?: [number, number] };
@@ -35,7 +37,9 @@ export default function App() {
   const clockRef = useRef(newClock(Date.now()));
   const endedRef = useRef(false);
   const stored = useRef(loadJSON<Snapshot | null>(STORAGE_KEYS.lastMatch, null));
-  const [page, setPage] = useState<Page>(() => new URLSearchParams(location.search).has('room') ? 'online' : 'home');
+  const [page, setPage] = useState<Page>(() => new URLSearchParams(location.search).has('room') ? 'online' : (loadJSON<{completedIntro?:boolean}>('gcu.royal-ui.v1',{}).completedIntro ? 'home' : 'studio'));
+  const [studioScreen, setStudioScreen] = useState<RoyalScreen>('splash');
+  const [boardSkin, setBoardSkin] = useState<'wood'|'ivory'|'onyx'|'stone'>(() => loadJSON<{skin?:'wood'|'ivory'|'onyx'|'stone'}>('gcu.royal-ui.v1',{}).skin || 'wood');
   const [mode, setMode] = useState<PlayMode>('local');
   const [view3D, setView3D] = useState(false);
   const [showAvatarAnimations, setShowAvatarAnimations] = useState(false);
@@ -243,12 +247,24 @@ export default function App() {
   const labelResult = (result: GameResult) => result === 'draw' ? 'A royal draw' : result.startsWith('timeout') ? 'Time expired' : result === 'white' ? 'White triumphs' : 'Black triumphs';
 
   const screen = (target: Page) => { setPage(target); setMenu(false); setMessage(''); };
-  const tab = (target: Page, icon: string, label: string) =>
-    <button type="button" onClick={() => screen(target)} className={'nav-tab ' + (page === target || ((page === 'game' || page === 'online') && target === 'play') ? 'current' : '')} aria-label={label}>
+  const openRoyal = (target: RoyalScreen) => {
+    setStudioScreen(target);
+    setMessage('');
+    setMenu(false);
+    if (target === 'home') setPage('home');
+    else if (target === 'modes') setPage('play');
+    else setPage('studio');
+  };
+  const royalTab = (target: RoyalScreen, icon: string, label: string) => {
+    const current = target === 'home' ? page === 'home' :
+      target === 'modes' ? page === 'play' || page === 'game' || page === 'online' :
+      page === 'studio' && studioScreen === target;
+    return <button type="button" onClick={() => openRoyal(target)} className={'nav-tab ' + (current ? 'current' : '')} aria-current={current ? 'page' : undefined} aria-label={label}>
       <Icon name={icon} size={23}/><span>{label}</span>
     </button>;
+  };
 
-  return <div className={'app ' + (settings.reducedMotion ? 'reduce-motion' : '')}>
+  return <div data-board-skin={boardSkin} className={'app ' + (settings.reducedMotion ? 'reduce-motion' : '') + (page === 'studio' && ['splash','welcome','onboard-play','onboard-learn'].includes(studioScreen) ? ' intro-stage' : '')}>
     <div className="ambient ambient-one"/><div className="ambient ambient-two"/>
     <div className="app-frame">
       <header className="topbar">
@@ -263,39 +279,23 @@ export default function App() {
       {message && <div role="status" className="notice"><Icon name="star" size={15}/>{message}<button type="button" onClick={() => setMessage('')} aria-label="Dismiss message">×</button></div>}
 
       <main id="main">
-        {page === 'home' && <>
-          <section className="hero">
-            <div className="hero-ornament"><div className="hero-crown">♛</div></div>
-            <p className="eyebrow">THE KINGDOM AWAITS</p>
-            <h1>Rule the <em>Board.</em></h1>
-            <p className="hero-text">Every move tells a story. Enter the royal arena.</p>
-            <button type="button" className="btn btn-primary hero-cta" onClick={() => screen('play')}><Icon name="sword"/> PLAY NOW <Icon name="arrow" size={24}/></button>
-          </section>
-          {stored.current?.active && <button className="resume-banner" type="button" onClick={resume}><Icon name="play"/> RESUME SAVED MATCH <Icon name="arrow"/></button>}
-          <div className="section-label"><h2>Choose Your Battle</h2><span>OFFLINE READY</span></div>
-          <div className="mode-grid">
-            <button type="button" className="mode-card" onClick={() => start('computer', false)}><span className="mode-symbol">♞</span><b>VS COMPUTER</b><small>Practice your strategy</small><span className="mode-chevron">›</span></button>
-            <button type="button" className="mode-card" onClick={() => start('local', false)}><span className="mode-symbol">⚔</span><b>PASS & PLAY</b><small>Two players, one board</small><span className="mode-chevron">›</span></button>
-            <button type="button" className="mode-card" onClick={() => screen('training')}><span className="mode-symbol">♜</span><b>ROYAL TACTICS</b><small>Train with a puzzle</small><span className="mode-chevron">›</span></button>
-            <button type="button" className="mode-card" onClick={() => screen('online')}><span className="mode-symbol">♚</span><b>PRIVATE ONLINE</b><small>Play with an invite code</small><span className="mode-chevron">◇</span></button>
-          </div>
-          <div className="section-label"><h2>Your Legacy</h2></div>
-          <div className="stats-grid">
-            <div className="stat"><span>FINISHED MATCHES</span><strong>{history.length}</strong></div>
-            <div className="stat"><span>ROYAL VICTORIES</span><strong>{history.filter(m => m.result === 'white').length}</strong></div>
-            <div className="stat"><span>PUZZLE TRAINING</span><strong>{solvedPuzzles.length}</strong></div>
-          </div>
-        </>}
-
-        {page === 'play' && <>
-          <section className="heading-block"><p className="eyebrow">THE ARENA</p><h1>Choose your <em>duel.</em></h1><p>Fast local chess, no account required.</p></section>
-          <div className="feature-stack">
-            <button type="button" className="feature-row" onClick={() => start('local', true)}><span className="feature-icon">⚔</span><span><b>Classic · Two Players</b><small>10 minute local clocks (experimental)</small></span><Icon name="arrow"/></button>
-            <button type="button" className="feature-row" onClick={() => start('local', false)}><span className="feature-icon">♙</span><span><b>Casual · Pass & Play</b><small>Unlimited time, one device</small></span><Icon name="arrow"/></button>
-            <button type="button" className="feature-row" onClick={() => start('computer', false)}><span className="feature-icon">♞</span><span><b>Challenge the Computer</b><small>Lightweight offline opponent</small></span><Icon name="arrow"/></button>
-            <button type="button" className="feature-row" onClick={() => screen('online')}><span className="feature-icon">♜</span><span><b>Private Online</b><small>Server-validated rooms · deploy required</small></span><Icon name="lock"/></button>
-          </div>
-        </>}
+        {(page === 'home' || page === 'play' || page === 'studio') && <RoyalStudio
+          screen={page === 'home' ? 'home' : page === 'play' ? 'modes' : studioScreen}
+          navigate={openRoyal}
+          openPage={screen}
+          begin={(nextMode,timed) => start(nextMode,timed)}
+          guest={guest}
+          saveGuest={(value) => { setGuest(value); setNewName(value); }}
+          history={history}
+          solved={solvedPuzzles}
+          reducedMotion={settings.reducedMotion}
+          hints={settings.hints}
+          flipped={settings.flipped}
+          toggleSetting={(key,value) => setSettings(prev => ({...prev,[key]:value}))}
+          modelTheme={settings.modelTheme || 'deco'}
+          setModelTheme={theme => setSettings(prev => ({...prev,modelTheme:theme}))}
+          onSkinChange={skin => setBoardSkin(skin)}
+        />}
 
         {page === 'game' && <>
           <div className="game-heading">
@@ -355,7 +355,7 @@ export default function App() {
         {page === 'about' && <><section className="heading-block"><p className="eyebrow">ABOUT THE PROJECT</p><h1>Built to <em>Play.</em></h1><p>Global Chess Ultimate · Prototype 0.1.0</p></section><div className="disclaimer"><h3>What's working</h3><p>Local chess, legal-move validation via chess.js, a basic computer opponent, one tactics position, PGN history export, original responsive visual design and installable PWA shell.</p><h3>What's not production-ready</h3><p>Public multiplayer, ranked ratings, full computer engine, monetization, production puzzle catalog, cloud accounts, Android AAB signing and device acceptance.</p><h3>Attribution</h3><p>chess.js is an open-source project licensed under BSD-2-Clause. Verify all dependency notices before distribution. This original UI is not affiliated with Miniclip or Chess Clash.</p></div></>}
       </main>
       <nav className="bottom-nav" aria-label="Main navigation">
-        {tab('home', 'home', 'Home')}{tab('play', 'sword', 'Play')}{tab('training', 'book', 'Learn')}{tab('history', 'history', 'History')}{tab('settings', 'settings', 'Settings')}
+        {royalTab('home','home','Home')}{royalTab('modes','sword','Play')}{royalTab('events','trophy','Events')}{royalTab('club','profile','Club')}{royalTab('shop','star','Store')}
       </nav>
     </div>
     {replayRecord && <Suspense fallback={<div role="status">Loading match replay…</div>}><ReplayViewer key={replayRecord.id} record={replayRecord} onClose={() => setReplayRecord(null)}/></Suspense>}
