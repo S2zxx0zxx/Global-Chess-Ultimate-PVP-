@@ -129,6 +129,29 @@ export default function ChessBoard3D({fen,selected,legal,lastMove,theme,useLibra
           const {GLTFLoader}=await import('three/addons/loaders/GLTFLoader.js');
           const {FBXLoader}=await import('three/addons/loaders/FBXLoader.js');
           const gltfLoader=new GLTFLoader(),fbxLoader=new FBXLoader();
+          const classicMaterials=new Map<string,THREE.MeshStandardMaterial>();
+          if(theme==='classic'){
+            const textureLoader=new THREE.TextureLoader();
+            for(const color of ['w','b']){
+              const prefix='chessset/textures/'+(color==='w'?'WhitePieces':'BlackPieces')+'/Mat_ChessPieces_';
+              const maps=new Map<string,THREE.Texture>();
+              for(const channel of ['BaseColor','Normal','Roughness','Metallic']){
+                const file=prefix+channel+'.webp';
+                if(!listed.has(file))continue;
+                try{
+                  const tex=await textureLoader.loadAsync('/assets/'+file);
+                  if(channel==='BaseColor')tex.colorSpace=THREE.SRGBColorSpace;
+                  maps.set(channel,tex);
+                }catch{ /* Keep gameplay usable even without optional textures. */ }
+              }
+              classicMaterials.set(color,new THREE.MeshStandardMaterial({
+                color: maps.has('BaseColor')?0xffffff:color==='w'?0xf2e4d1:0x3f3039,
+                map:maps.get('BaseColor'),normalMap:maps.get('Normal'),
+                roughnessMap:maps.get('Roughness'),metalnessMap:maps.get('Metallic'),
+                metalness:.35,roughness:.42
+              }));
+            }
+          }
           let loaded=0;
           for(const color of ['w','b'])for(const type of Object.keys(names)){
             if(!alive)break;
@@ -144,7 +167,7 @@ export default function ChessBoard3D({fen,selected,legal,lastMove,theme,useLibra
               object.scale.multiplyScalar(scale);object.position.set(-center.x*scale,-bounds.min.y*scale,-center.z*scale);
               if(theme==='classic'){
                 // FBX materials may not embed texture paths. Users may prepare PBR WebP separately.
-                object.traverse(item=>{if(item instanceof THREE.Mesh)item.material=new THREE.MeshStandardMaterial({color:color==='w'?0xf2e4d1:0x3f3039,metalness:.35,roughness:.42});});
+                object.traverse(item=>{if(item instanceof THREE.Mesh)item.material=classicMaterials.get(color)||ivory;});
               }
               prototypes.set(color+type,object);loaded++;redraw();setStatus('Library 3D models: '+loaded+'/12 loaded · '+theme);
             }catch{ /* A damaged optional model never blocks chess gameplay. */ }
