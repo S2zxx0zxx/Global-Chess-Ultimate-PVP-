@@ -453,3 +453,44 @@ h1,h2,h3{font-family:var(--font-title);font-weight:600}
 
 /* Sheet-02 exact golden reward chest miniature; artwork remains decorative and buttons stay native. */
 .royal-reward-chest{display:block;height:30px;width:auto;max-width:90%;object-fit:contain;filter:drop-shadow(0 2px 3px #14090480)}
+
+/* Sheet 01/03: player identity, stats, avatars, frames, inventory and customization. */
+.royal-profile-card{display:flex;align-items:center;gap:12px;padding:13px;background:#3c2518;border:1.5px solid #bb894f;border-radius:12px}
+.royal-profile-photo{display:grid;place-items:center;flex:0 0 77px;height:77px;border-radius:14px;background:#3d2417;border:5px double #e5b65f;box-shadow:inset 0 0 0 2px #9e7136}
+.royal-profile-photo.frame-bronze{border-color:#98714b}.royal-profile-photo.frame-onyx{border-color:#8e909b}
+.royal-profile-photo img{height:65px;width:65px;object-fit:contain}
+.royal-profile-identity{min-width:0;flex:1;display:flex;flex-direction:column;gap:4px}
+.royal-profile-identity strong{font:700 18px var(--font-title);color:#fbe6bd;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.royal-profile-identity span{font-size:12px;color:#ffde95}.royal-profile-identity small{font-size:11px;color:#c9b69c}
+.royal-profile-card>button{flex:0 0 42px;height:42px;border:1px solid #c49a5d;border-radius:8px;background:#492c1b;color:#ffdfa5;font-size:20px}
+.royal-profile-progress{border:1px solid #8e6a43;background:#2d1b10;border-radius:9px;padding:12px;margin:10px 0}
+.royal-profile-progress>div:first-child{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:8px}
+.royal-profile-progress span{font:750 10px var(--font-body);color:#ebc184;letter-spacing:.8px}
+.royal-profile-progress b{font:750 11px var(--font-body);color:#ebcb9b}
+.royal-profile-tabs,.royal-shop-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;overflow:visible}
+.royal-profile-tabs button,.royal-shop-tabs button{min-width:0;font-size:10px;padding:8px 3px}
+.royal-profile-summary{border:1px solid #9a7146;border-radius:12px;background:#2b1b12;padding:12px;display:grid;gap:1px}
+.royal-profile-summary>div{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 5px;border-bottom:1px solid #66482d}
+.royal-profile-summary>div:last-child{border:0}
+.royal-profile-summary span{font-size:13px;color:#e4ccaa}.royal-profile-summary strong{font:700 14px var(--font-title);color:#f3c87d}
+.royal-avatar-picker button,.royal-frame-picker button{min-height:157px;border:2px solid #806241;border-radius:12px;background:#332117;color:#eed7b4;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;padding:11px}
+.royal-avatar-picker button.active,.royal-frame-picker button.active{border-color:#f3ca7b;background:#50311d}
+.royal-avatar-picker img{height:75px;width:80px;object-fit:contain}
+.royal-frame-picker span{height:82px;width:82px;display:grid;place-items:center;font-size:45px;border:5px double #d1a353;border-radius:16px}
+.royal-frame-picker .frame-bronze span{border-color:#9d7856}.royal-frame-picker .frame-onyx span{border-color:#9c9da0}
+.royal-avatar-picker strong,.royal-frame-picker strong{font:600 14px var(--font-title);text-align:center}
+.royal-avatar-picker small,.royal-frame-picker small{font-size:10px;color:#e8c386}
+.royal-shop-showcase{padding:17px;background:#311f15;border:1.5px solid #b2864c;border-radius:13px;display:flex;align-items:center;flex-direction:column;text-align:center;gap:9px}
+.royal-shop-showcase>div{display:flex;justify-content:center;gap:2px;align-items:flex-end;width:100%;max-width:390px;height:120px;background:#27160c;border:1px solid #856038;border-radius:9px}
+.royal-shop-showcase img{height:110px;max-width:30%;object-fit:contain;filter:drop-shadow(0 5px 4px #0007)}
+.royal-shop-showcase img:nth-child(2){height:118px}
+.royal-shop-showcase strong{font:700 17px var(--font-title);color:#f7d48a}
+.royal-shop-showcase small{font-size:12px;color:#cbb193}
+.royal-shop-footer{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:12px}
+.royal-shop-footer .rv-action{min-width:0}
+.royal-inventory-summary{display:grid;gap:7px;padding:10px;background:#301e13;border:1px solid #896642;border-radius:12px;margin:10px 0}
+.royal-inventory-summary>div{display:flex;align-items:center;gap:9px;border-bottom:1px solid #6f5033;padding:8px 0;color:#ecc185}
+.royal-inventory-summary>div:last-child{border:0}
+.royal-inventory-summary span{flex:1;color:#e4d0af;font-size:12px}
+.royal-inventory-summary strong{font:650 12px var(--font-title);color:#f5daab;text-align:right}
+@media(max-width:360px){.royal-profile-photo{flex-basis:63px;width:63px;height:65px}.royal-profile-photo img{height:54px;width:54px}.royal-profile-identity strong{font-size:16px}.royal-avatar-picker button,.royal-frame-picker button{min-height:137px}.royal-frame-picker span{height:63px;width:63px}}
