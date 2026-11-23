@@ -54,6 +54,7 @@ export default function App() {
   const [endResult, setEndResult] = useState<GameResult | null>(null);
   const [message, setMessage] = useState('');
   const [menu, setMenu] = useState(false);
+  const [resignDialog, setResignDialog] = useState(false);
   const [puzzleDone, setPuzzleDone] = useState(false);
   const [currentPuzzle, setCurrentPuzzle] = useState<Puzzle>(PUZZLES[0]);
   const [solvedPuzzles, setSolvedPuzzles] = useState<string[]>(() => loadJSON<string[]>(PUZZLE_PROGRESS_KEY, []));
@@ -242,9 +243,13 @@ export default function App() {
   };
   const resign = () => {
     if (!active || mode === 'puzzle' || endResult) return;
-    if (!window.confirm('Resign this match? This will record a loss for the side whose turn it is.')) return;
-    recordEnd(game.current.turn() === 'w' ? 'black' : 'white', mode);
     setMenu(false);
+    setResignDialog(true);
+  };
+  const confirmResign = () => {
+    if (!active || mode === 'puzzle' || endResult) { setResignDialog(false); return; }
+    setResignDialog(false);
+    recordEnd(game.current.turn() === 'w' ? 'black' : 'white', mode);
   };
   const undo = () => {
     if (!active || mode === 'puzzle') return;
@@ -259,7 +264,7 @@ export default function App() {
     setMenu(false);
     setPage('home');
   };
-  const abandon = () => { setMenu(false); if (active && mode !== 'puzzle') recordEnd(turn === 'w' ? 'black' : 'white', mode); setActive(false); setPage('home'); };
+
   const formatTime = (secs: number) => displayClock(secs * 1000);
   const labelResult = (result: GameResult) => result === 'draw' ? 'A royal draw' : result.startsWith('timeout') ? 'Time expired' : result === 'white' ? 'White triumphs' : 'Black triumphs';
 
@@ -378,7 +383,18 @@ export default function App() {
       </nav>
     </div>
     {replayRecord && <Suspense fallback={<div role="status">Loading match replay…</div>}><ReplayViewer key={replayRecord.id} record={replayRecord} onClose={() => setReplayRecord(null)}/></Suspense>}
-    {menu && <div className="modal-mask" onClick={() => setMenu(false)}><div className="action-sheet" role="dialog" aria-modal="true" aria-label="Match menu" onClick={e => e.stopPropagation()}><div className="sheet-heading"><h2>Match Menu</h2><button onClick={() => setMenu(false)} aria-label="Close menu"><Icon name="close" size={28}/></button></div><button type="button" onClick={() => { setMenu(false); undo(); }} disabled={!active || mode === 'puzzle'}>↶ Undo last move</button><button type="button" onClick={() => { setMenu(false); setSettings(p => ({ ...p, flipped: !p.flipped })); }}>⇅ Flip board</button><button type="button" onClick={saveAndExit}>▤ Save and exit</button><button type="button" className="destructive" onClick={() => { if (window.confirm('Resign or leave this match?')) abandon(); }}>⚑ Resign / abandon</button></div></div>}
+    {menu && <div className="modal-mask" onClick={() => setMenu(false)}><div className="action-sheet" role="dialog" aria-modal="true" aria-label="Match menu" onClick={e => e.stopPropagation()}><div className="sheet-heading"><h2>Match Menu</h2><button onClick={() => setMenu(false)} aria-label="Close menu"><Icon name="close" size={28}/></button></div><button type="button" onClick={() => { setMenu(false); undo(); }} disabled={!active || mode === 'puzzle'}>↶ Undo last move</button><button type="button" onClick={() => { setMenu(false); setSettings(p => ({ ...p, flipped: !p.flipped })); }}>⇅ Flip board</button><button type="button" onClick={saveAndExit}>▤ Save and exit</button><button type="button" className="destructive" onClick={() => { if (mode === 'puzzle') saveAndExit(); else resign(); }}>{mode === 'puzzle' ? '↩ Exit puzzle' : '⚑ Resign match'}</button></div></div>}
+    {resignDialog && <div className="modal-mask" onClick={() => setResignDialog(false)}>
+      <section className="rv-resign-dialog" role="alertdialog" aria-modal="true" aria-labelledby="resign-dialog-title" aria-describedby="resign-dialog-desc" onClick={e => e.stopPropagation()}>
+        <span className="rv-resign-emblem" aria-hidden="true">⚑</span>
+        <h2 id="resign-dialog-title">Leave this match?</h2>
+        <p id="resign-dialog-desc">Resigning ends the current match and records a loss for the side whose turn it is. You can still review the recorded moves.</p>
+        <div className="rv-resign-actions">
+          <button type="button" onClick={() => setResignDialog(false)}>CANCEL</button>
+          <button type="button" onClick={confirmResign}>RESIGN MATCH</button>
+        </div>
+      </section>
+    </div>}
     {promotion && <div className="modal-mask"><div className="promotion-modal" role="dialog" aria-modal="true" aria-label="Choose a promotion piece"><h2>ROYAL PROMOTION</h2><p>Choose a piece</p><div className="promotion-options">{(['q','r','b','n'] as const).map(type => <button type="button" key={type} onClick={() => { const { from, to } = promotion; setPromotion(null); execute(from, to, type); }} aria-label={'Promote to ' + ({q:'queen',r:'rook',b:'bishop',n:'knight'}[type])}>{royalSymbol(type, turn)}</button>)}</div></div></div>}
   </div>;
 }
