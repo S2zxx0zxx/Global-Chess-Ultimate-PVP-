@@ -450,3 +450,6 @@ h1,h2,h3{font-family:var(--font-title);font-weight:600}
 .royal-mode-primary,.royal-mode-secondary,.royal-hub-rewards,.royal-hub-quests,.rv-list{animation:royal-screen-rise .3s ease-out}
 .modal-mask,.result-overlay,.replay-backdrop{animation:royal-modal-fade .25s ease-out}
 @keyframes royal-modal-fade{from{opacity:0}to{opacity:1}}
+
+/* Sheet-02 exact golden reward chest miniature; artwork remains decorative and buttons stay native. */
+.royal-reward-chest{display:block;height:30px;width:auto;max-width:90%;object-fit:contain;filter:drop-shadow(0 2px 3px #14090480)}
