@@ -134,7 +134,7 @@ export default function RoyalStudio({screen,navigate,openPage,begin,guest,saveGu
     <span className={'rv-skin-preview rv-skin-'+skin.id}><span className="rv-mini-chess">♜ ♞ ♛ ♚</span></span><strong>{skin.label}</strong><small>{local.skin===skin.id?'✓ Selected':'Apply'}</small>
   </button>)}</div>;
   const renderModels=()=> <div className="rv-grid rv-skins">{MODELS.map(item=><button type="button" className={'rv-model'+(modelTheme===item.id?' selected':'')} key={item.id} onClick={()=>{setModelTheme(item.id);setToast('3D style selected. Available models load on demand when 3D board is enabled.');}}>
-    <span className="rv-model-knight"><img src="/pieces/w-n.svg" alt=""/></span><strong>{item.name}</strong><small>{modelTheme===item.id?'✓ Selected':'Select style'}</small>
+    <span className="rv-model-knight"><img src="/art/sheet-gold-knight.svg" alt=""/></span><strong>{item.name}</strong><small>{modelTheme===item.id?'✓ Selected':'Select style'}</small>
   </button>)}</div>;
   const actionFeedback=()=>{if(!feedback.trim()){setToast('Write your feedback first.');return;}navigator.clipboard?.writeText(feedback).then(()=>setToast('Feedback copied. No message was sent.')).catch(()=>setToast('Copy unavailable. Select and copy your feedback manually.'));};
   const accountSave=()=>{const next=draftName.trim();if(next){saveGuest(next);setToast('Local display name saved on this device.');}else setToast('Enter a display name.');};
@@ -143,7 +143,7 @@ export default function RoyalStudio({screen,navigate,openPage,begin,guest,saveGu
   let content:ReactNode=null;
   switch(screen) {
     case 'splash':
-      content=<div className="rv-splash"><div className="rv-crown">♛</div><div className="rv-splash-figure"><img src="/pieces/w-k.svg" alt="Original Global Chess Ultimate king piece"/></div><K>PREMIUM CHESS EXPERIENCE</K><h1>GLOBAL CHESS<br/><span>ULTIMATE</span></h1><p>Think · Play · Improve</p><Action onClick={()=>navigateTo('welcome')}>ENTER THE KINGDOM ›</Action><small>No account needed to play</small></div>;
+      content=<div className="rv-splash"><div className="rv-crown">♛</div><div className="rv-splash-figure"><img src="/art/sheet-gold-knight.svg" alt="Original golden knight artwork from your UI design sheet"/></div><K>PREMIUM CHESS EXPERIENCE</K><h1>GLOBAL CHESS<br/><span>ULTIMATE</span></h1><p>Think · Play · Improve</p><Action onClick={()=>navigateTo('welcome')}>ENTER THE KINGDOM ›</Action><small>No account needed to play</small></div>;
       break;
     case 'welcome':
     case 'onboard-play':
@@ -180,7 +180,7 @@ export default function RoyalStudio({screen,navigate,openPage,begin,guest,saveGu
         <div className="royal-hub-emblem"><div className="royal-hub-crown"><RoyalIcon name="crown" size={27}/><span>GLOBAL CHESS</span></div><strong>ULTIMATE</strong><span>♟ &nbsp; PLAY • LEARN • COMPETE &nbsp; ♟</span></div>
         <div className="royal-mode-primary">
           <button className="royal-classic" type="button" onClick={()=>{setMode('local');setMinutes('untimed');navigateTo('match-setup');}}>
-            <span className="royal-mode-figure"><img src="/pieces/w-n.svg" alt=""/></span>
+            <span className="royal-mode-figure"><img src="/art/sheet-gold-knight.svg" alt=""/></span>
             <span><small>THE ROYAL ARENA</small><strong>Classic Chess</strong><em>Standard rules · Pass &amp; Play</em></span>
             <RoyalIcon name="arrow" size={21}/>
           </button>
@@ -209,7 +209,7 @@ export default function RoyalStudio({screen,navigate,openPage,begin,guest,saveGu
     case 'modes':
       content=<div className="royal-modes-page"><Header eyebrow="THE ROYAL ARENA" title="Play Chess" subtitle="Choose a mode. Every available local option starts the real chess engine." icon="play"/>
         <div className="royal-modes-stack">
-          <button type="button" onClick={()=>{setMode('local');setMinutes('untimed');navigateTo('match-setup');}}><span><img src="/pieces/w-n.svg" alt=""/></span><div><strong>Classic Chess</strong><small>Standard rules · No clock</small></div><RoyalIcon name="arrow"/></button>
+          <button type="button" onClick={()=>{setMode('local');setMinutes('untimed');navigateTo('match-setup');}}><span><img src="/art/sheet-gold-knight.svg" alt=""/></span><div><strong>Classic Chess</strong><small>Standard rules · No clock</small></div><RoyalIcon name="arrow"/></button>
           <button type="button" onClick={()=>{setMode('local');setMinutes('10');navigateTo('match-setup');}}><span><RoyalIcon name="time" size={34}/></span><div><strong>Quick Chess</strong><small>Fast &amp; exciting · 10 min</small></div><RoyalIcon name="arrow"/></button>
           <button type="button" onClick={()=>{setMode('computer');setMinutes('untimed');navigateTo('match-setup');}}><span><img src="/pieces/b-n.svg" alt=""/></span><div><strong>VS. Computer</strong><small>Offline · Basic AI</small></div><RoyalIcon name="arrow"/></button>
           <button type="button" onClick={()=>navigateTo('matchmaking')}><span><RoyalIcon name="friends" size={35}/></span><div><strong>Online Match</strong><small>Private invites · Server required</small></div><RoyalIcon name="arrow"/></button>
