@@ -279,6 +279,7 @@ export default function App() {
       {message && <div role="status" className="notice"><Icon name="star" size={15}/>{message}<button type="button" onClick={() => setMessage('')} aria-label="Dismiss message">×</button></div>}
 
       <main id="main">
+        {page === 'home' && stored.current?.active && <button type="button" className="resume-banner" onClick={resume}><Icon name="play"/> RESUME SAVED MATCH <Icon name="arrow"/></button>}
         {(page === 'home' || page === 'play' || page === 'studio') && <RoyalStudio
           screen={page === 'home' ? 'home' : page === 'play' ? 'modes' : studioScreen}
           navigate={openRoyal}
