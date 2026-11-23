@@ -1,0 +1,46 @@
+import type { ReactNode } from 'react';
+
+const strokes: Record<string, ReactNode> = {
+ crown:<><path d="M2.5 7.5 7.3 11l4.7-7 4.7 7 4.8-3.5-1.6 11.8H4.1L2.5 7.5Z"/><path d="M5.3 21h13.4"/><circle cx="12" cy="3.8" r=".8" fill="currentColor" stroke="none"/></>,
+ home:<><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1V10Z"/></>,
+ play:<><path d="M8 4.5 20 12 8 19.5v-15Z"/></>,
+ modes:<><path d="m6 4 4.5 4.5m7.5-4.5-4.5 4.5M5 16.5l4-4m10 4-4-4"/><path d="M4 20h4m8 0h4M4 4l16 16M20 4 4 20"/></>,
+ sword:<><path d="M4.5 4.5 18 18m-1.5 0L20 20m-7-4 3-3M19.5 4.5 6 18m1.5 0L4 20m7-4-3-3"/></>,
+ events:<><path d="M7 3h10v3h4v3c0 3-2.5 5-5 5.3a6 6 0 0 1-3 2.2V20h4v2H7v-2h4v-3.5a6 6 0 0 1-3-2.2C5.5 14 3 12 3 9V6h4V3Z"/><path d="M7 8H5m12 0h2"/></>,
+ cup:<><path d="M7 3h10v3h4v3c0 3-2 5-5.2 5.3A5.5 5.5 0 0 1 13 17v3h4v2H7v-2h4v-3a5.5 5.5 0 0 1-2.8-2.7C5 14 3 12 3 9V6h4V3Z"/></>,
+ club:<><path d="M7.5 14.8c-2.7 0-4.5 2-4.5 4V21h18v-2.2c0-2-1.8-4-4.5-4"/><circle cx="12" cy="7.5" r="4.3"/><path d="M5 11.2a3.4 3.4 0 0 1-1.3-6.5M19 11.2a3.4 3.4 0 0 0 1.3-6.5"/></>,
+ friends:<><circle cx="9" cy="8" r="3.5"/><path d="M1.8 20v-2c0-3.1 2.5-5.2 7.2-5.2s7.2 2.1 7.2 5.2v2H1.8Z"/><path d="M17.5 5a3 3 0 0 1 0 6m1.2 3.2c2 .5 3.4 1.8 3.4 4.1V20"/></>,
+ shop:<><path d="M4 8h16l-1.3 12H5.3L4 8Z"/><path d="M8 9V6a4 4 0 0 1 8 0v3"/></>,
+ star:<><path d="m12 2 3 6.6 7.1.8-5.3 4.8 1.5 7-6.3-3.5-6.3 3.5 1.5-7L2 9.4l7.1-.8L12 2Z"/></>,
+ profile:<><circle cx="12" cy="7.8" r="4"/><path d="M4 21v-1.7a8 8 0 0 1 16 0V21H4Z"/></>,
+ settings:<><circle cx="12" cy="12" r="3.4"/><path d="m9.7 2.4.5 2a8 8 0 0 1 3.6 0l.5-2 2.6 1.1-.8 1.9A8 8 0 0 1 18.6 8l2-.7 1 2.6-1.9.9a8 8 0 0 1 0 2.5l1.9.9-1 2.6-2-.7a8 8 0 0 1-2.5 2.5l.8 1.9-2.6 1.1-.5-2a8 8 0 0 1-3.6 0l-.5 2-2.6-1.1.8-1.9A8 8 0 0 1 5.4 16l-2 .7-1-2.6 1.9-.9a8 8 0 0 1 0-2.5l-1.9-.9 1-2.6 2 .7A8 8 0 0 1 7.9 5.4l-.8-1.9 2.6-1.1Z"/></>,
+ notifications:<><path d="M18 8a6 6 0 0 0-12 0v5l-2 3v1h16v-1l-2-3V8Z"/><path d="M10 21h4"/></>,
+ gift:<><rect x="3" y="9" width="18" height="12" rx="1"/><path d="M3 13h18M12 9v12M12 9H7.5C4 9 4 4 7 4c2 0 5 5 5 5Zm0 0h4.5c3.5 0 3.5-5 .5-5-2 0-5 5-5 5Z"/></>,
+ missions:<><rect x="4" y="3" width="16" height="19" rx="2"/><path d="m8 9 1.8 1.8L13 7.5M8 16h8M8 19h6"/></>,
+ training:<><path d="M3 5a14 14 0 0 1 9 2 14 14 0 0 1 9-2v15a14 14 0 0 0-9 2 14 14 0 0 0-9-2V5Z"/><path d="M12 7v15"/></>,
+ book:<><path d="M3 4h7a3 3 0 0 1 2 1 3 3 0 0 1 2-1h7v16h-7a4 4 0 0 0-2 1 4 4 0 0 0-2-1H3V4Z"/><path d="M12 5v16"/></>,
+ news:<><path d="M4 3h16v18H4V3Z"/><path d="M7 7h10M7 11h10M7 15h7"/></>,
+ search:<><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15 15 6 6"/></>,
+ leaderboard:<><path d="M4 21v-8h4v8M10 21V4h4v17M16 21v-12h4v12M2 21h20"/></>,
+ achievements:<><circle cx="12" cy="8" r="5"/><path d="m8 12-2 9 6-3 6 3-2-9"/></>,
+ time:<><circle cx="12" cy="12" r="9"/><path d="M12 6v7l4 3"/></>,
+ history:<><path d="M3 12a9 9 0 1 0 2-5.7L3 9M3 3v6h6"/><path d="M12 7v5l3 2"/></>,
+ review:<><path d="M5 3h14v18H5V3Z"/><path d="M9 8h6M9 12h6M9 16h4"/></>,
+ shield:<><path d="M12 2 20 5v6c0 5.5-3.3 9-8 11-4.7-2-8-5.5-8-11V5l8-3Z"/><path d="m9 12 2 2 4-4"/></>,
+ info:<><circle cx="12" cy="12" r="10"/><path d="M12 11v6M12 7h.01"/></>,
+ undo:<><path d="M9 7 4 12l5 5M4 12h11a5 5 0 0 1 0 10"/></>,
+ back:<><path d="m14 5-7 7 7 7M7 12h14"/></>,
+ arrow:<><path d="m9 5 7 7-7 7"/></>,
+ menu:<><path d="M4 6h16M4 12h16M4 18h16"/></>,
+ flip:<><path d="M7 3v17m-4-4 4 4 4-4M17 21V4m-4 4 4-4 4 4"/></>,
+ flag:<><path d="M5 22V3m0 1c5-4 8 4 15 0v11c-7 4-10-4-15 0"/></>,
+ pause:<><path d="M9 5v14M15 5v14"/></>,
+ check:<><path d="m4 12 5 5L20 6"/></>,
+ close:<><path d="M5 5 19 19M19 5 5 19"/></>,
+ lock:<><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></>,
+ alert:<><path d="M12 2 22 21H2L12 2Z"/><path d="M12 9v5M12 17h.01"/></>,
+ };
+export default function RoyalIcon({name,size=22}:{name:string;size?:number}) {
+ const body=strokes[name]??strokes.star;
+ return <svg aria-hidden="true" focusable="false" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="royal-icon">{body}</svg>;
+}
