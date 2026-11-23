@@ -228,6 +228,24 @@ export default function App() {
   useEffect(() => { if (!saveJSON(STORAGE_KEYS.settings, settings)) setStorageWarning(true); }, [settings]);
   useEffect(() => { if (!saveJSON(STORAGE_KEYS.guest, guest)) setStorageWarning(true); }, [guest]);
 
+  const hint = () => {
+    if (!active || endResult || puzzleDone || (mode === 'computer' && game.current.turn() === 'b')) return;
+    if (mode === 'puzzle') {
+      setSelected(currentPuzzle.from as Square);
+      notify('Tactics hint: consider the piece on ' + currentPuzzle.from + '.');
+      return;
+    }
+    const suggested = chooseComputerMove(game.current);
+    if (!suggested) { notify('No legal move available.'); return; }
+    setSelected(suggested.from);
+    notify('Suggestion: ' + suggested.from + ' → ' + suggested.to + '. This is a basic heuristic, not engine analysis.');
+  };
+  const resign = () => {
+    if (!active || mode === 'puzzle' || endResult) return;
+    if (!window.confirm('Resign this match? This will record a loss for the side whose turn it is.')) return;
+    recordEnd(game.current.turn() === 'w' ? 'black' : 'white', mode);
+    setMenu(false);
+  };
   const undo = () => {
     if (!active || mode === 'puzzle') return;
     const rewind = mode === 'computer' && game.current.turn() === 'w' ? 2 : 1;
@@ -330,13 +348,14 @@ export default function App() {
           </div>}
           <div className="player-strip self"><span className="player-shield light-shield">{mode === 'puzzle' ? '♙' : 'W'}</span><div><strong>{mode === 'puzzle' ? 'Royal Scholar' : guest}</strong><small>{turn === 'w' ? '● To move' : 'Waiting'}</small></div><span className={'clock ' + (turn === 'w' ? 'running' : '')}>{mode === 'puzzle' ? '—' : clockEnabled ? formatTime(seconds[0]) : '∞'}</span></div>
           <div className="board-status">{puzzleDone ? '✦ TACTIC SOLVED ✦' : endResult ? labelResult(endResult) : gameOver ? 'Match finished' : inCheck ? 'CHECK — defend your king' : mode === 'puzzle' ? currentPuzzle.prompt : turn === 'w' ? 'White to move' : 'Black to move'}</div>
-          <div className="game-actions">
+          <div className="game-actions" aria-label="Match actions">
             <button type="button" onClick={undo} disabled={!active || mode === 'puzzle' || game.current.history().length === 0}><Icon name="undo"/> Undo</button>
-            <button type="button" onClick={() => setSettings(old => ({ ...old, flipped: !old.flipped }))}><Icon name="flip"/> Flip</button>
+            <button type="button" onClick={hint} disabled={!active || Boolean(endResult) || puzzleDone}><Icon name="star"/> Hint</button>
+            <button type="button" onClick={resign} disabled={!active || mode === 'puzzle' || Boolean(endResult)}><Icon name="flag"/> Resign</button>
             <button type="button" onClick={() => setMenu(true)}><Icon name="menu"/> Menu</button>
           </div>
           <div className="moves-panel"><h3>MOVE RECORD <small>{game.current.history().length} plies</small></h3><div className="move-list">{game.current.history().length ? game.current.history().map((m, i) => <span key={i}><small>{i % 2 === 0 ? Math.floor(i / 2) + 1 + '.' : ' '}</small>{m}</span>) : <p>Match begins with your first move.</p>}</div></div>
-          {endResult && <div className="result-overlay" role="alertdialog" aria-modal="true" aria-label="Match result"><div className="result-card"><span className="result-crown">♛</span><p className="eyebrow">GAME COMPLETE</p><h2>{labelResult(endResult)}</h2><p>{shortResult(endResult)}</p><button type="button" className="btn btn-primary" onClick={() => start(mode === 'puzzle' ? 'local' : mode, clockEnabled)}>PLAY AGAIN</button><button type="button" className="btn btn-secondary" onClick={saveAndExit}>BACK TO LOBBY</button></div></div>}
+          {endResult && <div className="result-overlay" role="alertdialog" aria-modal="true" aria-label="Match result"><div className="result-card"><span className="result-crown">♛</span><p className="eyebrow">GAME COMPLETE</p><h2>{labelResult(endResult)}</h2><p>{shortResult(endResult)}</p><button type="button" className="btn btn-primary" onClick={() => start(mode === 'puzzle' ? 'local' : mode, clockEnabled)}>REMATCH</button><button type="button" className="btn btn-secondary" onClick={() => { if (history[0]) setReplayRecord(history[0]); else notify('Finish a recorded game first.'); }}>GAME REVIEW</button><button type="button" className="btn btn-secondary" onClick={saveAndExit}>BACK TO LOBBY</button></div></div>}
           {puzzleDone && <div className="result-overlay" role="alertdialog" aria-modal="true" aria-label="Puzzle completed"><div className="result-card"><span className="result-crown">✦</span><h2>Royal Tactic Solved</h2><p>{currentPuzzle.explanation}</p><button type="button" className="btn btn-primary" onClick={() => { setPuzzleDone(false); screen('training'); }}>COLLECT PROGRESS</button></div></div>}
         </>}
 
