@@ -40,7 +40,11 @@ export default function App() {
   const [selected, setSelected] = useState<Square | null>(null);
   const [promotion, setPromotion] = useState<Promotion | null>(null);
   const [settings, setSettings] = useState<Settings>(() => loadJSON(STORAGE_KEYS.settings, DEFAULT_SETTINGS));
-  const [guest, setGuest] = useState(() => loadJSON(STORAGE_KEYS.guest, randomGuest()));
+  const [guest, setGuest] = useState(() => {
+    const saved = loadJSON<string>(STORAGE_KEYS.guest, randomGuest());
+    const legacyAutoGuest = /^Royal Guest (\d{4})$/.exec(saved);
+    return legacyAutoGuest ? 'Chess Guest ' + legacyAutoGuest[1] : saved;
+  });
   const [history, setHistory] = useState<MatchRecord[]>(() => loadJSON(STORAGE_KEYS.history, []));
   const [seconds, setSeconds] = useState<[number, number]>([600, 600]);
   const [endResult, setEndResult] = useState<GameResult | null>(null);
