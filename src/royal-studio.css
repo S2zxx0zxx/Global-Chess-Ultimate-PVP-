@@ -2,13 +2,13 @@
    Source: two user-authored design sheets; all surfaces and cards are CSS/React.
    No screenshot crops, proprietary branding, neon, or gradient effects. */
 :root{
- --rv-black:#0d0a07;--rv-brown:#281c12;--rv-brown2:#3f2a1d;--rv-gold:#d4af37;
- --rv-gold-dark:#b8860b;--rv-ivory:#f5e9d6;--rv-light:#cdc0ad;--rv-border:#79582f;
- --rv-danger:#a72e35;--rv-success:#2e7d32;--rv-radius:16px;--rv-step:8px;
+ --rv-black:#0d0a07;--rv-brown:#281c12;--rv-brown2:#3a2619;--rv-gold:#d4af37;
+ --rv-gold-dark:#b8860b;--rv-ivory:#f5e9d6;--rv-light:#cd889c;--rv-border:#5c4028;
+ --rv-danger:#c0392b;--rv-success:#2e7d32;--rv-radius:16px;--rv-step:8px;
 }
 .rv-screen{font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;color:var(--rv-ivory);margin:0 auto;max-width:850px;min-height:65vh;line-height:1.45;padding:12px 0 35px;animation:rv-reveal .25s ease-out}
 .rv-screen *{box-sizing:border-box}
-.rv-screen h1,.rv-screen h2,.rv-screen h3,.rv-screen .rv-crown{font-family:Georgia,Times New Roman,serif}
+.rv-screen h1,.rv-screen h2,.rv-screen h3,.rv-screen .rv-crown{font-family:Cinzel,Georgia,Times New Roman,serif}
 .rv-screen button,.rv-screen input,.rv-screen select,.rv-screen textarea{font:inherit}
 .rv-screen button{cursor:pointer}
 .rv-screen button:disabled{cursor:not-allowed;opacity:.58}
@@ -67,7 +67,7 @@
 .rv-form select{appearance:auto}
 .rv-form .rv-action{width:100%}
 .rv-tabs{display:flex;gap:7px;overflow-x:auto;padding:8px 0 14px;scrollbar-width:thin}
-.rv-tabs button{white-space:nowrap;flex:1;min-height:43px;min-width:64px;padding:8px 12px;background:#37271c;border:1px solid #87623d;border-radius:9px;font-size:10px;font-weight:800;color:#d0b9a3}
+.rv-tabs button{white-space:nowrap;flex:1;min-height:48px;min-width:64px;padding:8px 12px;background:#37271c;border:1px solid #87623d;border-radius:9px;font-size:10px;font-weight:800;color:#d0b9a3}
 .rv-tabs button.active{background:#d9b66d;color:#2b1a10;border-color:#f2d79f}
 .rv-progress-card{padding:16px;background:#30231a;border:1px solid #785c3b;border-radius:14px}
 .rv-progress-copy{display:flex;align-items:center;justify-content:space-between;gap:12px}
