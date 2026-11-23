@@ -201,7 +201,6 @@ export default function App() {
   const formatTime = (secs: number) => Math.floor(secs / 60) + ':' + String(secs % 60).padStart(2, '0');
   const labelResult = (result: GameResult) => result === 'draw' ? 'A royal draw' : result.startsWith('timeout') ? 'Time expired' : result === 'white' ? 'White triumphs' : 'Black triumphs';
 
-  const displayRanks = settings.flipped ? [...board].reverse().map(rank => [...rank].reverse()) : board;
   const screen = (target: Page) => { setPage(target); setMenu(false); setMessage(''); };
   const tab = (target: Page, icon: string, label: string) =>
     <button type="button" onClick={() => screen(target)} className={'nav-tab ' + (page === target || (page === 'game' && target === 'play') ? 'current' : '')} aria-label={label}>
@@ -267,10 +266,6 @@ export default function App() {
           <div className="player-strip opponent"><span className="player-shield">{mode === 'computer' ? '♞' : 'B'}</span><div><strong>{mode === 'computer' ? 'Royal Computer' : 'Black Monarch'}</strong><small>{turn === 'b' ? '● To move' : 'Waiting'}</small></div><span className={'clock ' + (turn === 'b' ? 'running' : '')}>{mode === 'puzzle' ? '—' : clockEnabled ? formatTime(seconds[1]) : '∞'}</span></div>
           <div className="board-surround">
             <div className="board" role="grid" aria-label="Chess board. Select a piece then a destination.">
-              {displayRanks.flatMap(rank => rank.map(cell => {
-                const sq = (cell?.square ?? '') as Square;
-                return null;
-              })).length === -1 && null}
               {Array.from({ length: 64 }, (_, idx) => {
                 const r = Math.floor(idx / 8), c = idx % 8;
                 const row = settings.flipped ? 7 - r : r;
@@ -280,7 +275,7 @@ export default function App() {
                 const light = (r + c) % 2 === 0;
                 const isSelected = selected === square;
                 const isLast = lastMove?.includes(square);
-                const isLegal = legal.includes(square);
+                const isLegal = settings.hints && legal.includes(square);
                 const checkingKing = Boolean(inCheck && piece?.type === 'k' && piece.color === turn);
                 return <button type="button" role="gridcell" aria-selected={isSelected} key={square} onClick={() => onSquare(square)} className={'square ' + (light ? 'light' : 'dark') + (isSelected ? ' selected' : '') + (isLast ? ' last-move' : '') + (checkingKing ? ' in-check' : '')} aria-label={square + (piece ? ': ' + (piece.color === 'w' ? 'White ' : 'Black ') + piece.type : ': empty') }>
                   {c === 0 && <span className="rank-label">{8 - row}</span>}
