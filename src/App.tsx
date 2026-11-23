@@ -7,9 +7,10 @@ import { newClock, advanceClock, displayClock } from './clock';
 const ChessBoard3D = lazy(() => import('./ChessBoard3D'));
 const AnimationShowcase = lazy(() => import('./AnimationShowcase'));
 const ReplayViewer = lazy(() => import('./ReplayViewer'));
+const PrivateOnline = lazy(() => import('./PrivateOnline'));
 
 type ThreeTheme = 'deco' | 'bauhaus' | 'scifi' | 'egypt' | 'classic';
-type Page = 'home' | 'play' | 'game' | 'history' | 'training' | 'profile' | 'settings' | 'about';
+type Page = 'home' | 'play' | 'game' | 'history' | 'training' | 'profile' | 'settings' | 'about' | 'online';
 type Promotion = { from: Square; to: Square };
 type Settings = { flipped: boolean; reducedMotion: boolean; hints: boolean; modelTheme?: ThreeTheme; useLibraryAssets?: boolean };
 type Snapshot = { fen: string; mode: PlayMode; pgn: string; active: boolean; seconds: [number, number]; timed?: boolean; remainingMs?: [number, number] };
@@ -34,7 +35,7 @@ export default function App() {
   const clockRef = useRef(newClock(Date.now()));
   const endedRef = useRef(false);
   const stored = useRef(loadJSON<Snapshot | null>(STORAGE_KEYS.lastMatch, null));
-  const [page, setPage] = useState<Page>('home');
+  const [page, setPage] = useState<Page>(() => new URLSearchParams(location.search).has('room') ? 'online' : 'home');
   const [mode, setMode] = useState<PlayMode>('local');
   const [view3D, setView3D] = useState(false);
   const [showAvatarAnimations, setShowAvatarAnimations] = useState(false);
@@ -243,7 +244,7 @@ export default function App() {
 
   const screen = (target: Page) => { setPage(target); setMenu(false); setMessage(''); };
   const tab = (target: Page, icon: string, label: string) =>
-    <button type="button" onClick={() => screen(target)} className={'nav-tab ' + (page === target || (page === 'game' && target === 'play') ? 'current' : '')} aria-label={label}>
+    <button type="button" onClick={() => screen(target)} className={'nav-tab ' + (page === target || ((page === 'game' || page === 'online') && target === 'play') ? 'current' : '')} aria-label={label}>
       <Icon name={icon} size={23}/><span>{label}</span>
     </button>;
 
@@ -276,7 +277,7 @@ export default function App() {
             <button type="button" className="mode-card" onClick={() => start('computer', false)}><span className="mode-symbol">♞</span><b>VS COMPUTER</b><small>Practice your strategy</small><span className="mode-chevron">›</span></button>
             <button type="button" className="mode-card" onClick={() => start('local', false)}><span className="mode-symbol">⚔</span><b>PASS & PLAY</b><small>Two players, one board</small><span className="mode-chevron">›</span></button>
             <button type="button" className="mode-card" onClick={() => screen('training')}><span className="mode-symbol">♜</span><b>ROYAL TACTICS</b><small>Train with a puzzle</small><span className="mode-chevron">›</span></button>
-            <button type="button" className="mode-card is-locked" onClick={() => notify('Live online matchmaking needs a deployed, tested multiplayer service.')}><span className="mode-symbol">♚</span><b>ONLINE ARENA</b><small>Not connected yet</small><span className="mode-chevron">◇</span></button>
+            <button type="button" className="mode-card" onClick={() => screen('online')}><span className="mode-symbol">♚</span><b>PRIVATE ONLINE</b><small>Play with an invite code</small><span className="mode-chevron">◇</span></button>
           </div>
           <div className="section-label"><h2>Your Legacy</h2></div>
           <div className="stats-grid">
@@ -292,7 +293,7 @@ export default function App() {
             <button type="button" className="feature-row" onClick={() => start('local', true)}><span className="feature-icon">⚔</span><span><b>Classic · Two Players</b><small>10 minute local clocks (experimental)</small></span><Icon name="arrow"/></button>
             <button type="button" className="feature-row" onClick={() => start('local', false)}><span className="feature-icon">♙</span><span><b>Casual · Pass & Play</b><small>Unlimited time, one device</small></span><Icon name="arrow"/></button>
             <button type="button" className="feature-row" onClick={() => start('computer', false)}><span className="feature-icon">♞</span><span><b>Challenge the Computer</b><small>Lightweight offline opponent</small></span><Icon name="arrow"/></button>
-            <button type="button" className="feature-row" onClick={() => notify('Rated PvP requires a live server, account security, anti-abuse and real two-device tests.')}><span className="feature-icon">♜</span><span><b>Ranked Online</b><small>Planned · not yet live</small></span><Icon name="lock"/></button>
+            <button type="button" className="feature-row" onClick={() => screen('online')}><span className="feature-icon">♜</span><span><b>Private Online</b><small>Server-validated rooms · deploy required</small></span><Icon name="lock"/></button>
           </div>
         </>}
 
@@ -338,6 +339,8 @@ export default function App() {
           {endResult && <div className="result-overlay" role="alertdialog" aria-modal="true" aria-label="Match result"><div className="result-card"><span className="result-crown">♛</span><p className="eyebrow">GAME COMPLETE</p><h2>{labelResult(endResult)}</h2><p>{shortResult(endResult)}</p><button type="button" className="btn btn-primary" onClick={() => start(mode === 'puzzle' ? 'local' : mode, clockEnabled)}>PLAY AGAIN</button><button type="button" className="btn btn-secondary" onClick={saveAndExit}>BACK TO LOBBY</button></div></div>}
           {puzzleDone && <div className="result-overlay" role="alertdialog" aria-modal="true" aria-label="Puzzle completed"><div className="result-card"><span className="result-crown">✦</span><h2>Royal Tactic Solved</h2><p>{currentPuzzle.explanation}</p><button type="button" className="btn btn-primary" onClick={() => { setPuzzleDone(false); screen('training'); }}>COLLECT PROGRESS</button></div></div>}
         </>}
+
+        {page === 'online' && <Suspense fallback={<p role="status">Loading private online arena…</p>}><PrivateOnline/></Suspense>}
 
         {page === 'history' && <><section className="heading-block"><p className="eyebrow">THE ARCHIVES</p><h1>Match <em>History.</em></h1><p>Recent results are stored locally in this browser only.</p></section>
           {history.length === 0 ? <div className="empty-state"><span>♜</span><h3>No matches yet</h3><p>Finish a game to build your legacy.</p><button type="button" className="btn btn-primary" onClick={() => screen('play')}>PLAY A MATCH</button></div> :
