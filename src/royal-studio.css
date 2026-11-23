@@ -238,3 +238,20 @@ body,.app{background:#0d0a07!important}
 .app .nav-tab{min-height:48px;justify-content:center}
 .app .render-switch button.active{background:#d5af59;color:#25180f}
 .app .mode-card,.app .feature-row,.app .game-heading,.app .profile-card,.app .setting-group,.app .history-card{box-shadow:none}
+
+/* Gameplay HUD aligned with the seven core mobile flows in reference sheet 01. */
+.app .game-actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;max-width:630px}
+.app .game-actions button{min-width:0;min-height:50px;display:flex;flex-direction:column;gap:4px;color:#f8dfb0;border-color:#87603d;background:#302116;border-radius:10px;font-weight:800}
+.app .game-actions button:focus-visible{outline:3px solid #e7bd6b;outline-offset:2px}
+.app .game-actions button:disabled{opacity:.46}
+.app .game-actions .icon{color:#d9b35f}
+.app .moves-panel{background:#2a2018;border-color:#6b5434}
+.app .moves-panel h3{color:#eed08d}
+.app .result-card{background:#3f2a1d;border:2px solid #c09b56;box-shadow:0 14px 40px #0009}
+.app .result-card .btn{min-height:48px}
+.app .promotion-modal{background:#302015;border:2px solid #c09b56}
+.app .promotion-options button{min-height:56px}
+.app .puzzle-entry{background:#332218;border-color:#85623b}
+.app .replay-dialog{background:#281c12}
+.app .board-status{min-height:24px}
+@media(max-width:340px){.app .game-actions{gap:5px}.app .game-actions button{font-size:10px;padding:9px 3px}}
