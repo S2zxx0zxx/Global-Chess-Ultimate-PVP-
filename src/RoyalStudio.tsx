@@ -79,6 +79,7 @@ const descriptions: Record<RoyalScreen,string>={
   daily:'Daily challenge', missions:'Missions',season:'Seasonal events',events:'Events hub',news:'Announcements',
   friends:'Friends list','player-search':'Search for players','player-card':'Other player profile',
   club:'Clubs and community',invites:'Invitations',leaderboard:'Leaderboards',
+  notifications:'Activity notifications',
   profile:'Player identity',stats:'Activity statistics',achievements:'Achievements',
   shop:'Shop and cosmetics',inventory:'Owned cosmetics',customize:'Customize game',
   membership:'Optional premium account',checkout:'Purchase information',
