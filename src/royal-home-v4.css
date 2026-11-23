@@ -1,0 +1,157 @@
+/* Global Chess Ultimate — Royal Visual Rebuild v0.2.1
+   Mobile-first fixes for original art scale, hierarchy and component proportions.
+   The chess engine, routes, server boundaries, and saved local game state are unchanged.
+   No UI screenshots are used as page backgrounds or fake controls. */
+:root { --rv-stage:#0f0b08;--rv-panel:#241913;--rv-panel-raised:#342317;--rv-gold:#d4a75c;--rv-gold-bright:#f7d591;--rv-ivory:#f8e9d0;--rv-dim:#cdbca4; }
+html{background:#0c0907}
+body,.app{background:#0c0907!important;color:#f8ead3}
+.app .app-frame{width:min(100%,920px);padding:0 clamp(14px,4vw,27px) 105px!important}
+.app .topbar{min-height:73px;padding:11px 0 13px;border-bottom:1px solid #775432;gap:10px}
+.app .brand{display:flex;align-items:center;gap:11px;min-width:0}
+.app .brand-crest{width:45px;height:45px;flex-shrink:0;border:1.5px solid #c59c5e;border-radius:11px;background:#3e2a1a;display:grid;place-items:center;color:#e9c07c}
+.app .brand-crest .royal-icon{height:28px;width:28px}
+.app .brand-copy{display:grid;gap:3px}
+.app .brand-copy b{font:700 clamp(13px,3.6vw,17px)/1.08 Georgia,serif;letter-spacing:1.7px;color:#f6e2b7}
+.app .brand-copy small{font:700 10px/1 system-ui,sans-serif;letter-spacing:4px;color:#dbb77a}
+.app .top-avatar{width:43px;height:43px;min-width:43px;font-size:12px;font-weight:800;border-radius:50%;background:#372418;border:1.5px solid #b89157;color:#ead0a4}
+.app .bottom-nav{min-height:75px;bottom:0;left:50%;max-width:920px;width:100%;padding:10px 9px max(9px,env(safe-area-inset-bottom));border-top:1px solid #ad8450;background:#1b130e;box-shadow:0 -12px 35px #0a0706ad;backdrop-filter:none}
+.app .nav-tab{flex:1;min-height:53px;gap:5px;padding:7px 3px;color:#bfb19a;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:12px;font:650 11px/1.1 system-ui,sans-serif;transition:background .17s,color .17s}
+.app .nav-tab .royal-icon{width:23px;height:23px}
+.app .nav-tab.current{color:#f4cf83;background:#493021;border:1px solid #ac8249}
+.app .nav-tab.current .royal-icon{color:#f4cb78}
+.app .nav-tab:not(.current){border:1px solid transparent}
+.app .nav-tab:focus-visible{outline:2px solid #f7d591;outline-offset:1px}
+.royal-icon{display:inline-block;vertical-align:middle;flex:0 0 auto}
+/* Home: visual hierarchy */
+.rv-screen[data-rv-screen=home]{max-width:100%;padding:16px 0 22px;animation:none}
+.rv-home{display:flex;flex-direction:column;gap:0;min-height:calc(100dvh - 205px)}
+.rv-commanderline{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 14px}
+.rv-command-profile{min-height:59px;min-width:0;display:flex;align-items:center;gap:10px;background:#2a1d15;border:1px solid #725438;border-radius:12px;padding:6px 11px 6px 6px;color:#f9e5bf;text-align:left;flex:1}
+.rv-command-avatar{width:45px;height:45px;min-width:45px;border-radius:11px;background:#775334;border:1.5px solid #cea466;display:grid;place-items:center;font:500 25px Georgia,serif}
+.rv-command-copy{display:flex;flex:1;flex-direction:column;min-width:0;gap:3px}
+.rv-command-copy small{font:750 9px system-ui,sans-serif;color:#cfaa72;letter-spacing:1.1px}
+.rv-command-copy strong{font:650 15px/1.1 Georgia,serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#ffeac4}
+.rv-command-copy span{font:500 11px system-ui,sans-serif;color:#cdbba5}
+.rv-command-profile>.royal-icon{color:#d1ab6d}
+.rv-command-tools{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.rv-command-tools button{display:grid;place-items:center;position:relative;width:49px;height:49px;border:1px solid #927048;background:#302219;color:#e3c18a;border-radius:12px}
+.rv-command-tools button:focus-visible{outline:3px solid #e9ba6a}
+.rv-unread{position:absolute;right:-5px;top:-5px;border-radius:50%;background:#b64238;border:2px solid #1e140d;min-width:20px;height:20px;display:grid;place-items:center;color:#fff;font-size:10px}
+.rv-cinematic-hero{height:clamp(280px,77vw,420px);position:relative;overflow:hidden;isolation:isolate;border:2px solid #bc8d4b;border-radius:19px;background:#21160f;box-shadow:0 6px 0 #110b08,0 12px 25px #0005}
+.rv-cinematic-hero:before{content:"";position:absolute;z-index:4;inset:8px;border:1px solid #846035;border-radius:12px;pointer-events:none}
+.rv-cinematic-hero:after{content:"";position:absolute;z-index:4;left:23px;top:0;width:85px;height:4px;background:#e8c78a;box-shadow:0 0 0 #000}
+.rv-hall-art{position:absolute;right:-2%;top:-16%;height:135%;width:77%;object-fit:cover;object-position:center 43%;pointer-events:none;filter:saturate(.9) contrast(1.04);z-index:0}
+.rv-cinematic-shade{position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(90deg,#22150efc 0%,#20140ef6 37%,#21140ea8 58%,#24140d1a 90%)}
+.rv-cinematic-copy{position:relative;z-index:3;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;min-height:100%;max-width:76%;padding:23px 0 25px 22px}
+.rv-royal-tag{display:inline-flex;align-items:center;gap:6px;min-height:24px;padding:4px 8px;color:#f0c982;border:1px solid #ad7c3b;background:#2c1b10e0;font-size:9px;font-weight:800;letter-spacing:1.2px;border-radius:6px;white-space:nowrap;margin:0 0 16px}
+.rv-cinematic-copy .rv-kicker{font:800 10px/1.4 system-ui,sans-serif;letter-spacing:2px;color:#eacb9f}
+.rv-cinematic-copy h1{font:500 clamp(36px,10vw,62px)/.99 Georgia,serif;letter-spacing:-.5px;margin:6px 0 9px;color:#fff0d2;text-shadow:0 2px 3px #120803}
+.rv-cinematic-copy h1 em{font-style:normal;color:#e8bb6d}
+.rv-cinematic-copy p{font:500 clamp(12px,3.3vw,15px)/1.45 system-ui,sans-serif;color:#efdebe;margin:0 0 18px;max-width:250px}
+.rv-hero-play{display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:51px;padding:11px 16px;background:#e4b862;border:1.5px solid #ffdf99;border-radius:10px;color:#27180f;font:850 12px/1 system-ui,sans-serif;letter-spacing:.7px;box-shadow:inset 0 2px #fff0ae,0 4px 0 #79502c;white-space:nowrap}
+.rv-hero-play:active{transform:translateY(3px);box-shadow:inset 0 1px #fff0ae}
+.rv-cinematic-crest{position:absolute;right:12px;bottom:12px;z-index:3;display:flex;flex-direction:column;align-items:center;gap:2px;opacity:.85;color:#e0b66f}
+.rv-cinematic-crest span:first-child{font-size:20px}
+.rv-cinematic-crest span:last-child{font-size:8px;letter-spacing:1px}
+.rv-quick-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:17px 0 14px}
+.rv-quick-grid button{min-width:0;min-height:94px;text-align:left;display:flex;flex-direction:column;justify-content:center;gap:3px;border:1px solid #8d6942;border-radius:13px;background:#2a1e16;padding:12px 14px;color:#f9e8cf}
+.rv-quick-grid button>span{height:29px;color:#eac178;margin:0 0 3px}
+.rv-quick-grid strong{font:500 clamp(16px,4vw,20px)/1.1 Georgia,serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rv-quick-grid small{font:550 12px/1.2 system-ui,sans-serif;color:#cdbca5}
+.rv-quick-grid button:active{background:#3b2a1b}
+.rv-home-section-title{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:13px 0 13px;border-bottom:1px solid #6c4c30;padding-bottom:10px}
+.rv-home-section-title div{display:grid;gap:2px}
+.rv-home-section-title div>span{font:850 9px/1.3 system-ui,sans-serif;color:#c6a16c;letter-spacing:1.4px}
+.rv-home-section-title h2{margin:0;color:#f7e4c6;font:500 clamp(23px,5.6vw,29px) Georgia,serif}
+.rv-home-section-title button{display:flex;align-items:center;gap:4px;min-height:43px;min-width:48px;border:0;background:transparent;color:#d8b577;font:800 10px system-ui,sans-serif;white-space:nowrap;letter-spacing:.4px}
+.rv-battle-grid{display:grid;grid-template-columns:1fr;gap:10px}
+.rv-battle-card{position:relative;min-height:100px;display:flex;align-items:center;gap:9px;text-align:left;border-radius:14px;border:1.5px solid #a47a4d;background:#372519;padding:10px 12px;color:#f9e7c5;overflow:hidden}
+.rv-battle-card>svg{margin-left:auto;flex-shrink:0;color:#d3b17b}
+.rv-battle-card:before{content:"";position:absolute;left:7px;top:7px;bottom:7px;width:3px;background:#c69553;border-radius:9px}
+.rv-battle-art{width:88px;min-width:88px;display:grid;place-items:center;flex-shrink:0}
+.rv-battle-art img{height:82px;width:82px;object-fit:contain;filter:drop-shadow(1px 5px 3px #160a0788)}
+.rv-battle-text{min-width:0;flex:1;display:flex;flex-direction:column;gap:5px}
+.rv-battle-text>small{font:800 9px system-ui,sans-serif;color:#d4ac73;letter-spacing:1px}
+.rv-battle-text>strong{font:550 clamp(18px,4.5vw,23px)/1 Georgia,serif;color:#ffecc9}
+.rv-battle-text>span{font:500 12px/1.25 system-ui,sans-serif;color:#deccaf}
+.rv-battle-classic{background:#654327;border-color:#cda362}
+.rv-battle-classic .rv-battle-text>strong{color:#fff0cd}
+.rv-battle-classic .rv-battle-text>small{color:#e9c889}
+.rv-battle-computer{background:#29221c;border-color:#847055}
+.rv-duo-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:11px 0 14px}
+.rv-duo-actions button{display:flex;align-items:center;gap:8px;border:1px solid #795d40;background:#261b15;border-radius:12px;min-width:0;min-height:76px;color:#edc782;padding:12px 10px;text-align:left}
+.rv-duo-actions button>span{display:grid;flex:1;min-width:0;gap:5px}
+.rv-duo-actions strong{color:#f3ddbc;font:550 15px/1 Georgia,serif}
+.rv-duo-actions small{font:500 11px/1.25 system-ui,sans-serif;color:#cbb9a4}
+.rv-duo-actions button>svg:last-child{display:none}
+.rv-royal-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.rv-royal-stats button{min-height:108px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;border:1px solid #85643f;background:#291d16;color:#e5b96f;border-radius:14px}
+.rv-royal-stats strong{font:550 29px/1 Georgia,serif;color:#f6d8a0}
+.rv-royal-stats strong small{font-size:15px}
+.rv-royal-stats span{font:700 11px system-ui,sans-serif;color:#cfbea8}
+.rv-lower-grid{display:grid;grid-template-columns:1fr;gap:9px;margin:12px 0}
+.rv-lower-grid button{min-height:68px;display:flex;align-items:center;gap:12px;padding:12px 15px;border:1px solid #886842;border-radius:12px;background:#302116;color:#e4bc7e;text-align:left}
+.rv-lower-grid button>span{display:grid;gap:4px;flex:1}
+.rv-lower-grid strong{font:550 16px Georgia,serif;color:#ffe2b9}
+.rv-lower-grid small{font:500 12px system-ui,sans-serif;color:#cdbba5}
+.rv-royal-signature{display:flex;align-items:center;justify-content:center;gap:19px;margin:17px auto 7px;color:#ae8b59;text-align:center;font:700 11px/1.5 Georgia,serif;letter-spacing:1.7px;opacity:.86}
+.rv-royal-signature>span:first-child,.rv-royal-signature>span:last-child{font-size:25px}
+.rv-royal-signature small{font:600 9px system-ui,sans-serif;letter-spacing:1.5px;color:#9b8160}
+/* Other 48 screens receive the same readable, tactile design language. */
+.rv-page-head{padding:22px 10px 20px}
+.rv-page-head h1{font-size:clamp(35px,8vw,48px)}
+.rv-page-head p{font-size:14px;line-height:1.5}
+.rv-screen .rv-kicker{font-size:11px}
+.rv-section-heading h2{font-size:25px}
+.rv-tile{min-height:82px;padding:14px 15px;background:#302118;border-color:#846341}
+.rv-tile-icon{width:51px;min-width:51px;height:51px;background:#4c3222}
+.rv-tile-copy strong{font-size:18px}
+.rv-tile-copy small{font-size:13px}
+.rv-tile-trailing{font-size:22px}
+.rv-action{min-height:50px;font-size:13px}
+.rv-form input,.rv-form select,.rv-form textarea{font-size:15px}
+.rv-tabs button{font-size:11px}
+.rv-skins strong{font-size:16px}
+.rv-skins small{font-size:12px}
+.rv-screen .rv-panel p,.rv-screen .rv-note{font-size:13px}
+.rv-profile-banner p{font-size:13px}
+.rv-profile-banner small{font-size:12px}
+.rv-setting small{font-size:12px}
+.rv-empty p{font-size:14px}
+/* Keep chess engine layout and interaction separate from cosmetic redesign. */
+.app .game-heading{margin-top:12px}
+.app .game-actions button{min-height:54px}
+.app .player-strip strong{font-size:14px}
+.app .player-strip small{font-size:12px}
+@media(min-width:630px){
+ .rv-cinematic-hero{height:380px}
+ .rv-hall-art{height:145%;width:62%;top:-15%;right:0}
+ .rv-cinematic-copy{padding-left:42px}
+ .rv-cinematic-copy h1{font-size:62px}
+ .rv-quick-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+ .rv-battle-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .rv-battle-card{min-height:115px}
+ .rv-duo-actions{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .rv-lower-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:360px){
+ .app .app-frame{padding-left:12px!important;padding-right:12px!important}
+ .rv-cinematic-hero{height:286px}
+ .rv-hall-art{width:82%;right:-11%}
+ .rv-cinematic-copy{padding-left:16px;max-width:78%}
+ .rv-cinematic-copy h1{font-size:35px}
+ .rv-royal-tag{font-size:8px}
+ .rv-hero-play{padding:11px 12px;font-size:11px}
+ .rv-quick-grid button{padding:11px 10px}
+ .rv-quick-grid strong{font-size:15px}
+ .rv-quick-grid small{font-size:11px}
+ .rv-battle-art{width:76px;min-width:76px}
+ .rv-battle-art img{width:74px;height:74px}
+ .rv-battle-text>strong{font-size:18px}
+ .rv-command-profile{padding-right:7px}
+ .rv-command-tools{gap:5px}
+ .rv-command-tools button{width:44px;height:44px}
+}
+@media(prefers-reduced-motion:reduce){
+ .rv-hero-play,.rv-quick-grid button,.rv-battle-card,.rv-royal-stats button{transition:none!important}
+}
