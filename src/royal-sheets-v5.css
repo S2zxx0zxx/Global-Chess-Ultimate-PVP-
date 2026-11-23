@@ -374,3 +374,26 @@ h1,h2,h3{font-family:var(--font-title);font-weight:600}
  .royal-match-history>button{font-size:9px}
  .royal-match-panel .board-surround{border-width:5px}
 }
+
+/* Sheet 02 screen 13: interactive five-part tutorial with legal destinations */
+.royal-tutorial{padding:10px 6px 20px;margin:0 auto;max-width:560px}
+.royal-tutorial-header{text-align:center;border:1px solid #956b3c;border-radius:11px;background:#2e1b11;padding:12px;margin-bottom:12px}
+.royal-tutorial-header>span{display:block;color:#e8bf78;font:800 10px var(--font-body);letter-spacing:1.4px}
+.royal-tutorial-header strong{font:750 25px var(--font-title);color:#ffe4b5}
+.royal-tutorial-header p{font-size:13px;color:#e3c9a5;margin:7px auto 0}
+.royal-tutorial-progress{display:grid;gap:5px;font:800 11px var(--font-body);color:#e8bf78;margin-bottom:12px}
+.royal-tutorial-progress>div{height:9px;background:#634a31;border-radius:8px;overflow:hidden}
+.royal-tutorial-progress i{display:block;height:100%;background:#efc779;transition:width .25s}
+.royal-tutorial-board{width:100%;aspect-ratio:1;display:grid;grid-template-columns:repeat(8,minmax(0,1fr));border:7px ridge #bd8848;border-radius:4px;background:#362115}
+.royal-tutorial-square{border:0;position:relative;aspect-ratio:1;padding:0;display:grid;place-items:center;min-width:0;min-height:0;overflow:hidden}
+.royal-tutorial-square.light{background:#e7c995}.royal-tutorial-square.dark{background:#99623c}
+.royal-tutorial-square img{width:94%;height:94%;object-fit:contain;filter:drop-shadow(0 2px 1px #0007)}
+.royal-tutorial-square.selected{outline:3px solid #ffd564;outline-offset:-3px}
+.royal-tutorial-square.destination{box-shadow:inset 0 0 0 3px #7bd451}
+.royal-tutorial-dot{position:absolute;width:25%;aspect-ratio:1;border-radius:50%;background:#62b545;pointer-events:none}
+.royal-tutorial-frame{position:absolute;inset:2px;border:3px solid #e6c763;border-radius:4px;pointer-events:none}
+.royal-tutorial-feedback{min-height:26px;margin:11px 0;color:#f1d69e;text-align:center;font-size:12px}
+.royal-tutorial-actions{display:flex;gap:9px}
+.royal-tutorial-actions button{min-height:49px;flex:1;background:#3d2918;border:1px solid #ac7d42;border-radius:9px;color:#f5dcb2;font-weight:800}
+.royal-tutorial-actions button:last-child{background:linear-gradient(#f8dda9,#bd9048);color:#281505;border-color:#ffe1a0}
+@media(max-width:380px){.rv-onboarding .rv-two-actions{flex-wrap:wrap}.rv-onboarding .rv-two-actions>*{flex:1 1 43%;font-size:10px}}
