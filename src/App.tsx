@@ -334,14 +334,18 @@ export default function App() {
         />}
 
         {page === 'game' && <>
-          <div className="game-heading">
-            <button className="icon-button" type="button" onClick={saveAndExit} aria-label="Back to home"><Icon name="back"/></button>
-            <div><small>{mode === 'puzzle' ? 'ROYAL TRAINING' : mode === 'computer' ? 'COMPUTER DUEL' : 'CLASSIC CHESS'}</small><strong>{mode === 'puzzle' ? 'Master the Tactic' : 'The Royal Board'}</strong></div>
-            <button className="icon-button" type="button" onClick={() => setMenu(true)} aria-label="Open game menu"><Icon name="menu"/></button>
-          </div>
-
-          <div className="player-strip opponent"><span className="player-shield">{mode === 'computer' ? '♞' : 'B'}</span><div><strong>{mode === 'computer' ? 'Royal Computer' : 'Black Monarch'}</strong><small>{turn === 'b' ? '● To move' : 'Waiting'}</small></div><span className={'clock ' + (turn === 'b' ? 'running' : '')}>{mode === 'puzzle' ? '—' : clockEnabled ? formatTime(seconds[1]) : '∞'}</span></div>
-          <div className="render-switch" role="group" aria-label="Board display mode"><button type="button" className={!view3D ? "active" : ""} onClick={() => setView3D(false)} aria-pressed={!view3D}>2D BOARD</button><button type="button" className={view3D ? "active" : ""} onClick={() => setView3D(true)} aria-pressed={view3D}>3D BOARD</button></div>
+          <div className="royal-match-panel">
+            <div className="royal-match-top">
+              <button className="royal-match-back" type="button" onClick={saveAndExit} aria-label="Save game and return home"><Icon name="back" size={20}/></button>
+              <div className="royal-match-player"><span className="royal-match-avatar">♙</span><span><strong>{mode === 'puzzle' ? 'Scholar' : guest}</strong><small>★ {mode === 'puzzle' ? 'Training' : 'Beginner'}</small></span><b className={turn==='w'?'active-clock':''}>{mode==='puzzle'?'—':clockEnabled?formatTime(seconds[0]):'∞'}</b></div>
+              <span className="royal-match-crown">♛</span>
+              <div className="royal-match-player opponent"><span><strong>{mode==='computer'?'Computer':mode==='puzzle'?'Tactic':'Black'}</strong><small>{mode==='computer'?'★ Basic':'Opponent'}</small></span><b className={turn==='b'?'active-clock':''}>{mode==='puzzle'?'—':clockEnabled?formatTime(seconds[1]):'∞'}</b><span className="royal-match-avatar">♟</span></div>
+              <button className="royal-match-back" type="button" aria-label="Open match settings" onClick={()=>setMenu(true)}><Icon name="menu" size={19}/></button>
+            </div>
+            <div className="royal-display-switch" role="group" aria-label="Choose board rendering">
+              <button type="button" className={!view3D?'active':''} onClick={()=>setView3D(false)} aria-pressed={!view3D}>2D BOARD</button>
+              <button type="button" className={view3D?'active':''} onClick={()=>setView3D(true)} aria-pressed={view3D}>3D BOARD</button>
+            </div>
           {view3D ? <Suspense fallback={<div className="board3d-loading" role="status">Loading 3D renderer…</div>}><ChessBoard3D fen={fen} selected={selected} legal={settings.hints ? legal : []} lastMove={lastMove} theme={settings.modelTheme || "deco"} useLibraryAssets={Boolean(settings.useLibraryAssets)} flipped={settings.flipped} reducedMotion={settings.reducedMotion} onSquare={onSquare}/></Suspense> : <div className="board-surround">
             <div className="board" role="grid" aria-label="Chess board. Select a piece then a destination.">
               {Array.from({ length: 64 }, (_, idx) => {
