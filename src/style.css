@@ -49,3 +49,19 @@
 .replay-moves button{border:1px solid #654633;background:#35212a;color:#e7c7a0;border-radius:5px;padding:5px 7px;font-size:11px}
 .replay-moves button.active{background:#b78345;color:#211218}
 .replay-dialog>.btn{width:100%}
+
+/* Private beta room UI; intentionally separate from unbuilt public ranked matchmaking. */
+.private-online .heading-block{padding-bottom:10px}
+.private-lobby{padding:23px 18px;border:1px solid #876044;background:#311b24;border-radius:17px;display:grid;gap:14px}
+.private-lobby>.btn{width:100%}
+.private-lobby>label{font-size:11px;letter-spacing:1.2px;font-weight:800;color:#f0c989}
+.private-room-meta{display:flex;flex-wrap:wrap;gap:9px;align-items:center;margin:10px 0 15px;border:1px solid #966b40;background:#39232b;border-radius:15px;padding:15px}
+.private-room-meta>div{flex:1;min-width:145px;display:grid;gap:4px}
+.private-room-meta small{color:#c8aea4;font-size:10px}
+.private-room-meta strong{font-family:monospace;font-size:22px;letter-spacing:2px;color:#f6d491}
+.private-leave{background:#4f242c;color:#ffd9d2;border:1px solid #ac5d64;border-radius:9px;padding:10px;font-size:11px}
+.private-status{text-align:center;color:#f6d493;font-weight:800;letter-spacing:.4px;font-size:12px}
+.private-online .board-surround{max-width:550px}
+.private-online .square:disabled{opacity:1;cursor:default}
+.private-moves{margin:15px 0;padding:12px;background:#2b1720;border:1px solid #805c47;border-radius:12px;color:#e5c9a4;font-size:12px;max-height:120px;overflow:auto;word-break:break-word}
+.private-connection-status{min-height:42px;color:#d5bca9;font-size:12px;line-height:1.5}
