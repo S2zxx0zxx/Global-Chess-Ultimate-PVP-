@@ -280,7 +280,7 @@ export default function App() {
                 return <button type="button" role="gridcell" aria-selected={isSelected} key={square} onClick={() => onSquare(square)} className={'square ' + (light ? 'light' : 'dark') + (isSelected ? ' selected' : '') + (isLast ? ' last-move' : '') + (checkingKing ? ' in-check' : '')} aria-label={square + (piece ? ': ' + (piece.color === 'w' ? 'White ' : 'Black ') + piece.type : ': empty') }>
                   {c === 0 && <span className="rank-label">{8 - row}</span>}
                   {r === 7 && <span className="file-label">{FILES[col]}</span>}
-                  {piece && <span className={'piece ' + (piece.color === 'w' ? 'white-piece' : 'black-piece')}>{royalSymbol(piece.type, piece.color)}</span>}
+                  {piece && <img alt="" draggable={false} className="piece-img" src={'/pieces/' + piece.color + '-' + piece.type + '.svg'} />}
                   {isLegal && <span className={piece ? 'legal-capture' : 'legal-dot'} />}
                 </button>;
               })}
