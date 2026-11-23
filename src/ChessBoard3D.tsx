@@ -79,6 +79,8 @@ export default function ChessBoard3D({fen,selected,legal,lastMove,theme,useLibra
       };
       for(const color of ['w','b'])for(const type of Object.keys(names))prototypes.set(color+type,makeFallback(type,color));
       const coord=(square:string)=>new THREE.Vector3(files.indexOf(square[0])-3.5,.02,8-Number(square[1])-3.5);
+      let previousFen=positionRef.current.fen;
+      let slide:{node:THREE.Group;from:THREE.Vector3;to:THREE.Vector3;started:number}|null=null;
       const redraw=()=>{
         if(!alive)return;
         const state=positionRef.current;
@@ -93,6 +95,16 @@ export default function ChessBoard3D({fen,selected,legal,lastMove,theme,useLibra
           if(mesh)node.add(mesh.clone(true));
           pieces.add(node);
         }
+        const last=state.lastMove;
+        if(!reducedMotion && last && state.fen!==previousFen){
+          const moving=pieces.children.find(child=>child.userData.square===last[1]);
+          if(moving instanceof THREE.Group){
+            const from=coord(last[0]),to=coord(last[1]);
+            moving.position.copy(from);
+            slide={node:moving,from,to,started:performance.now()};
+          }
+        }
+        previousFen=state.fen;
         for(const t of tiles){
           const sq=t.userData.square as Square;
           const r=8-Number(sq[1]),c=files.indexOf(sq[0]);
@@ -116,7 +128,23 @@ export default function ChessBoard3D({fen,selected,legal,lastMove,theme,useLibra
       const resize=()=>{const w=Math.max(1,host.clientWidth),h=Math.max(1,host.clientHeight);renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();};
       const observer=new ResizeObserver(resize);observer.observe(host);resize();
       let frame=0;
-      const animate=()=>{if(!alive)return;if(!document.hidden){if(!reducedMotion)key.intensity=2.2+Math.sin(performance.now()*.0005)*.07;renderer.render(scene,camera);}frame=requestAnimationFrame(animate);};
+      const animate=()=>{
+        if(!alive)return;
+        if(!document.hidden){
+          if(slide){
+            const now=performance.now();
+            const t=Math.min(1,(now-slide.started)/320);
+            const eased=t*t*(3-2*t);
+            slide.node.position.lerpVectors(slide.from,slide.to,eased);
+            slide.node.position.y+=Math.sin(t*Math.PI)*.18;
+            // Restore the exact ground height next frame; never accumulate y-offset.
+            if(t>=1){slide.node.position.copy(slide.to);slide=null;}
+          }
+          if(!reducedMotion)key.intensity=2.2+Math.sin(performance.now()*.0005)*.07;
+          renderer.render(scene,camera);
+        }
+        frame=requestAnimationFrame(animate);
+      };
       animate();
       cleanup=()=>{cancelAnimationFrame(frame);updateRef.current=null;observer.disconnect();renderer.domElement.removeEventListener('pointerdown',click);renderer.dispose();renderer.forceContextLoss();renderer.domElement.remove();};
       setStatus('3D board active · procedural chess pieces');
