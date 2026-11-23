@@ -8,9 +8,10 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --host 0.0.0.0",
     "test": "node --experimental-strip-types --test tests/*.test.mjs",
-    "verify": "npm run test && npm run build",
+    "verify": "npm run test && npm run check:worker && npm run build",
     "assets:verify": "node scripts/verify-assets.mjs",
-    "assets:verify:strict": "node scripts/verify-assets.mjs --strict"
+    "assets:verify:strict": "node scripts/verify-assets.mjs --strict",
+    "check:worker": "esbuild server/src/index.js --bundle --platform=browser --format=esm --external:cloudflare:workers --outfile=dist-worker/match-worker.mjs"
   },
   "dependencies": {
     "chess.js": "1.4.0",
@@ -23,6 +24,7 @@
     "@types/react-dom": "^19.1.0",
     "typescript": "~5.8.3",
     "vite": "^6.3.5",
-    "@types/three": "^0.180.0"
+    "@types/three": "^0.180.0",
+    "esbuild": "0.25.12"
   }
 }
