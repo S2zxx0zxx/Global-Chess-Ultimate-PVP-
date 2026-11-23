@@ -80,15 +80,21 @@ export class MatchRoom extends DurableObject {
     if (url.pathname === '/join' && request.method === 'POST') {
       let args;
       try { args = await request.json(); } catch { return json({ error: 'BAD_JSON' }, 400); }
-      if (args?.token === state.hostToken) return json({ seat: 'w', token: state.hostToken });
-      if (args?.token && args.token === state.guestToken) return json({ seat: 'b', token: state.guestToken });
-      if (state.guestToken) return json({ error: 'ROOM_FULL' }, 409);
-      const guestToken = token();
-      state.guestToken = guestToken;
-      state.status = 'active';
-      await this.ctx.storage.put('match', state);
-      await this.broadcast(state);
-      return json({ seat: 'b', token: guestToken }, 201);
+      const outcome = await this.ctx.storage.transaction(async storage => {
+        const current = await storage.get('match');
+        if (!current || current.expiresAt <= Date.now()) return { error: 'ROOM_EXPIRED', status: 410 };
+        if (args?.token === current.hostToken) return { seat: 'w', token: current.hostToken, status: 200 };
+        if (args?.token && args.token === current.guestToken) return { seat: 'b', token: current.guestToken, status: 200 };
+        if (current.guestToken) return { error: 'ROOM_FULL', status: 409 };
+        const guestToken = token();
+        current.guestToken = guestToken;
+        current.status = 'active';
+        await storage.put('match', current);
+        return { seat: 'b', token: guestToken, status: 201, updated: current };
+      });
+      if (outcome.updated) await this.broadcast(outcome.updated);
+      const { updated, status, ...response } = outcome;
+      return json(response, status);
     }
     if (url.pathname.endsWith('/socket') && request.headers.get('Upgrade')?.toLowerCase() === 'websocket') {
       const protocols = (request.headers.get('Sec-WebSocket-Protocol') || '').split(',').map(x => x.trim());
@@ -128,17 +134,22 @@ export class MatchRoom extends DurableObject {
     const events = sameWindow ? (attachment.events || 0) + 1 : 1;
     if (events > 15) { socket.close(1008, 'Rate limit'); return; }
     socket.serializeAttachment({ ...attachment, windowAt: sameWindow ? attachment.windowAt : now, events });
-    const state = await this.read();
     const seat = attachment.side;
-    if (!state || !seat || state.expiresAt <= Date.now()) return socket.close(1008, 'Expired room');
-    const result = applyMove(state, seat, command);
-    if (!result.ok) {
-      socket.send(JSON.stringify({ type: 'error', error: result.error, revision: state.revision }));
-      socket.send(JSON.stringify(publicMatchState(state, seat)));
+    const transaction = await this.ctx.storage.transaction(async storage => {
+      const current = await storage.get('match');
+      if (!current || !seat || current.expiresAt <= Date.now()) return { expired: true };
+      const result = applyMove(current, seat, command);
+      if (!result.ok) return { error: result.error, state: current };
+      await storage.put('match', result.next);
+      return { updated: result.next };
+    });
+    if (transaction.expired) return socket.close(1008, 'Expired room');
+    if (transaction.error) {
+      socket.send(JSON.stringify({ type: 'error', error: transaction.error, revision: transaction.state.revision }));
+      socket.send(JSON.stringify(publicMatchState(transaction.state, seat)));
       return;
     }
-    await this.ctx.storage.put('match', result.next);
-    await this.broadcast(result.next);
+    if (transaction.updated) await this.broadcast(transaction.updated);
   }
   async alarm() {
     for (const socket of this.ctx.getWebSockets()) {
