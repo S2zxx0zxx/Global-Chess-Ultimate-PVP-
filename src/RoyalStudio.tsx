@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { MatchRecord, PlayMode } from './game';
 import { loadJSON, saveJSON } from './game';
+import RoyalIcon from './RoyalIcon';
 
 export const ROYAL_SCREEN_GROUPS = {
   journey: ['splash', 'welcome', 'onboard-play', 'onboard-learn', 'sign-in', 'register'],
@@ -37,7 +38,7 @@ const BUTTONS = {
   cup: '♜', star: '★', info: 'ⓘ', review: '▤', shield: '♧', gift: '❖',
 };
 type SymbolName = keyof typeof BUTTONS;
-const SN = ({name}: {name: SymbolName}) => <span className="rv-symbol" aria-hidden="true">{BUTTONS[name]}</span>;
+const SN = ({name}: {name: SymbolName}) => <RoyalIcon name={name} size={23}/>;
 const K = ({children}: {children: ReactNode}) => <span className="rv-kicker">{children}</span>;
 const Header = ({eyebrow, title, subtitle, icon}: {eyebrow: string; title: string; subtitle?: string; icon?: SymbolName}) => <header className="rv-page-head">
   {icon && <span className="rv-page-emblem"><SN name={icon}/></span>}
@@ -165,19 +166,67 @@ export default function RoyalStudio({screen,navigate,openPage,begin,guest,saveGu
         <div className="rv-note"><strong>Google / Email sign-in unavailable</strong><p>Cloud credentials, password handling and cross-device sync have not been deployed. We do not collect passwords in this preview.</p></div><Action secondary onClick={doneIntro}>CONTINUE AS GUEST</Action><button type="button" className="rv-text-link" onClick={()=>navigateTo(screen==='sign-in'?'register':'sign-in')}>{screen==='sign-in'?'CREATE A LOCAL PROFILE':'SEE SIGN-IN STATUS'}</button></div></>;
       break;
     case 'home':
-      content=<><div className="rv-userline"><button onClick={navigateMain('profile')} type="button" className="rv-account-pill"><span>{guest.slice(0,1).toUpperCase()}</span><b>{guest}</b><small>Guest · Local</small></button><div className="rv-user-actions"><button type="button" aria-label="Notifications" onClick={navigateMain('notifications')}><SN name="notifications"/>{unread>0&&<span className="rv-unread">{unread}</span>}</button><button type="button" aria-label="Settings" onClick={navigateMain('settings')}><SN name="settings"/></button></div></div>
-        <div className="rv-hero"><div className="rv-hero-chess"><img src="/pieces/b-n.svg" alt="Original obsidian chess knight"/></div><K>THE KINGDOM AWAITS</K><h1>Rule the Board.</h1><p>Play, learn and improve your strategy with every match.</p><Action onClick={()=>navigateTo('modes')}>♞ &nbsp; PLAY CHESS ›</Action></div>
-        <div className="rv-grid rv-shortcuts">{link('tournaments','cup','Tournaments','View competition status')}{link('daily','star','Daily Challenge','Solve a real puzzle')}{link('missions','missions','Missions','Progress from your games')}{link('events','events','Events','Activities and updates')}</div>
-        <Section title="Quick Battle" note="Available modes"><div className="rv-list">
-          <Tile icon="play" title="Classic Chess" detail="Local 10-minute chess or no-clock mode" onClick={()=>{setMode('local');navigateTo('match-setup');}}/>
-          <Tile icon="training" title="VS. Computer" detail="Real offline opponent · basic difficulty" onClick={()=>{setMode('computer');navigateTo('match-setup');}}/>
-          <Tile icon="friends" title="Play with a Friend" detail="Pass & Play or private invite room" onClick={()=>navigateTo('modes')}/>
-        </div></Section>
-        <Section title="Royal Rewards & Events" note="Verified availability"><div className="rv-grid">
-          <Tile icon="gift" title="Daily Reward" detail="Progress missions · no coins issued" onClick={()=>navigateTo('missions')}/>
-          <Tile icon="star" title="Lucky Box" detail="Cosmetics preview · not purchasable" onClick={()=>navigateTo('shop')}/>
-        </div></Section>
-        <Section title="Your Progress"><div className="rv-metrics"><Metric label="MATCHES PLAYED" value={history.length}/><Metric label="TACTICS SOLVED" value={solved.length}/><Metric label="COMPUTER WINS" value={computerWins}/></div><div className="rv-spaced-action"><Action secondary onClick={()=>openPage('history')}>VIEW MATCH HISTORY & REPLAYS ›</Action></div></Section></>;
+      content=<div className="rv-home">
+        <div className="rv-commanderline">
+          <button type="button" className="rv-command-profile" onClick={navigateMain('profile')} aria-label="Open your profile">
+            <span className="rv-command-avatar">{guest.slice(0,1).toUpperCase()}</span>
+            <span className="rv-command-copy"><small>YOUR CHESS KINGDOM</small><strong>{guest}</strong><span>Local player · Unrated</span></span>
+            <RoyalIcon name="arrow" size={17}/>
+          </button>
+          <div className="rv-command-tools">
+            <button type="button" onClick={navigateMain('notifications')} aria-label={'Notifications, '+unread+' unread'}><RoyalIcon name="notifications" size={22}/>{unread>0&&<span className="rv-unread">{unread}</span>}</button>
+            <button type="button" onClick={navigateMain('settings')} aria-label="Open settings"><RoyalIcon name="settings" size={22}/></button>
+          </div>
+        </div>
+        <section className="rv-cinematic-hero" aria-label="Global Chess Ultimate royal arena">
+          <img className="rv-hall-art" src="/art/royal-hall.svg" alt="" loading="eager" decoding="async"/>
+          <div className="rv-cinematic-shade"/>
+          <div className="rv-cinematic-copy">
+            <div className="rv-royal-tag"><RoyalIcon name="crown" size={16}/> GLOBAL CHESS ULTIMATE</div>
+            <K>YOUR ROYAL ARENA</K>
+            <h1>Every Move<br/><em>Matters.</em></h1>
+            <p>Take the throne. Master the board.</p>
+            <button type="button" className="rv-hero-play" onClick={()=>navigateTo('modes')}>
+              <RoyalIcon name="play" size={19}/> PLAY CHESS <RoyalIcon name="arrow" size={18}/>
+            </button>
+          </div>
+          <div className="rv-cinematic-crest" aria-hidden="true"><span>♛</span><span>EST. 2026</span></div>
+        </section>
+        <div className="rv-quick-grid" aria-label="Quick access">
+          <button type="button" onClick={()=>navigateTo('tournaments')}><span><RoyalIcon name="cup" size={26}/></span><strong>Tournaments</strong><small>Competitions</small></button>
+          <button type="button" onClick={()=>navigateTo('daily')}><span><RoyalIcon name="training" size={26}/></span><strong>Daily Tactics</strong><small>{solved.length}/5 solved</small></button>
+          <button type="button" onClick={()=>navigateTo('missions')}><span><RoyalIcon name="missions" size={26}/></span><strong>Missions</strong><small>Earn progress</small></button>
+          <button type="button" onClick={()=>navigateTo('events')}><span><RoyalIcon name="events" size={26}/></span><strong>Events</strong><small>What's happening</small></button>
+        </div>
+        <div className="rv-home-section-title"><div><span>SELECT YOUR BATTLE</span><h2>Play Chess</h2></div><button type="button" onClick={()=>navigateTo('modes')}>ALL MODES <RoyalIcon name="arrow" size={15}/></button></div>
+        <div className="rv-battle-grid">
+          <button type="button" className="rv-battle-card rv-battle-classic" onClick={()=>{setMode('local');setMinutes('untimed');navigateTo('match-setup')}}>
+            <span className="rv-battle-art"><img src="/pieces/w-n.svg" alt="" loading="lazy"/></span>
+            <span className="rv-battle-text"><small>THE ORIGINAL</small><strong>Classic Chess</strong><span>Play locally, at your pace</span></span>
+            <RoyalIcon name="arrow" size={21}/>
+          </button>
+          <button type="button" className="rv-battle-card rv-battle-computer" onClick={()=>{setMode('computer');setMinutes('untimed');navigateTo('match-setup')}}>
+            <span className="rv-battle-art"><img src="/pieces/b-k.svg" alt="" loading="lazy"/></span>
+            <span className="rv-battle-text"><small>SOLO DUEL</small><strong>VS Computer</strong><span>Challenge the offline bot</span></span>
+            <RoyalIcon name="arrow" size={21}/>
+          </button>
+        </div>
+        <div className="rv-duo-actions">
+          <button type="button" onClick={()=>{setMode('local');setMinutes('10');navigateTo('match-setup')}}><RoyalIcon name="time" size={22}/><span><strong>Quick Chess</strong><small>10-minute local match</small></span><RoyalIcon name="arrow" size={16}/></button>
+          <button type="button" onClick={()=>navigateTo('modes')}><RoyalIcon name="friends" size={22}/><span><strong>Play with Friends</strong><small>Pass &amp; Play or private room</small></span><RoyalIcon name="arrow" size={16}/></button>
+        </div>
+        <div className="rv-home-section-title"><div><span>YOUR JOURNEY</span><h2>Royal Progress</h2></div><button type="button" onClick={()=>navigateTo('achievements')}>ACHIEVEMENTS <RoyalIcon name="arrow" size={15}/></button></div>
+        <div className="rv-royal-stats">
+          <button type="button" onClick={()=>openPage('history')}><RoyalIcon name="review" size={20}/><strong>{history.length}</strong><span>Matches</span></button>
+          <button type="button" onClick={()=>openPage('training')}><RoyalIcon name="training" size={20}/><strong>{solved.length}<small> / 5</small></strong><span>Tactics</span></button>
+          <button type="button" onClick={()=>navigateTo('stats')}><RoyalIcon name="achievements" size={20}/><strong>{computerWins}</strong><span>Bot Wins</span></button>
+        </div>
+        <div className="rv-lower-grid">
+          <button type="button" onClick={()=>openPage('history')}><RoyalIcon name="history" size={25}/><span><strong>Game Review</strong><small>Replay your saved matches</small></span><RoyalIcon name="arrow" size={18}/></button>
+          <button type="button" onClick={()=>navigateTo('shop')}><RoyalIcon name="shop" size={25}/><span><strong>Royal Collection</strong><small>Boards, pieces &amp; themes</small></span><RoyalIcon name="arrow" size={18}/></button>
+        </div>
+        <div className="rv-royal-signature"><span>♛</span><span>GLOBAL CHESS ULTIMATE<br/><small>THINK • PLAY • MASTER</small></span><span>♛</span></div>
+      </div>;
       break;
     case 'modes':
       content=<><Header eyebrow="THE ARENA" title="Play Chess" subtitle="Choose a fully supported local mode, or open private online rooms if the service is configured." icon="play"/><div className="rv-list">
