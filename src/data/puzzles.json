@@ -1,0 +1,57 @@
+[
+  {
+    "id": "queen-trap",
+    "title": "Royal Queen Trap",
+    "level": "Beginner",
+    "fen": "4k3/8/8/3q4/8/3R4/8/4K3 w - - 0 1",
+    "from": "d3",
+    "to": "d5",
+    "promotion": null,
+    "prompt": "White to move. Capture the exposed queen with your rook.",
+    "explanation": "The rook controls the d-file and can take the undefended queen on d5."
+  },
+  {
+    "id": "bishop-strike",
+    "title": "Diagonal Strike",
+    "level": "Beginner",
+    "fen": "4k3/5r2/8/8/2B5/8/8/4K3 w - - 0 1",
+    "from": "c4",
+    "to": "f7",
+    "promotion": null,
+    "prompt": "White to move. Use your bishop to capture the rook.",
+    "explanation": "The c4–f7 diagonal is clear, letting the bishop win the rook."
+  },
+  {
+    "id": "knight-fork",
+    "title": "Knight's Leap",
+    "level": "Beginner",
+    "fen": "k7/8/8/4q3/8/5N2/8/7K w - - 0 1",
+    "from": "f3",
+    "to": "e5",
+    "promotion": null,
+    "prompt": "White to move. Your knight can win the queen.",
+    "explanation": "Knights jump in an L shape. From f3 the knight captures on e5."
+  },
+  {
+    "id": "royal-promotion",
+    "title": "Crown the Pawn",
+    "level": "Beginner",
+    "fen": "4k3/P7/8/8/8/8/8/4K3 w - - 0 1",
+    "from": "a7",
+    "to": "a8",
+    "promotion": "q",
+    "prompt": "White to move. Promote the pawn to a queen.",
+    "explanation": "The pawn reaches its final rank and becomes a queen."
+  },
+  {
+    "id": "fools-mate",
+    "title": "The Four-Move Trap",
+    "level": "Intermediate",
+    "fen": "rnbqkbnr/pppp1ppp/8/4p3/6P1/5P2/PPPPP2P/RNBQKBNR b KQkq g3 0 2",
+    "from": "d8",
+    "to": "h4",
+    "promotion": null,
+    "prompt": "Black to move. Find checkmate in one.",
+    "explanation": "Qh4# attacks the exposed white king through the weakened diagonal."
+  }
+]

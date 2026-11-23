@@ -1,14 +1,19 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Chess, type Square } from 'chess.js';
-import { chooseComputerMove, FILES, loadJSON, PIECE_GLYPHS, PRACTICE, resultOf, saveJSON, shortResult, SQUARES, STORAGE_KEYS, type GameResult, type MatchRecord, type PlayMode } from './game';
+import { chooseComputerMove, FILES, loadJSON, PIECE_GLYPHS, resultOf, saveJSON, shortResult, SQUARES, STORAGE_KEYS, type GameResult, type MatchRecord, type PlayMode } from './game';
+import { PUZZLES, PUZZLE_PROGRESS_KEY, isPuzzleSolution, type Puzzle } from './academy';
+import { newClock, advanceClock, displayClock } from './clock';
 
 const ChessBoard3D = lazy(() => import('./ChessBoard3D'));
 const AnimationShowcase = lazy(() => import('./AnimationShowcase'));
+const ReplayViewer = lazy(() => import('./ReplayViewer'));
+const PrivateOnline = lazy(() => import('./PrivateOnline'));
+
 type ThreeTheme = 'deco' | 'bauhaus' | 'scifi' | 'egypt' | 'classic';
-type Page = 'home' | 'play' | 'game' | 'history' | 'training' | 'profile' | 'settings' | 'about';
+type Page = 'home' | 'play' | 'game' | 'history' | 'training' | 'profile' | 'settings' | 'about' | 'online';
 type Promotion = { from: Square; to: Square };
 type Settings = { flipped: boolean; reducedMotion: boolean; hints: boolean; modelTheme?: ThreeTheme; useLibraryAssets?: boolean };
-type Snapshot = { fen: string; mode: PlayMode; pgn: string; active: boolean; seconds: [number, number] };
+type Snapshot = { fen: string; mode: PlayMode; pgn: string; active: boolean; seconds: [number, number]; timed?: boolean; remainingMs?: [number, number] };
 const DEFAULT_SETTINGS: Settings = { flipped: false, reducedMotion: false, hints: true };
 const initials = (text: string) => text.trim().slice(0, 2).toUpperCase() || 'GC';
 function randomGuest() { return 'Royal Guest ' + Math.floor(1000 + Math.random() * 9000); }
@@ -27,11 +32,14 @@ const Icon = ({ name, size = 20 }: { name: string; size?: number }) => {
 
 export default function App() {
   const game = useRef(new Chess());
+  const clockRef = useRef(newClock(Date.now()));
+  const endedRef = useRef(false);
   const stored = useRef(loadJSON<Snapshot | null>(STORAGE_KEYS.lastMatch, null));
-  const [page, setPage] = useState<Page>('home');
+  const [page, setPage] = useState<Page>(() => new URLSearchParams(location.search).has('room') ? 'online' : 'home');
   const [mode, setMode] = useState<PlayMode>('local');
   const [view3D, setView3D] = useState(false);
   const [showAvatarAnimations, setShowAvatarAnimations] = useState(false);
+  const [replayRecord, setReplayRecord] = useState<MatchRecord | null>(null);
   const [fen, setFen] = useState(game.current.fen());
   const [active, setActive] = useState(false);
   const [selected, setSelected] = useState<Square | null>(null);
@@ -44,11 +52,12 @@ export default function App() {
   const [message, setMessage] = useState('');
   const [menu, setMenu] = useState(false);
   const [puzzleDone, setPuzzleDone] = useState(false);
+  const [currentPuzzle, setCurrentPuzzle] = useState<Puzzle>(PUZZLES[0]);
+  const [solvedPuzzles, setSolvedPuzzles] = useState<string[]>(() => loadJSON<string[]>(PUZZLE_PROGRESS_KEY, []));
   const [newName, setNewName] = useState(guest);
   const [clockEnabled, setClockEnabled] = useState(false);
   const [storageWarning, setStorageWarning] = useState(false);
   const [lastMove, setLastMove] = useState<[Square, Square] | null>(null);
-  const [completedId, setCompletedId] = useState<string | null>(null);
 
   const turn = game.current.turn();
   const legal = useMemo(() => selected ? game.current.moves({ square: selected, verbose: true }).map(m => m.to) : [], [selected, fen]);
@@ -57,14 +66,15 @@ export default function App() {
   const gameOver = game.current.isGameOver();
 
   const notify = (text: string) => { setMessage(text); };
-  const persist = (currentMode: PlayMode, currentActive: boolean, currentSeconds: [number, number]) => {
-    const ok = saveJSON(STORAGE_KEYS.lastMatch, { fen: game.current.fen(), pgn: game.current.pgn(), mode: currentMode, active: currentActive, seconds: currentSeconds } satisfies Snapshot);
-    if (!ok) setStorageWarning(true);
+  const persist = (currentMode: PlayMode, currentActive: boolean, currentSeconds: [number, number], timed = clockEnabled) => {
+    const next: Snapshot = { fen: game.current.fen(), pgn: game.current.pgn(), mode: currentMode, active: currentActive, seconds: currentSeconds, timed, remainingMs: [...clockRef.current.remainingMs] };
+    stored.current = next;
+    if (!saveJSON(STORAGE_KEYS.lastMatch, next)) setStorageWarning(true);
   };
   const recordEnd = (outcome: GameResult, currentMode: PlayMode) => {
-    if (completedId) return;
+    if (endedRef.current) return;
+    endedRef.current = true;
     const id = Date.now() + '-' + Math.random().toString(36).slice(2, 7);
-    setCompletedId(id);
     const item: MatchRecord = { id, endedAt: new Date().toISOString(), mode: currentMode, result: outcome, pgn: game.current.pgn(), moves: game.current.history().length };
     setHistory(old => {
       const next = [item, ...old].slice(0, 100);
@@ -87,13 +97,15 @@ export default function App() {
     const outcome = resultOf(game.current);
     if (outcome && currentMode !== 'puzzle') recordEnd(outcome, currentMode);
   };
-  const start = (nextMode: PlayMode, timed = false) => {
-    game.current = nextMode === 'puzzle' ? new Chess(PRACTICE.fen) : new Chess();
+  const start = (nextMode: PlayMode, timed = false, puzzle: Puzzle = currentPuzzle) => {
+    if (nextMode === 'puzzle') setCurrentPuzzle(puzzle);
+    game.current = nextMode === 'puzzle' ? new Chess(puzzle.fen) : new Chess();
     setMode(nextMode);
     setFen(game.current.fen());
     setSelected(null);
     setEndResult(null);
-    setCompletedId(null);
+    endedRef.current = false;
+    clockRef.current = newClock(Date.now());
     setPromotion(null);
     setPuzzleDone(false);
     setSeconds([600, 600]);
@@ -103,7 +115,7 @@ export default function App() {
     setPage('game');
     setMenu(false);
     setMessage('');
-    persist(nextMode, true, [600, 600]);
+    persist(nextMode, true, [600, 600], timed && nextMode !== 'puzzle');
   };
   const resume = () => {
     const old = stored.current;
@@ -117,7 +129,10 @@ export default function App() {
       setMode(old.mode);
       setActive(true);
       setSeconds(old.seconds || [600, 600]);
-      setClockEnabled(false);
+      const ms = old.remainingMs || [old.seconds[0] * 1000, old.seconds[1] * 1000];
+      clockRef.current = { remainingMs: [...ms], turn: restored.turn(), lastAt: Date.now() };
+      endedRef.current = false;
+      setClockEnabled(Boolean(old.timed));
       setLastMove(null);
       setPage('game');
     } catch { notify('Saved game could not be restored. Your other games are untouched.'); }
@@ -125,15 +140,30 @@ export default function App() {
 
   const execute = (from: Square, to: Square, promote: string = 'q') => {
     if (!active || endResult || (mode === 'computer' && turn === 'b')) return;
-    if (mode === 'puzzle' && !(from === PRACTICE.target.from && to === PRACTICE.target.to)) {
-      notify('Not quite. Look for the exposed queen on d5.');
+    if (mode === 'puzzle' && !isPuzzleSolution(currentPuzzle, from, to, promote)) {
+      notify('Not quite. ' + currentPuzzle.prompt);
       setSelected(null);
       return;
     }
     try {
+      if (clockEnabled) {
+        const ticked = advanceClock(clockRef.current, Date.now());
+        clockRef.current = ticked.state;
+        if (ticked.flagged) { recordEnd(ticked.flagged === 'w' ? 'timeout-white' : 'timeout-black', mode); return; }
+      }
       const moved = game.current.move({ from, to, promotion: promote });
       if (!moved) { setSelected(null); return; }
-      if (mode === 'puzzle') { setPuzzleDone(true); notify('Excellent. You captured the queen.'); }
+      clockRef.current = { ...clockRef.current, turn: game.current.turn(), lastAt: Date.now() };
+      if (mode === 'puzzle') {
+        setPuzzleDone(true);
+        setSolvedPuzzles(old => {
+          if (old.includes(currentPuzzle.id)) return old;
+          const next = [...old, currentPuzzle.id];
+          if (!saveJSON(PUZZLE_PROGRESS_KEY, next)) setStorageWarning(true);
+          return next;
+        });
+        notify('Tactic solved! ' + currentPuzzle.explanation);
+      }
       refresh(mode);
     } catch {
       notify('That move is not legal.');
@@ -161,7 +191,13 @@ export default function App() {
     const timer = window.setTimeout(() => {
       const next = chooseComputerMove(game.current);
       if (next) {
+        if (clockEnabled) {
+          const ticked = advanceClock(clockRef.current, Date.now());
+          clockRef.current = ticked.state;
+          if (ticked.flagged) { recordEnd('timeout-black', 'computer'); return; }
+        }
         game.current.move(next);
+        clockRef.current = { ...clockRef.current, turn: game.current.turn(), lastAt: Date.now() };
         refresh('computer');
       }
     }, 480);
@@ -170,24 +206,19 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fen, mode, active, page, endResult, gameOver, turn]);
 
-  // Browser clocks do not run while the app is backgrounded; real-time clock
-  // reconciliation and server authority are deliberately NOT claimed here.
+  // Local clocks are wall-time reconciled to avoid drift after a throttled/background tab.
+  // Network/rated clocks must still use a server-authoritative clock.
   useEffect(() => {
     if (!clockEnabled || !active || page !== 'game' || endResult || mode === 'puzzle') return;
-    const timer = window.setInterval(() => {
-      setSeconds(previous => {
-        const side = game.current.turn() === 'w' ? 0 : 1;
-        const next: [number, number] = [...previous] as [number, number];
-        next[side] = Math.max(0, next[side] - 1);
-        if (next[side] === 0) {
-          window.clearInterval(timer);
-          const outcome: GameResult = side === 0 ? 'timeout-white' : 'timeout-black';
-          window.setTimeout(() => recordEnd(outcome, mode), 0);
-        }
-        return next;
-      });
-    }, 1000);
-    return () => window.clearInterval(timer);
+    const tick = () => {
+      const current = advanceClock(clockRef.current, Date.now());
+      clockRef.current = current.state;
+      setSeconds([Math.ceil(current.state.remainingMs[0] / 1000), Math.ceil(current.state.remainingMs[1] / 1000)]);
+      if (current.flagged) recordEnd(current.flagged === 'w' ? 'timeout-white' : 'timeout-black', mode);
+    };
+    const timer = window.setInterval(tick, 250);
+    document.addEventListener('visibilitychange', tick);
+    return () => { window.clearInterval(timer); document.removeEventListener('visibilitychange', tick); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clockEnabled, active, page, mode, endResult]);
 
@@ -199,16 +230,21 @@ export default function App() {
     const rewind = mode === 'computer' && game.current.turn() === 'w' ? 2 : 1;
     let changed = false;
     for (let i = 0; i < rewind; i++) changed = Boolean(game.current.undo()) || changed;
-    if (changed) { setEndResult(null); setCompletedId(null); refresh(mode); }
+    if (changed) { clockRef.current = { ...clockRef.current, turn: game.current.turn(), lastAt: Date.now() }; setEndResult(null); refresh(mode); }
   };
-  const saveAndExit = () => { persist(mode, active, seconds); stored.current = { fen: game.current.fen(), pgn: game.current.pgn(), mode, active, seconds }; setMenu(false); setPage('home'); };
+  const saveAndExit = () => {
+    if (clockEnabled && active) clockRef.current = advanceClock(clockRef.current, Date.now()).state;
+    persist(mode, active, seconds);
+    setMenu(false);
+    setPage('home');
+  };
   const abandon = () => { setMenu(false); if (active && mode !== 'puzzle') recordEnd(turn === 'w' ? 'black' : 'white', mode); setActive(false); setPage('home'); };
-  const formatTime = (secs: number) => Math.floor(secs / 60) + ':' + String(secs % 60).padStart(2, '0');
+  const formatTime = (secs: number) => displayClock(secs * 1000);
   const labelResult = (result: GameResult) => result === 'draw' ? 'A royal draw' : result.startsWith('timeout') ? 'Time expired' : result === 'white' ? 'White triumphs' : 'Black triumphs';
 
   const screen = (target: Page) => { setPage(target); setMenu(false); setMessage(''); };
   const tab = (target: Page, icon: string, label: string) =>
-    <button type="button" onClick={() => screen(target)} className={'nav-tab ' + (page === target || (page === 'game' && target === 'play') ? 'current' : '')} aria-label={label}>
+    <button type="button" onClick={() => screen(target)} className={'nav-tab ' + (page === target || ((page === 'game' || page === 'online') && target === 'play') ? 'current' : '')} aria-label={label}>
       <Icon name={icon} size={23}/><span>{label}</span>
     </button>;
 
@@ -241,13 +277,13 @@ export default function App() {
             <button type="button" className="mode-card" onClick={() => start('computer', false)}><span className="mode-symbol">♞</span><b>VS COMPUTER</b><small>Practice your strategy</small><span className="mode-chevron">›</span></button>
             <button type="button" className="mode-card" onClick={() => start('local', false)}><span className="mode-symbol">⚔</span><b>PASS & PLAY</b><small>Two players, one board</small><span className="mode-chevron">›</span></button>
             <button type="button" className="mode-card" onClick={() => screen('training')}><span className="mode-symbol">♜</span><b>ROYAL TACTICS</b><small>Train with a puzzle</small><span className="mode-chevron">›</span></button>
-            <button type="button" className="mode-card is-locked" onClick={() => notify('Live online matchmaking needs a deployed, tested multiplayer service.')}><span className="mode-symbol">♚</span><b>ONLINE ARENA</b><small>Not connected yet</small><span className="mode-chevron">◇</span></button>
+            <button type="button" className="mode-card" onClick={() => screen('online')}><span className="mode-symbol">♚</span><b>PRIVATE ONLINE</b><small>Play with an invite code</small><span className="mode-chevron">◇</span></button>
           </div>
           <div className="section-label"><h2>Your Legacy</h2></div>
           <div className="stats-grid">
             <div className="stat"><span>FINISHED MATCHES</span><strong>{history.length}</strong></div>
             <div className="stat"><span>ROYAL VICTORIES</span><strong>{history.filter(m => m.result === 'white').length}</strong></div>
-            <div className="stat"><span>PUZZLE TRAINING</span><strong>{loadJSON('gcu.puzzles.v1', 0)}</strong></div>
+            <div className="stat"><span>PUZZLE TRAINING</span><strong>{solvedPuzzles.length}</strong></div>
           </div>
         </>}
 
@@ -257,7 +293,7 @@ export default function App() {
             <button type="button" className="feature-row" onClick={() => start('local', true)}><span className="feature-icon">⚔</span><span><b>Classic · Two Players</b><small>10 minute local clocks (experimental)</small></span><Icon name="arrow"/></button>
             <button type="button" className="feature-row" onClick={() => start('local', false)}><span className="feature-icon">♙</span><span><b>Casual · Pass & Play</b><small>Unlimited time, one device</small></span><Icon name="arrow"/></button>
             <button type="button" className="feature-row" onClick={() => start('computer', false)}><span className="feature-icon">♞</span><span><b>Challenge the Computer</b><small>Lightweight offline opponent</small></span><Icon name="arrow"/></button>
-            <button type="button" className="feature-row" onClick={() => notify('Rated PvP requires a live server, account security, anti-abuse and real two-device tests.')}><span className="feature-icon">♜</span><span><b>Ranked Online</b><small>Planned · not yet live</small></span><Icon name="lock"/></button>
+            <button type="button" className="feature-row" onClick={() => screen('online')}><span className="feature-icon">♜</span><span><b>Private Online</b><small>Server-validated rooms · deploy required</small></span><Icon name="lock"/></button>
           </div>
         </>}
 
@@ -293,7 +329,7 @@ export default function App() {
             </div>
           </div>}
           <div className="player-strip self"><span className="player-shield light-shield">{mode === 'puzzle' ? '♙' : 'W'}</span><div><strong>{mode === 'puzzle' ? 'Royal Scholar' : guest}</strong><small>{turn === 'w' ? '● To move' : 'Waiting'}</small></div><span className={'clock ' + (turn === 'w' ? 'running' : '')}>{mode === 'puzzle' ? '—' : clockEnabled ? formatTime(seconds[0]) : '∞'}</span></div>
-          <div className="board-status">{puzzleDone ? '✦ TACTIC SOLVED ✦' : endResult ? labelResult(endResult) : gameOver ? 'Match finished' : inCheck ? 'CHECK — defend your king' : mode === 'puzzle' ? PRACTICE.instruction : turn === 'w' ? 'White to move' : 'Black to move'}</div>
+          <div className="board-status">{puzzleDone ? '✦ TACTIC SOLVED ✦' : endResult ? labelResult(endResult) : gameOver ? 'Match finished' : inCheck ? 'CHECK — defend your king' : mode === 'puzzle' ? currentPuzzle.prompt : turn === 'w' ? 'White to move' : 'Black to move'}</div>
           <div className="game-actions">
             <button type="button" onClick={undo} disabled={!active || mode === 'puzzle' || game.current.history().length === 0}><Icon name="undo"/> Undo</button>
             <button type="button" onClick={() => setSettings(old => ({ ...old, flipped: !old.flipped }))}><Icon name="flip"/> Flip</button>
@@ -301,17 +337,19 @@ export default function App() {
           </div>
           <div className="moves-panel"><h3>MOVE RECORD <small>{game.current.history().length} plies</small></h3><div className="move-list">{game.current.history().length ? game.current.history().map((m, i) => <span key={i}><small>{i % 2 === 0 ? Math.floor(i / 2) + 1 + '.' : ' '}</small>{m}</span>) : <p>Match begins with your first move.</p>}</div></div>
           {endResult && <div className="result-overlay" role="alertdialog" aria-modal="true" aria-label="Match result"><div className="result-card"><span className="result-crown">♛</span><p className="eyebrow">GAME COMPLETE</p><h2>{labelResult(endResult)}</h2><p>{shortResult(endResult)}</p><button type="button" className="btn btn-primary" onClick={() => start(mode === 'puzzle' ? 'local' : mode, clockEnabled)}>PLAY AGAIN</button><button type="button" className="btn btn-secondary" onClick={saveAndExit}>BACK TO LOBBY</button></div></div>}
-          {puzzleDone && <div className="result-overlay" role="alertdialog" aria-modal="true" aria-label="Puzzle completed"><div className="result-card"><span className="result-crown">✦</span><h2>Royal Tactic Solved</h2><p>You've won the exposed queen.</p><button type="button" className="btn btn-primary" onClick={() => { saveJSON('gcu.puzzles.v1', loadJSON('gcu.puzzles.v1', 0) + 1); setPuzzleDone(false); screen('training'); }}>COLLECT PROGRESS</button></div></div>}
+          {puzzleDone && <div className="result-overlay" role="alertdialog" aria-modal="true" aria-label="Puzzle completed"><div className="result-card"><span className="result-crown">✦</span><h2>Royal Tactic Solved</h2><p>{currentPuzzle.explanation}</p><button type="button" className="btn btn-primary" onClick={() => { setPuzzleDone(false); screen('training'); }}>COLLECT PROGRESS</button></div></div>}
         </>}
+
+        {page === 'online' && <Suspense fallback={<p role="status">Loading private online arena…</p>}><PrivateOnline/></Suspense>}
 
         {page === 'history' && <><section className="heading-block"><p className="eyebrow">THE ARCHIVES</p><h1>Match <em>History.</em></h1><p>Recent results are stored locally in this browser only.</p></section>
           {history.length === 0 ? <div className="empty-state"><span>♜</span><h3>No matches yet</h3><p>Finish a game to build your legacy.</p><button type="button" className="btn btn-primary" onClick={() => screen('play')}>PLAY A MATCH</button></div> :
-            <div className="history-list">{history.map(record => <article key={record.id} className="history-card"><span className="history-token">{record.result === 'draw' ? '½' : '♛'}</span><div><strong>{record.mode === 'computer' ? 'VS Computer' : 'Pass & Play'}</strong><small>{new Date(record.endedAt).toLocaleDateString()} · {record.moves} plies</small></div><span className="history-score">{shortResult(record.result)}</span><button type="button" onClick={() => { navigator.clipboard?.writeText(record.pgn).then(() => notify('PGN copied.')).catch(() => notify('Clipboard unavailable in this browser.')); }} aria-label="Copy game PGN">COPY PGN</button></article>)}</div>}
+            <div className="history-list">{history.map(record => <article key={record.id} className="history-card"><span className="history-token">{record.result === 'draw' ? '½' : '♛'}</span><div><strong>{record.mode === 'computer' ? 'VS Computer' : 'Pass & Play'}</strong><small>{new Date(record.endedAt).toLocaleDateString()} · {record.moves} plies</small></div><span className="history-score">{shortResult(record.result)}</span><button type="button" onClick={() => { navigator.clipboard?.writeText(record.pgn).then(() => notify('PGN copied.')).catch(() => notify('Clipboard unavailable in this browser.')); }} aria-label="Copy game PGN">COPY PGN</button><button type="button" onClick={() => setReplayRecord(record)} aria-label="Replay saved game">REPLAY GAME</button></article>)}</div>}
         </>}
 
-        {page === 'training' && <><section className="heading-block"><p className="eyebrow">THE ACADEMY</p><h1>Sharpen your <em>Mind.</em></h1><p>A small original offline tactic—full training packs are not yet included.</p></section><article className="training-card"><div className="training-crest">♜</div><p className="eyebrow">CAPTURE CHALLENGE</p><h2>{PRACTICE.title}</h2><p>{PRACTICE.instruction}</p><span className="training-difficulty">BEGINNER · 1 POSITION</span><button type="button" className="btn btn-primary" onClick={() => start('puzzle')}>START TRAINING <Icon name="arrow"/></button></article></>}
+        {page === 'training' && <><section className="heading-block"><p className="eyebrow">THE ACADEMY</p><h1>Sharpen your <em>Mind.</em></h1><p>{solvedPuzzles.length} of {PUZZLES.length} original tactics solved. Progress is saved on this device.</p></section><div className="puzzle-list">{PUZZLES.map((puzzle, index) => <article className="puzzle-entry" key={puzzle.id}><div className="puzzle-number">{String(index + 1).padStart(2, '0')}</div><div><span className="eyebrow">{puzzle.level.toUpperCase()}{solvedPuzzles.includes(puzzle.id) ? ' · SOLVED' : ''}</span><h3>{puzzle.title}</h3><p>{puzzle.prompt}</p></div><button type="button" className="btn btn-small" onClick={() => start('puzzle', false, puzzle)}>{solvedPuzzles.includes(puzzle.id) ? 'REPLAY' : 'PLAY'}</button></article>)}</div></>}
 
-        {page === 'profile' && <><section className="heading-block"><p className="eyebrow">THE ROYAL PROFILE</p><h1>Your <em>Legacy.</em></h1></section><div className="profile-card"><div className="profile-crest">{initials(guest)}</div><h2>{guest}</h2><p>Local guest profile · No sign-in needed</p></div><div className="stats-grid"><div className="stat"><span>MATCHES</span><strong>{history.length}</strong></div><div className="stat"><span>TACTICS</span><strong>{loadJSON('gcu.puzzles.v1', 0)}</strong></div><div className="stat"><span>ONLINE ELO</span><strong>—</strong></div></div><label className="form-label" htmlFor="playername">Display name</label><div className="name-row"><input id="playername" value={newName} maxLength={25} onChange={e => setNewName(e.target.value)}/><button type="button" className="btn btn-small" onClick={() => { const value = newName.trim(); if (value) { setGuest(value); notify('Display name saved locally.'); } }}>SAVE</button></div><section className="avatar-animation-entry"><h3>Royal Character Animation Studio</h3><p>Preview the supplied 43 humanoid animations; downloads only when opened.</p><button type="button" className="btn btn-secondary" onClick={() => setShowAvatarAnimations(v => !v)}>{showAvatarAnimations ? 'CLOSE' : 'OPEN'} ANIMATION STUDIO</button>{showAvatarAnimations && <Suspense fallback={<p>Loading 3D animation studio…</p>}><AnimationShowcase/></Suspense>}</section></>}
+        {page === 'profile' && <><section className="heading-block"><p className="eyebrow">THE ROYAL PROFILE</p><h1>Your <em>Legacy.</em></h1></section><div className="profile-card"><div className="profile-crest">{initials(guest)}</div><h2>{guest}</h2><p>Local guest profile · No sign-in needed</p></div><div className="stats-grid"><div className="stat"><span>MATCHES</span><strong>{history.length}</strong></div><div className="stat"><span>TACTICS</span><strong>{solvedPuzzles.length}</strong></div><div className="stat"><span>ONLINE ELO</span><strong>—</strong></div></div><label className="form-label" htmlFor="playername">Display name</label><div className="name-row"><input id="playername" value={newName} maxLength={25} onChange={e => setNewName(e.target.value)}/><button type="button" className="btn btn-small" onClick={() => { const value = newName.trim(); if (value) { setGuest(value); notify('Display name saved locally.'); } }}>SAVE</button></div><section className="avatar-animation-entry"><h3>Royal Character Animation Studio</h3><p>Preview the supplied 43 humanoid animations; downloads only when opened.</p><button type="button" className="btn btn-secondary" onClick={() => setShowAvatarAnimations(v => !v)}>{showAvatarAnimations ? 'CLOSE' : 'OPEN'} ANIMATION STUDIO</button>{showAvatarAnimations && <Suspense fallback={<p>Loading 3D animation studio…</p>}><AnimationShowcase/></Suspense>}</section></>}
 
         {page === 'settings' && <><section className="heading-block"><p className="eyebrow">PREFERENCES</p><h1>Your <em>Kingdom.</em></h1></section><div className="setting-group"><label><span><strong>Flip board</strong><small>Show Black at the bottom</small></span><input type="checkbox" checked={settings.flipped} onChange={e => setSettings(p => ({ ...p, flipped: e.target.checked }))}/></label><label><span><strong>Reduce motion</strong><small>Disable ornamental effects</small></span><input type="checkbox" checked={settings.reducedMotion} onChange={e => setSettings(p => ({ ...p, reducedMotion: e.target.checked }))}/></label><label><span><strong>Legal move hints</strong><small>Highlight valid destinations</small></span><input type="checkbox" checked={settings.hints} onChange={e => setSettings(p => ({ ...p, hints: e.target.checked }))}/></label><label><span><strong>Premium 3D theme</strong><small>Choose one of the supplied chess sets</small></span><select value={settings.modelTheme || "deco"} onChange={e => setSettings(s => ({...s,modelTheme:e.target.value as ThreeTheme}))}><option value="deco">Art Deco</option><option value="bauhaus">Bauhaus</option><option value="scifi">Sci-fi</option><option value="egypt">Egyptian</option><option value="classic">ChessSet FBX</option></select></label><label><span><strong>Load supplied 3D library</strong><small>Use optimized installed assets; fall back if unavailable</small></span><input type="checkbox" checked={Boolean(settings.useLibraryAssets)} onChange={e => setSettings(s => ({...s,useLibraryAssets:e.target.checked}))}/></label></div><div className="disclaimer"><strong>Privacy</strong><p>Matches, preferences and guest name are stored locally on your device. No account, voice access, microphone permission, analytics or advertising SDK is included in this build.</p></div><button className="btn btn-secondary" type="button" onClick={() => screen('about')}>ABOUT & LICENSES</button></>}
         {page === 'about' && <><section className="heading-block"><p className="eyebrow">ABOUT THE PROJECT</p><h1>Built to <em>Play.</em></h1><p>Global Chess Ultimate · Prototype 0.1.0</p></section><div className="disclaimer"><h3>What's working</h3><p>Local chess, legal-move validation via chess.js, a basic computer opponent, one tactics position, PGN history export, original responsive visual design and installable PWA shell.</p><h3>What's not production-ready</h3><p>Public multiplayer, ranked ratings, full computer engine, monetization, production puzzle catalog, cloud accounts, Android AAB signing and device acceptance.</p><h3>Attribution</h3><p>chess.js is an open-source project licensed under BSD-2-Clause. Verify all dependency notices before distribution. This original UI is not affiliated with Miniclip or Chess Clash.</p></div></>}
@@ -320,6 +358,7 @@ export default function App() {
         {tab('home', 'home', 'Home')}{tab('play', 'sword', 'Play')}{tab('training', 'book', 'Learn')}{tab('history', 'history', 'History')}{tab('settings', 'settings', 'Settings')}
       </nav>
     </div>
+    {replayRecord && <Suspense fallback={<div role="status">Loading match replay…</div>}><ReplayViewer key={replayRecord.id} record={replayRecord} onClose={() => setReplayRecord(null)}/></Suspense>}
     {menu && <div className="modal-mask" onClick={() => setMenu(false)}><div className="action-sheet" role="dialog" aria-modal="true" aria-label="Match menu" onClick={e => e.stopPropagation()}><div className="sheet-heading"><h2>Match Menu</h2><button onClick={() => setMenu(false)} aria-label="Close menu"><Icon name="close" size={28}/></button></div><button type="button" onClick={() => { setMenu(false); undo(); }} disabled={!active || mode === 'puzzle'}>↶ Undo last move</button><button type="button" onClick={() => { setMenu(false); setSettings(p => ({ ...p, flipped: !p.flipped })); }}>⇅ Flip board</button><button type="button" onClick={saveAndExit}>▤ Save and exit</button><button type="button" className="destructive" onClick={() => { if (window.confirm('Resign or leave this match?')) abandon(); }}>⚑ Resign / abandon</button></div></div>}
     {promotion && <div className="modal-mask"><div className="promotion-modal" role="dialog" aria-modal="true" aria-label="Choose a promotion piece"><h2>ROYAL PROMOTION</h2><p>Choose a piece</p><div className="promotion-options">{(['q','r','b','n'] as const).map(type => <button type="button" key={type} onClick={() => { const { from, to } = promotion; setPromotion(null); execute(from, to, type); }} aria-label={'Promote to ' + ({q:'queen',r:'rook',b:'bishop',n:'knight'}[type])}>{royalSymbol(type, turn)}</button>)}</div></div></div>}
   </div>;
