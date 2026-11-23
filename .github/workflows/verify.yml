@@ -1,0 +1,22 @@
+name: Verify playable chess
+on:
+  push:
+    branches: ["main", "feat/**"]
+  pull_request:
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: package.json
+      - run: npm install --no-audit --no-fund
+      - run: npm run verify
+      - uses: actions/upload-artifact@v4
+        with:
+          name: global-chess-ultimate-preview
+          path: dist/
+          if-no-files-found: error

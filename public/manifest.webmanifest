@@ -1,0 +1,13 @@
+{
+  "name": "Global Chess Ultimate",
+  "short_name": "Global Chess",
+  "description": "Royal offline chess for web and Android PWA.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#180a10",
+  "theme_color": "#200b13",
+  "icons": [
+    {"src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable"}
+  ]
+}
