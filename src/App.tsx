@@ -35,6 +35,7 @@ export default function App() {
   const [view3D, setView3D] = useState(false);
   const [showAvatarAnimations, setShowAvatarAnimations] = useState(false);
   const [replayRecord, setReplayRecord] = useState<MatchRecord | null>(null);
+  const [replayAnalysis, setReplayAnalysis] = useState(false);
   const [fen, setFen] = useState(game.current.fen());
   const [active, setActive] = useState(false);
   const [selected, setSelected] = useState<Square | null>(null);
@@ -279,6 +280,12 @@ export default function App() {
   };
 
   const formatTime = (secs: number) => displayClock(secs * 1000);
+  const openLatestReplay=(analyze=false)=>{
+    const latest=history[0];
+    if(!latest){notify('Complete a recorded match first.');return;}
+    setReplayAnalysis(analyze);
+    setReplayRecord(latest);
+  };
   const labelResult = (result: GameResult) => result === 'draw' ? 'A royal draw' : result.startsWith('timeout') ? 'Time expired' : result === 'white' ? 'White triumphs' : 'Black triumphs';
 
   const screen = (target: Page) => { setPage(target); setMenu(false); setMessage(''); };
@@ -386,7 +393,7 @@ export default function App() {
             <button type="button" onClick={hint} disabled={!active||Boolean(endResult)||puzzleDone}>✦ HINT</button>
           </div>
         </div>
-          {endResult && <div className="result-overlay" role="alertdialog" aria-modal="true" aria-label="Match result"><div className="result-card"><span className="result-crown">♛</span><p className="eyebrow">GAME COMPLETE</p><h2>{labelResult(endResult)}</h2><p>{shortResult(endResult)}</p><button type="button" className="btn btn-primary" onClick={() => start(mode === 'puzzle' ? 'local' : mode, clockEnabled)}>REMATCH</button><button type="button" className="btn btn-secondary" onClick={() => { if (history[0]) setReplayRecord(history[0]); else notify('Finish a recorded game first.'); }}>GAME REVIEW</button><button type="button" className="btn btn-secondary" onClick={saveAndExit}>BACK TO LOBBY</button></div></div>}
+          {endResult && <div className="result-overlay" role="alertdialog" aria-modal="true" aria-label="Match result"><div className="result-card"><span className="result-crown">♛</span><p className="eyebrow">GAME COMPLETE</p><h2>{labelResult(endResult)}</h2><p>{shortResult(endResult)}</p><button type="button" className="btn btn-primary" onClick={() => start(mode === 'puzzle' ? 'local' : mode, clockEnabled)}>REMATCH</button><button type="button" className="btn btn-secondary" onClick={() => openLatestReplay(false)}>REPLAY</button><button type="button" className="btn btn-secondary" onClick={() => openLatestReplay(true)}>ANALYSIS</button><button type="button" className="btn btn-secondary" onClick={saveAndExit}>BACK TO LOBBY</button></div></div>}
           {puzzleDone && <div className="result-overlay" role="alertdialog" aria-modal="true" aria-label="Puzzle completed"><div className="result-card"><span className="result-crown">✦</span><h2>Royal Tactic Solved</h2><p>{currentPuzzle.explanation}</p><button type="button" className="btn btn-primary" onClick={() => { setPuzzleDone(false); screen('training'); }}>COLLECT PROGRESS</button></div></div>}
         </>}
 
@@ -408,7 +415,7 @@ export default function App() {
         {royalTab('home','home','Home')}{royalTab('modes','sword','Play')}{royalTab('events','trophy','Events')}{royalTab('club','profile','Club')}{royalTab('shop','star','Store')}
       </nav>
     </div>
-    {replayRecord && <Suspense fallback={<div role="status">Loading match replay…</div>}><ReplayViewer key={replayRecord.id} record={replayRecord} onClose={() => setReplayRecord(null)}/></Suspense>}
+    {replayRecord && <Suspense fallback={<div role="status">Loading match replay…</div>}><ReplayViewer key={replayRecord.id+(replayAnalysis?'-analysis':'-replay')} record={replayRecord} startAnalysis={replayAnalysis} onClose={() => setReplayRecord(null)}/></Suspense>}
     {menu && <div className="modal-mask" onClick={() => setMenu(false)}><div className="action-sheet" role="dialog" aria-modal="true" aria-label="Match menu" onClick={e => e.stopPropagation()}><div className="sheet-heading"><h2>Match Menu</h2><button onClick={() => setMenu(false)} aria-label="Close menu"><Icon name="close" size={28}/></button></div><button type="button" onClick={() => { setMenu(false); undo(); }} disabled={!active || mode === 'puzzle'}>↶ Undo last move</button><button type="button" onClick={() => { setMenu(false); setSettings(p => ({ ...p, flipped: !p.flipped })); }}>⇅ Flip board</button><button type="button" onClick={saveAndExit}>▤ Save and exit</button><button type="button" className="destructive" onClick={() => { if (mode === 'puzzle') saveAndExit(); else resign(); }}>{mode === 'puzzle' ? '↩ Exit puzzle' : '⚑ Resign match'}</button></div></div>}
     {drawDialog && <div className="modal-mask" onClick={()=>setDrawDialog(false)}>
       <section className="rv-resign-dialog royal-draw-dialog" role="alertdialog" aria-modal="true" aria-labelledby="royal-draw-title" onClick={e=>e.stopPropagation()}>
@@ -432,6 +439,6 @@ export default function App() {
         </div>
       </section>
     </div>}
-    {promotion && <div className="modal-mask"><div className="promotion-modal" role="dialog" aria-modal="true" aria-label="Choose a promotion piece"><h2>ROYAL PROMOTION</h2><p>Choose a piece</p><div className="promotion-options">{(['q','r','b','n'] as const).map(type => <button type="button" key={type} onClick={() => { const { from, to } = promotion; setPromotion(null); execute(from, to, type); }} aria-label={'Promote to ' + ({q:'queen',r:'rook',b:'bishop',n:'knight'}[type])}>{royalSymbol(type, turn)}</button>)}</div></div></div>}
+    {promotion && <div className="modal-mask"><div className="promotion-modal" role="dialog" aria-modal="true" aria-label="Choose a promotion piece"><h2>ROYAL PROMOTION</h2><p>Choose a piece</p><div className="promotion-options">{(['q','r','b','n'] as const).map(type => <button type="button" key={type} onClick={() => { const { from, to } = promotion; setPromotion(null); execute(from, to, type); }} aria-label={'Promote to ' + ({q:'queen',r:'rook',b:'bishop',n:'knight'}[type])}><img className="royal-promotion-piece" src={'/pieces/'+turn+'-'+type+'.svg'} alt="" /><small>{({q:'Queen',r:'Rook',b:'Bishop',n:'Knight'}[type])}</small></button>)}</div></div></div>}
   </div>;
 }
