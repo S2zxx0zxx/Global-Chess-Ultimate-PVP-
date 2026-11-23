@@ -3,7 +3,6 @@ import { Chess, type Square } from 'chess.js';
 import { chooseComputerMove, FILES, loadJSON, PIECE_GLYPHS, resultOf, saveJSON, shortResult, SQUARES, STORAGE_KEYS, type GameResult, type MatchRecord, type PlayMode } from './game';
 import { PUZZLES, PUZZLE_PROGRESS_KEY, isPuzzleSolution, type Puzzle } from './academy';
 import RoyalStudio, { type RoyalScreen } from './RoyalStudio';
-import './royal-studio.css';
 import { newClock, advanceClock, displayClock } from './clock';
 
 const ChessBoard3D = lazy(() => import('./ChessBoard3D'));
