@@ -1,0 +1,15 @@
+{
+  "name": "global-chess-ultimate-private-rooms",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "cf dev",
+    "deploy": "cf deploy"
+  },
+  "dependencies": {
+    "chess.js": "1.4.0"
+  },
+  "devDependencies": {
+    "cf": "1.0.0-rc.1"
+  }
+}
