@@ -8,7 +8,7 @@ export const ROYAL_SCREEN_GROUPS = {
   competition: ['tournaments', 'tournament-detail', 'bracket', 'daily', 'missions', 'season', 'events', 'news'],
   community: ['friends', 'player-search', 'player-card', 'club', 'invites', 'leaderboard'],
   progression: ['profile', 'stats', 'achievements', 'shop', 'inventory', 'customize', 'membership', 'checkout'],
-  preferences: ['settings', 'appearance', 'sound', 'language', 'privacy', 'accessibility', 'help', 'feedback', 'offline', 'empty-state', 'alerts', 'about', 'account'],
+  preferences: ['settings', 'appearance', 'sound', 'language', 'privacy', 'accessibility', 'notifications', 'help', 'feedback', 'offline', 'empty-state', 'alerts', 'about', 'account'],
 } as const;
 export type RoyalScreen = typeof ROYAL_SCREEN_GROUPS[keyof typeof ROYAL_SCREEN_GROUPS][number];
 export const ROYAL_SCREEN_COUNT = Object.values(ROYAL_SCREEN_GROUPS).reduce((sum, group) => sum + group.length, 0);
