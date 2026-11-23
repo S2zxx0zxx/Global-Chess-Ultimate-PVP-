@@ -32,7 +32,7 @@
  <ellipse cx="358" cy="648" rx="206" ry="35" fill="#6e4926" stroke="#e8bc6d" stroke-width="11"/>
  <path d="M210 621H506L542 658H174Z" fill="url(#onyx)" stroke="url(#gold)" stroke-width="9"/>
  <ellipse cx="358" cy="615" rx="166" ry="25" fill="#2c1d1a" stroke="#e1ad56" stroke-width="8"/>
- <g transform="translate(143 52) scale(4.2 5.4)">
+ <g transform="translate(143 122) scale(4.2 5.4)">
    <path d="M27 87C19 61 26 46 35 36 36 25 38 19 49 14L67 11 77 27 74 35 62 39 53 37 48 45 43 52Q56 57 65 77L77 89H22Z" fill="url(#onyx)" stroke="url(#gold)" stroke-width="2.7" stroke-linejoin="round"/>
    <path d="M37 43Q49 50 55 48M38 50Q52 58 54 68M31 60Q42 76 40 81" fill="none" stroke="#dba65d" stroke-width="2.6" stroke-linecap="round"/>
    <path d="M39 32Q47 23 58 22L71 23 76 30Q65 29 54 33L47 42Z" fill="#9f733b" stroke="#fbe29a" stroke-width="1.2"/>
