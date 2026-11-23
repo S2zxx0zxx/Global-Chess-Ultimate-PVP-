@@ -14,16 +14,16 @@ const groups = [...registry.matchAll(/\b([a-z]+):\s*\[([^\]]+)\]/g)].map(m => ({
 }));
 const routes = groups.flatMap(group => group.routes);
 
-test('all three sheets map to a complete unique 49-screen interactive route inventory', () => {
+test('all three sheets map to a complete unique 50-screen interactive route inventory', () => {
   assert.equal(groups.length, 6);
-  assert.equal(routes.length, 49, JSON.stringify(groups.map(g => [g.group,g.routes.length])));
+  assert.equal(routes.length, 50, JSON.stringify(groups.map(g => [g.group,g.routes.length])));
   assert.equal(new Set(routes).size, routes.length, 'duplicate screen registry keys');
   for(const screen of routes) {
     assert.ok(view.includes("case '" + screen + "':"), 'Missing screen renderer: ' + screen);
   }
 });
 test('all key sheet sections and existing gameplay paths are connected', () => {
-  for(const id of ['splash','welcome','home','modes','match-setup','matchmaking','gameplay','match-result','review','profile',
+  for(const id of ['splash','welcome','tutorial','home','modes','match-setup','matchmaking','gameplay','match-result','review','profile',
     'friends','leaderboard','achievements','shop','inventory','notifications','settings','tournaments','daily',
     'missions','season','news','club','invites','membership','checkout','privacy','feedback','accessibility']) {
     assert.ok(routes.includes(id), 'Missing required design screen '+id);
