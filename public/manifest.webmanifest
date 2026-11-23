@@ -1,13 +1,18 @@
 {
   "name": "Global Chess Ultimate",
   "short_name": "Global Chess",
-  "description": "Royal offline chess for web and Android PWA.",
+  "description": "Original black-and-gold chess: local and computer chess, tactics, match replay and optional 3D.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#180a10",
-  "theme_color": "#200b13",
+  "background_color": "#0D0A07",
+  "theme_color": "#281C12",
   "icons": [
-    {"src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable"}
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
   ]
 }
