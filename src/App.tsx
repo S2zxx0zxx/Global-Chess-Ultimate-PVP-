@@ -61,6 +61,7 @@ export default function App() {
   const [clockEnabled, setClockEnabled] = useState(false);
   const [storageWarning, setStorageWarning] = useState(false);
   const [lastMove, setLastMove] = useState<[Square, Square] | null>(null);
+  const [captureSquare, setCaptureSquare] = useState<Square | null>(null);
 
   const turn = game.current.turn();
   const legal = useMemo(() => selected ? game.current.moves({ square: selected, verbose: true }).map(m => m.to) : [], [selected, fen]);
@@ -115,6 +116,7 @@ export default function App() {
     setClockEnabled(timed && nextMode !== 'puzzle');
     setActive(true);
     setLastMove(null);
+    setCaptureSquare(null);
     setPage('game');
     setMenu(false);
     setDrawDialog(false);
@@ -158,6 +160,10 @@ export default function App() {
         if (ticked.flagged) { recordEnd(ticked.flagged === 'w' ? 'timeout-white' : 'timeout-black', mode); return; }
       }
       const moved = game.current.move({ from, to, promotion: promote });
+      if (moved?.captured) {
+        setCaptureSquare(to);
+        window.setTimeout(()=>setCaptureSquare(current=>current===to?null:current),600);
+      }
       if (!moved) { setSelected(null); return; }
       clockRef.current = { ...clockRef.current, turn: game.current.turn(), lastAt: Date.now() };
       if (mode === 'puzzle') {
@@ -202,7 +208,11 @@ export default function App() {
           clockRef.current = ticked.state;
           if (ticked.flagged) { recordEnd('timeout-black', 'computer'); return; }
         }
-        game.current.move(next);
+        const played=game.current.move(next);
+        if (played?.captured) {
+          setCaptureSquare(played.to);
+          window.setTimeout(()=>setCaptureSquare(current=>current===played.to?null:current),600);
+        }
         clockRef.current = { ...clockRef.current, turn: game.current.turn(), lastAt: Date.now() };
         refresh('computer');
       }
@@ -386,6 +396,7 @@ export default function App() {
                   {r === 7 && <span className="file-label">{FILES[col]}</span>}
                   {piece && <img alt="" draggable={false} className="piece-img" src={'/pieces/' + piece.color + '-' + piece.type + '.svg'} />}
                   {isLegal && <span className={piece ? 'legal-capture' : 'legal-dot'} />}
+                  {captureSquare===square && !settings.reducedMotion && <span className="royal-capture-smoke" aria-hidden="true"/>}
                 </button>;
               })}
             </div>
