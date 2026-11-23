@@ -8,9 +8,9 @@ const token = () => {
   return Array.from(data, b => b.toString(16).padStart(2, '0')).join('');
 };
 const randomRoom = () => {
-  const data = new Uint8Array(9);
+  const data = new Uint8Array(12);
   crypto.getRandomValues(data);
-  return Array.from(data, b => (b % 36).toString(36).toUpperCase()).join('').padEnd(12, 'X').slice(0, 12);
+  return Array.from(data, b => (b % 36).toString(36).toUpperCase()).join('');
 };
 const json = (value, status = 200, extra = {}) =>
   new Response(JSON.stringify(value), { status, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', ...extra } });
@@ -122,8 +122,14 @@ export class MatchRoom extends DurableObject {
     let command;
     try { command = JSON.parse(input); }
     catch { socket.send(JSON.stringify({ type: 'error', error: 'BAD_JSON' })); return; }
+    const now = Date.now();
+    const attachment = socket.deserializeAttachment() || {};
+    const sameWindow = now - (attachment.windowAt || 0) < 1000;
+    const events = sameWindow ? (attachment.events || 0) + 1 : 1;
+    if (events > 15) { socket.close(1008, 'Rate limit'); return; }
+    socket.serializeAttachment({ ...attachment, windowAt: sameWindow ? attachment.windowAt : now, events });
     const state = await this.read();
-    const seat = socket.deserializeAttachment()?.side;
+    const seat = attachment.side;
     if (!state || !seat || state.expiresAt <= Date.now()) return socket.close(1008, 'Expired room');
     const result = applyMove(state, seat, command);
     if (!result.ok) {
