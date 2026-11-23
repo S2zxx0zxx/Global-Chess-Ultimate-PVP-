@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Chess, type Square } from 'chess.js';
-import { chooseComputerMove, FILES, loadJSON, PIECE_GLYPHS, PRACTICE, resultOf, saveJSON, shortResult, SQUARES, STORAGE_KEYS, type GameResult, type MatchRecord, type PlayMode } from './game';
+import { chooseComputerMove, FILES, loadJSON, PIECE_GLYPHS, resultOf, saveJSON, shortResult, SQUARES, STORAGE_KEYS, type GameResult, type MatchRecord, type PlayMode } from './game';
+import { PUZZLES, PUZZLE_PROGRESS_KEY, isPuzzleSolution, type Puzzle } from './academy';
 
 const ChessBoard3D = lazy(() => import('./ChessBoard3D'));
 const AnimationShowcase = lazy(() => import('./AnimationShowcase'));
@@ -44,6 +45,8 @@ export default function App() {
   const [message, setMessage] = useState('');
   const [menu, setMenu] = useState(false);
   const [puzzleDone, setPuzzleDone] = useState(false);
+  const [currentPuzzle, setCurrentPuzzle] = useState<Puzzle>(PUZZLES[0]);
+  const [solvedPuzzles, setSolvedPuzzles] = useState<string[]>(() => loadJSON<string[]>(PUZZLE_PROGRESS_KEY, []));
   const [newName, setNewName] = useState(guest);
   const [clockEnabled, setClockEnabled] = useState(false);
   const [storageWarning, setStorageWarning] = useState(false);
@@ -87,8 +90,9 @@ export default function App() {
     const outcome = resultOf(game.current);
     if (outcome && currentMode !== 'puzzle') recordEnd(outcome, currentMode);
   };
-  const start = (nextMode: PlayMode, timed = false) => {
-    game.current = nextMode === 'puzzle' ? new Chess(PRACTICE.fen) : new Chess();
+  const start = (nextMode: PlayMode, timed = false, puzzle: Puzzle = currentPuzzle) => {
+    if (nextMode === 'puzzle') setCurrentPuzzle(puzzle);
+    game.current = nextMode === 'puzzle' ? new Chess(puzzle.fen) : new Chess();
     setMode(nextMode);
     setFen(game.current.fen());
     setSelected(null);
@@ -125,15 +129,24 @@ export default function App() {
 
   const execute = (from: Square, to: Square, promote: string = 'q') => {
     if (!active || endResult || (mode === 'computer' && turn === 'b')) return;
-    if (mode === 'puzzle' && !(from === PRACTICE.target.from && to === PRACTICE.target.to)) {
-      notify('Not quite. Look for the exposed queen on d5.');
+    if (mode === 'puzzle' && !isPuzzleSolution(currentPuzzle, from, to, promote)) {
+      notify('Not quite. ' + currentPuzzle.prompt);
       setSelected(null);
       return;
     }
     try {
       const moved = game.current.move({ from, to, promotion: promote });
       if (!moved) { setSelected(null); return; }
-      if (mode === 'puzzle') { setPuzzleDone(true); notify('Excellent. You captured the queen.'); }
+      if (mode === 'puzzle') {
+        setPuzzleDone(true);
+        setSolvedPuzzles(old => {
+          if (old.includes(currentPuzzle.id)) return old;
+          const next = [...old, currentPuzzle.id];
+          if (!saveJSON(PUZZLE_PROGRESS_KEY, next)) setStorageWarning(true);
+          return next;
+        });
+        notify('Tactic solved! ' + currentPuzzle.explanation);
+      }
       refresh(mode);
     } catch {
       notify('That move is not legal.');
@@ -247,7 +260,7 @@ export default function App() {
           <div className="stats-grid">
             <div className="stat"><span>FINISHED MATCHES</span><strong>{history.length}</strong></div>
             <div className="stat"><span>ROYAL VICTORIES</span><strong>{history.filter(m => m.result === 'white').length}</strong></div>
-            <div className="stat"><span>PUZZLE TRAINING</span><strong>{loadJSON('gcu.puzzles.v1', 0)}</strong></div>
+            <div className="stat"><span>PUZZLE TRAINING</span><strong>{solvedPuzzles.length}</strong></div>
           </div>
         </>}
 
@@ -293,7 +306,7 @@ export default function App() {
             </div>
           </div>}
           <div className="player-strip self"><span className="player-shield light-shield">{mode === 'puzzle' ? '♙' : 'W'}</span><div><strong>{mode === 'puzzle' ? 'Royal Scholar' : guest}</strong><small>{turn === 'w' ? '● To move' : 'Waiting'}</small></div><span className={'clock ' + (turn === 'w' ? 'running' : '')}>{mode === 'puzzle' ? '—' : clockEnabled ? formatTime(seconds[0]) : '∞'}</span></div>
-          <div className="board-status">{puzzleDone ? '✦ TACTIC SOLVED ✦' : endResult ? labelResult(endResult) : gameOver ? 'Match finished' : inCheck ? 'CHECK — defend your king' : mode === 'puzzle' ? PRACTICE.instruction : turn === 'w' ? 'White to move' : 'Black to move'}</div>
+          <div className="board-status">{puzzleDone ? '✦ TACTIC SOLVED ✦' : endResult ? labelResult(endResult) : gameOver ? 'Match finished' : inCheck ? 'CHECK — defend your king' : mode === 'puzzle' ? currentPuzzle.prompt : turn === 'w' ? 'White to move' : 'Black to move'}</div>
           <div className="game-actions">
             <button type="button" onClick={undo} disabled={!active || mode === 'puzzle' || game.current.history().length === 0}><Icon name="undo"/> Undo</button>
             <button type="button" onClick={() => setSettings(old => ({ ...old, flipped: !old.flipped }))}><Icon name="flip"/> Flip</button>
@@ -301,7 +314,7 @@ export default function App() {
           </div>
           <div className="moves-panel"><h3>MOVE RECORD <small>{game.current.history().length} plies</small></h3><div className="move-list">{game.current.history().length ? game.current.history().map((m, i) => <span key={i}><small>{i % 2 === 0 ? Math.floor(i / 2) + 1 + '.' : ' '}</small>{m}</span>) : <p>Match begins with your first move.</p>}</div></div>
           {endResult && <div className="result-overlay" role="alertdialog" aria-modal="true" aria-label="Match result"><div className="result-card"><span className="result-crown">♛</span><p className="eyebrow">GAME COMPLETE</p><h2>{labelResult(endResult)}</h2><p>{shortResult(endResult)}</p><button type="button" className="btn btn-primary" onClick={() => start(mode === 'puzzle' ? 'local' : mode, clockEnabled)}>PLAY AGAIN</button><button type="button" className="btn btn-secondary" onClick={saveAndExit}>BACK TO LOBBY</button></div></div>}
-          {puzzleDone && <div className="result-overlay" role="alertdialog" aria-modal="true" aria-label="Puzzle completed"><div className="result-card"><span className="result-crown">✦</span><h2>Royal Tactic Solved</h2><p>You've won the exposed queen.</p><button type="button" className="btn btn-primary" onClick={() => { saveJSON('gcu.puzzles.v1', loadJSON('gcu.puzzles.v1', 0) + 1); setPuzzleDone(false); screen('training'); }}>COLLECT PROGRESS</button></div></div>}
+          {puzzleDone && <div className="result-overlay" role="alertdialog" aria-modal="true" aria-label="Puzzle completed"><div className="result-card"><span className="result-crown">✦</span><h2>Royal Tactic Solved</h2><p>{currentPuzzle.explanation}</p><button type="button" className="btn btn-primary" onClick={() => { setPuzzleDone(false); screen('training'); }}>COLLECT PROGRESS</button></div></div>}
         </>}
 
         {page === 'history' && <><section className="heading-block"><p className="eyebrow">THE ARCHIVES</p><h1>Match <em>History.</em></h1><p>Recent results are stored locally in this browser only.</p></section>
@@ -309,9 +322,9 @@ export default function App() {
             <div className="history-list">{history.map(record => <article key={record.id} className="history-card"><span className="history-token">{record.result === 'draw' ? '½' : '♛'}</span><div><strong>{record.mode === 'computer' ? 'VS Computer' : 'Pass & Play'}</strong><small>{new Date(record.endedAt).toLocaleDateString()} · {record.moves} plies</small></div><span className="history-score">{shortResult(record.result)}</span><button type="button" onClick={() => { navigator.clipboard?.writeText(record.pgn).then(() => notify('PGN copied.')).catch(() => notify('Clipboard unavailable in this browser.')); }} aria-label="Copy game PGN">COPY PGN</button></article>)}</div>}
         </>}
 
-        {page === 'training' && <><section className="heading-block"><p className="eyebrow">THE ACADEMY</p><h1>Sharpen your <em>Mind.</em></h1><p>A small original offline tactic—full training packs are not yet included.</p></section><article className="training-card"><div className="training-crest">♜</div><p className="eyebrow">CAPTURE CHALLENGE</p><h2>{PRACTICE.title}</h2><p>{PRACTICE.instruction}</p><span className="training-difficulty">BEGINNER · 1 POSITION</span><button type="button" className="btn btn-primary" onClick={() => start('puzzle')}>START TRAINING <Icon name="arrow"/></button></article></>}
+        {page === 'training' && <><section className="heading-block"><p className="eyebrow">THE ACADEMY</p><h1>Sharpen your <em>Mind.</em></h1><p>{solvedPuzzles.length} of {PUZZLES.length} original tactics solved. Progress is saved on this device.</p></section><div className="puzzle-list">{PUZZLES.map((puzzle, index) => <article className="puzzle-entry" key={puzzle.id}><div className="puzzle-number">{String(index + 1).padStart(2, '0')}</div><div><span className="eyebrow">{puzzle.level.toUpperCase()}{solvedPuzzles.includes(puzzle.id) ? ' · SOLVED' : ''}</span><h3>{puzzle.title}</h3><p>{puzzle.prompt}</p></div><button type="button" className="btn btn-small" onClick={() => start('puzzle', false, puzzle)}>{solvedPuzzles.includes(puzzle.id) ? 'REPLAY' : 'PLAY'}</button></article>)}</div></>}
 
-        {page === 'profile' && <><section className="heading-block"><p className="eyebrow">THE ROYAL PROFILE</p><h1>Your <em>Legacy.</em></h1></section><div className="profile-card"><div className="profile-crest">{initials(guest)}</div><h2>{guest}</h2><p>Local guest profile · No sign-in needed</p></div><div className="stats-grid"><div className="stat"><span>MATCHES</span><strong>{history.length}</strong></div><div className="stat"><span>TACTICS</span><strong>{loadJSON('gcu.puzzles.v1', 0)}</strong></div><div className="stat"><span>ONLINE ELO</span><strong>—</strong></div></div><label className="form-label" htmlFor="playername">Display name</label><div className="name-row"><input id="playername" value={newName} maxLength={25} onChange={e => setNewName(e.target.value)}/><button type="button" className="btn btn-small" onClick={() => { const value = newName.trim(); if (value) { setGuest(value); notify('Display name saved locally.'); } }}>SAVE</button></div><section className="avatar-animation-entry"><h3>Royal Character Animation Studio</h3><p>Preview the supplied 43 humanoid animations; downloads only when opened.</p><button type="button" className="btn btn-secondary" onClick={() => setShowAvatarAnimations(v => !v)}>{showAvatarAnimations ? 'CLOSE' : 'OPEN'} ANIMATION STUDIO</button>{showAvatarAnimations && <Suspense fallback={<p>Loading 3D animation studio…</p>}><AnimationShowcase/></Suspense>}</section></>}
+        {page === 'profile' && <><section className="heading-block"><p className="eyebrow">THE ROYAL PROFILE</p><h1>Your <em>Legacy.</em></h1></section><div className="profile-card"><div className="profile-crest">{initials(guest)}</div><h2>{guest}</h2><p>Local guest profile · No sign-in needed</p></div><div className="stats-grid"><div className="stat"><span>MATCHES</span><strong>{history.length}</strong></div><div className="stat"><span>TACTICS</span><strong>{solvedPuzzles.length}</strong></div><div className="stat"><span>ONLINE ELO</span><strong>—</strong></div></div><label className="form-label" htmlFor="playername">Display name</label><div className="name-row"><input id="playername" value={newName} maxLength={25} onChange={e => setNewName(e.target.value)}/><button type="button" className="btn btn-small" onClick={() => { const value = newName.trim(); if (value) { setGuest(value); notify('Display name saved locally.'); } }}>SAVE</button></div><section className="avatar-animation-entry"><h3>Royal Character Animation Studio</h3><p>Preview the supplied 43 humanoid animations; downloads only when opened.</p><button type="button" className="btn btn-secondary" onClick={() => setShowAvatarAnimations(v => !v)}>{showAvatarAnimations ? 'CLOSE' : 'OPEN'} ANIMATION STUDIO</button>{showAvatarAnimations && <Suspense fallback={<p>Loading 3D animation studio…</p>}><AnimationShowcase/></Suspense>}</section></>}
 
         {page === 'settings' && <><section className="heading-block"><p className="eyebrow">PREFERENCES</p><h1>Your <em>Kingdom.</em></h1></section><div className="setting-group"><label><span><strong>Flip board</strong><small>Show Black at the bottom</small></span><input type="checkbox" checked={settings.flipped} onChange={e => setSettings(p => ({ ...p, flipped: e.target.checked }))}/></label><label><span><strong>Reduce motion</strong><small>Disable ornamental effects</small></span><input type="checkbox" checked={settings.reducedMotion} onChange={e => setSettings(p => ({ ...p, reducedMotion: e.target.checked }))}/></label><label><span><strong>Legal move hints</strong><small>Highlight valid destinations</small></span><input type="checkbox" checked={settings.hints} onChange={e => setSettings(p => ({ ...p, hints: e.target.checked }))}/></label><label><span><strong>Premium 3D theme</strong><small>Choose one of the supplied chess sets</small></span><select value={settings.modelTheme || "deco"} onChange={e => setSettings(s => ({...s,modelTheme:e.target.value as ThreeTheme}))}><option value="deco">Art Deco</option><option value="bauhaus">Bauhaus</option><option value="scifi">Sci-fi</option><option value="egypt">Egyptian</option><option value="classic">ChessSet FBX</option></select></label><label><span><strong>Load supplied 3D library</strong><small>Use optimized installed assets; fall back if unavailable</small></span><input type="checkbox" checked={Boolean(settings.useLibraryAssets)} onChange={e => setSettings(s => ({...s,useLibraryAssets:e.target.checked}))}/></label></div><div className="disclaimer"><strong>Privacy</strong><p>Matches, preferences and guest name are stored locally on your device. No account, voice access, microphone permission, analytics or advertising SDK is included in this build.</p></div><button className="btn btn-secondary" type="button" onClick={() => screen('about')}>ABOUT & LICENSES</button></>}
         {page === 'about' && <><section className="heading-block"><p className="eyebrow">ABOUT THE PROJECT</p><h1>Built to <em>Play.</em></h1><p>Global Chess Ultimate · Prototype 0.1.0</p></section><div className="disclaimer"><h3>What's working</h3><p>Local chess, legal-move validation via chess.js, a basic computer opponent, one tactics position, PGN history export, original responsive visual design and installable PWA shell.</p><h3>What's not production-ready</h3><p>Public multiplayer, ranked ratings, full computer engine, monetization, production puzzle catalog, cloud accounts, Android AAB signing and device acceptance.</p><h3>Attribution</h3><p>chess.js is an open-source project licensed under BSD-2-Clause. Verify all dependency notices before distribution. This original UI is not affiliated with Miniclip or Chess Clash.</p></div></>}
