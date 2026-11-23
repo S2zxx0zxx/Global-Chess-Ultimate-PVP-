@@ -211,7 +211,7 @@ export default function App() {
   // Local clocks are wall-time reconciled to avoid drift after a throttled/background tab.
   // Network/rated clocks must still use a server-authoritative clock.
   useEffect(() => {
-    if (!clockEnabled || !active || page !== 'game' || endResult || mode === 'puzzle') return;
+    if (!clockEnabled || !active || page !== 'game' || endResult || mode === 'puzzle' || menu) return;
     const tick = () => {
       const current = advanceClock(clockRef.current, Date.now());
       clockRef.current = current.state;
@@ -222,7 +222,7 @@ export default function App() {
     document.addEventListener('visibilitychange', tick);
     return () => { window.clearInterval(timer); document.removeEventListener('visibilitychange', tick); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [clockEnabled, active, page, mode, endResult]);
+  }, [clockEnabled, active, page, mode, endResult, menu]);
 
   useEffect(() => { if (!saveJSON(STORAGE_KEYS.settings, settings)) setStorageWarning(true); }, [settings]);
   useEffect(() => { if (!saveJSON(STORAGE_KEYS.guest, guest)) setStorageWarning(true); }, [guest]);
@@ -249,6 +249,18 @@ export default function App() {
     setResignDialog(false);
     recordEnd(game.current.turn() === 'w' ? 'black' : 'white', mode);
   };
+  const showGameMenu=()=>{
+    if(clockEnabled && active && mode!=='puzzle' && !endResult){
+      const ticked=advanceClock(clockRef.current,Date.now());
+      clockRef.current=ticked.state;
+      setSeconds([Math.ceil(ticked.state.remainingMs[0]/1000),Math.ceil(ticked.state.remainingMs[1]/1000)]);
+      if(ticked.flagged)recordEnd(ticked.flagged==='w'?'timeout-white':'timeout-black',mode);
+    }
+    setMenu(true);
+  };
+  useEffect(()=>{
+    if(!menu)clockRef.current={...clockRef.current,lastAt:Date.now()};
+  },[menu]);
   const offerDraw = () => {
     if (!active || mode === 'puzzle' || endResult) return;
     if (mode === 'computer') { notify('The offline computer does not support draw negotiation.'); return; }
@@ -346,7 +358,7 @@ export default function App() {
               <div className="royal-match-player"><span className="royal-match-avatar">♙</span><span><strong>{mode === 'puzzle' ? 'Scholar' : guest}</strong><small>★ {mode === 'puzzle' ? 'Training' : 'Beginner'}</small></span><b className={turn==='w'?'active-clock':''}>{mode==='puzzle'?'—':clockEnabled?formatTime(seconds[0]):'∞'}</b></div>
               <span className="royal-match-crown">♛</span>
               <div className="royal-match-player opponent"><span><strong>{mode==='computer'?'Computer':mode==='puzzle'?'Tactic':'Black'}</strong><small>{mode==='computer'?'★ Basic':'Opponent'}</small></span><b className={turn==='b'?'active-clock':''}>{mode==='puzzle'?'—':clockEnabled?formatTime(seconds[1]):'∞'}</b><span className="royal-match-avatar">♟</span></div>
-              <button className="royal-match-back" type="button" aria-label="Open match settings" onClick={()=>setMenu(true)}><Icon name="menu" size={19}/></button>
+              <button className="royal-match-back" type="button" aria-label="Open match settings" onClick={showGameMenu}><Icon name="menu" size={19}/></button>
             </div>
             <div className="royal-display-switch" role="group" aria-label="Choose board rendering">
               <button type="button" className={!view3D?'active':''} onClick={()=>setView3D(false)} aria-pressed={!view3D}>2D BOARD</button>
@@ -382,7 +394,7 @@ export default function App() {
             <button type="button" onClick={()=>setEmoteOpen(v=>!v)} disabled={!active||Boolean(endResult)}><span>☺</span>Emote</button>
             <button type="button" onClick={offerDraw} disabled={!active||mode!=='local'||Boolean(endResult)}><span>♧</span>Draw</button>
             <button type="button" onClick={resign} disabled={!active||mode==='puzzle'||Boolean(endResult)}><Icon name="flag" size={22}/>Resign</button>
-            <button type="button" onClick={()=>setMenu(true)}><Icon name="menu" size={22}/>Menu</button>
+            <button type="button" onClick={showGameMenu}><Icon name="menu" size={22}/>Menu</button>
           </div>
           {emoteOpen && <div className="royal-emote-picker" role="group" aria-label="Local chess emotes">{['👍','👏','🔥','😎','🤔','😄','😮','😠'].map(emoji=><button type="button" key={emoji} onClick={()=>sendLocalEmote(emoji)} aria-label={'Show local emote '+emoji}>{emoji}</button>)}</div>}
           {emoteFeedback && <p className="royal-emote-last" role="status">Last local emote: {emoteFeedback}</p>}
@@ -415,7 +427,7 @@ export default function App() {
       </nav>
     </div>
     {replayRecord && <Suspense fallback={<div role="status">Loading match replay…</div>}><ReplayViewer key={replayRecord.id+(replayAnalysis?'-analysis':'-replay')} record={replayRecord} startAnalysis={replayAnalysis} onClose={() => setReplayRecord(null)}/></Suspense>}
-    {menu && <div className="modal-mask" onClick={() => setMenu(false)}><div className="action-sheet" role="dialog" aria-modal="true" aria-label="Match menu" onClick={e => e.stopPropagation()}><div className="sheet-heading"><h2>Match Menu</h2><button onClick={() => setMenu(false)} aria-label="Close menu"><Icon name="close" size={28}/></button></div><button type="button" onClick={() => { setMenu(false); undo(); }} disabled={!active || mode === 'puzzle'}>↶ Undo last move</button><button type="button" onClick={() => { setMenu(false); setSettings(p => ({ ...p, flipped: !p.flipped })); }}>⇅ Flip board</button><button type="button" onClick={saveAndExit}>▤ Save and exit</button><button type="button" className="destructive" onClick={() => { if (mode === 'puzzle') saveAndExit(); else resign(); }}>{mode === 'puzzle' ? '↩ Exit puzzle' : '⚑ Resign match'}</button></div></div>}
+    {menu && <div className="modal-mask" onClick={() => setMenu(false)}><div className="action-sheet" role="dialog" aria-modal="true" aria-label="Match menu" onClick={e => e.stopPropagation()}><div className="sheet-heading"><h2>Game Paused</h2><button onClick={() => setMenu(false)} aria-label="Close menu"><Icon name="close" size={28}/></button></div><button type="button" className="royal-resume-action" onClick={()=>setMenu(false)}>▶ Resume Game</button><button type="button" onClick={() => { setMenu(false); undo(); }} disabled={!active || mode === 'puzzle'}>↶ Undo last move</button><button type="button" onClick={() => { setMenu(false); setSettings(p => ({ ...p, flipped: !p.flipped })); }}>⇅ Flip board</button><button type="button" onClick={saveAndExit}>▤ Save and exit</button><button type="button" className="destructive" onClick={() => { if (mode === 'puzzle') saveAndExit(); else resign(); }}>{mode === 'puzzle' ? '↩ Exit puzzle' : '⚑ Resign match'}</button></div></div>}
     {drawDialog && <div className="modal-mask" onClick={()=>setDrawDialog(false)}>
       <section className="rv-resign-dialog royal-draw-dialog" role="alertdialog" aria-modal="true" aria-labelledby="royal-draw-title" onClick={e=>e.stopPropagation()}>
         <span className="rv-resign-emblem" aria-hidden="true">♛</span>
