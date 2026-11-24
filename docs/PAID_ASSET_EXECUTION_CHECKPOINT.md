@@ -55,14 +55,14 @@ Performance protocol (provisional design targets, not measured): fixed seed and 
 | GCU-P00-T04 | VERIFIED | Exact-main CI and source baseline rechecked; checkpoint CI passed |
 | GCU-P00-T05 | VERIFIED | 84 task IDs/dependencies revalidated; 12 risks mapped; decisions recorded |
 | GCU-P00-T06 | VERIFIED | Worker/event/storage and benchmark protocol reviewed against plan; implementation pending |
-| GCU-P01-T01 | PLANNED | Not started; previous phase gate required |
-| GCU-P01-T02 | PLANNED | Not started; previous phase gate required |
-| GCU-P01-T03 | PLANNED | Not started; previous phase gate required |
-| GCU-P01-T04 | PLANNED | Not started; previous phase gate required |
-| GCU-P01-T05 | PLANNED | Not started; previous phase gate required |
-| GCU-P01-T06 | PLANNED | Not started; previous phase gate required |
-| GCU-P01-T07 | PLANNED | Not started; previous phase gate required |
-| GCU-P01-T08 | PLANNED | Not started; previous phase gate required |
+| GCU-P01-T01 | IMPLEMENTED_PENDING_VERIFY | P01 changes submitted; exact-head acceptance evidence pending |
+| GCU-P01-T02 | IMPLEMENTED_PENDING_VERIFY | P01 changes submitted; exact-head acceptance evidence pending |
+| GCU-P01-T03 | IMPLEMENTED_PENDING_VERIFY | P01 changes submitted; exact-head acceptance evidence pending |
+| GCU-P01-T04 | IMPLEMENTED_PENDING_VERIFY | P01 changes submitted; exact-head acceptance evidence pending |
+| GCU-P01-T05 | IMPLEMENTED_PENDING_VERIFY | P01 changes submitted; exact-head acceptance evidence pending |
+| GCU-P01-T06 | IMPLEMENTED_PENDING_VERIFY | P01 changes submitted; exact-head acceptance evidence pending |
+| GCU-P01-T07 | IMPLEMENTED_PENDING_VERIFY | P01 changes submitted; exact-head acceptance evidence pending |
+| GCU-P01-T08 | IMPLEMENTED_PENDING_VERIFY | P01 changes submitted; exact-head acceptance evidence pending |
 | GCU-P02-T01 | PLANNED | Not started; previous phase gate required |
 | GCU-P02-T02 | PLANNED | Not started; previous phase gate required |
 | GCU-P02-T03 | PLANNED | Not started; previous phase gate required |
@@ -136,4 +136,8 @@ Performance protocol (provisional design targets, not measured): fixed seed and 
 
 ## Resume rule
 
-P00 engineering gate accepted: five verified tasks and one accepted with restrictions, six dispositions complete. P01 remains NOT STARTED until the user explicitly starts it. Resume GCU-P01-T01 through T08 on the same integration branch. Re-fetch exact main and branch head before edits; validate canonical chess.js rules, perft and state compatibility against the master plan. Never treat the ownership attestation as independent publisher/license verification or permission to redistribute raw assets in public. Revisit distribution at P08/P09. No PR created, no main merge, no raw package committed. Record actual tests and exact commits at each phase, with no fabricated results. Final PR only after P09.
+P00 engineering gate accepted: five verified tasks and one accepted with restrictions, six dispositions complete. P01 authorized and implementation submitted; gate pending exact-head CI and benchmark evidence. Resume GCU-P01-T01 through T08 on the same integration branch. Re-fetch exact main and branch head before edits; validate canonical chess.js rules, perft and state compatibility against the master plan. Never treat the ownership attestation as independent publisher/license verification or permission to redistribute raw assets in public. Revisit distribution at P08/P09. No PR created, no main merge, no raw package committed. Record actual tests and exact commits at each phase, with no fabricated results. Final PR only after P09.
+
+## P01 execution checkpoint
+
+P01 authorized after G0; exact main unchanged. P00 exact-head CI run 45490682938 passed. Master plan, archive and inventory hashes rechecked and matched. P01 implementation includes independent perft/divide harness, standard fixtures, legal/terminal/history tests, replay setup/history fix, actual en passant regression and repeatable browser baseline. G1 remains pending until exact-head test/build/browser evidence is inspected. No P02, PR or main merge.

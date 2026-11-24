@@ -1,0 +1,10 @@
+# P01 — Chess correctness and reproducible baseline
+
+Scope: GCU-P01-T01–T08. Original package Perft/Board/FEN concepts are used as test-design references only; no C# or proprietary content is copied. chess.js 1.4.0 remains the sole rules authority in UI and room server. Existing storage keys, PGN schema and room wire format remain unchanged.
+
+- BigInt legal-move perft and divide use public chess.js API, undo in finally, depth bound 6. Perft ignores claim-based draws because it counts legal move paths. Canonical starting and Kiwipete vectors: https://www.chessprogramming.org/Perft_Results and https://github.com/gflohr/Chess-Plisco/blob/main/t/05perft.t.
+- Regression suite covers legal path counts, castling, pin, en passant expiry/discovered check, promotion parity, counters, terminal conditions, seeded undo and PGN replay, server/local parity and advisory heuristic state preservation.
+- Draw policy unchanged: local and private-room matches automatically finish when chess.js reports threefold repetition or fifty-move draw, rather than implementing a separate FIDE claim UI. Stalemate and insufficient material also draw. This is the current casual game policy, not a claim of complete FIDE tournament adjudication.
+- Actual replay defect fixed: original code started replay at standard setup and reconstructed every position from FEN alone. Nonstandard PGN starts and repetition history now reconstructed from original position and move prefix. No storage migration needed.
+- Browser benchmark: fixed six-position corpus, 30 trials per position, 30 repetition-aware replay reconstructions per viewport. Report nearest-rank p50/p95, max, exact tactical matches, observed main-thread long tasks and runtime metadata. Measured numbers must come from CI report, never estimates. Browser benchmark targets 360/414 simulated mobile viewports; physical-device testing remains P09. It is a baseline, not an engine-strength or FPS claim.
+- CI acceptance: original and new tests, Worker bundle, TS/Vite build, browser baseline report. No P02 until actual evidence is inspected. 

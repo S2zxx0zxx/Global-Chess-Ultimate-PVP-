@@ -20,8 +20,15 @@ test('castling rights and check filtering are enforced', () => {
   game.move('O-O');
   assert.equal(game.get('g1')?.type, 'k');
 });
-test('en passant and promotion are legal', () => {
+test('queen promotion is legal', () => {
   const game = new Chess('4k3/P7/8/8/8/8/8/4K3 w - - 0 1');
   game.move({ from: 'a7', to: 'a8', promotion: 'q' });
   assert.equal(game.get('a8')?.type, 'q');
+});
+
+test('actual en passant removes the passed pawn', () => {
+  const game = new Chess();
+  for (const san of ['e4','a6','e5','d5','exd6']) game.move(san);
+  assert.equal(game.get('d6')?.type, 'p');
+  assert.equal(game.get('d5'), undefined);
 });

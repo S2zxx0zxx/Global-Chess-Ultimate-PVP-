@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Chess } from 'chess.js';
+import { replayTimeline, replayPosition } from './chess-state';
+import type { ReplayTimeline } from './chess-state';
 import { chooseComputerMove, type MatchRecord } from './game';
 
 type Props = { record: MatchRecord; onClose: () => void; startAnalysis?: boolean };
@@ -9,23 +10,16 @@ const files = 'abcdefgh';
 export default function ReplayViewer({ record, onClose, startAnalysis=false }: Props) {
   const replay = useMemo(() => {
     try {
-      const match = new Chess();
-      match.loadPgn(record.pgn);
-      const moves = match.history({ verbose: true });
-      const step = new Chess();
-      const positions = [step.fen()];
-      for (const move of moves) {
-        step.move(move);
-        positions.push(step.fen());
-      }
-      return { positions, moves: moves.map(move => move.san), error: null as string | null };
+      const timeline = replayTimeline(record.pgn);
+      return { timeline, moves: timeline.moves.map(move => move.san), error: null as string | null };
     } catch {
-      return { positions: [], moves: [], error: 'The saved PGN could not be decoded.' };
+      return { timeline: null as ReplayTimeline | null, moves: [], error: 'The saved PGN could not be decoded.' };
     }
   }, [record.pgn]);
   const [ply, setPly] = useState(replay.moves.length);
   const [playing, setPlaying] = useState(false);
   const [analysis, setAnalysis] = useState(startAnalysis);
+  useEffect(() => { setPly(replay.moves.length); setPlaying(false); }, [replay]);
   useEffect(() => {
     const listener = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onClose();
@@ -35,7 +29,7 @@ export default function ReplayViewer({ record, onClose, startAnalysis=false }: P
     document.addEventListener('keydown', listener);
     return () => document.removeEventListener('keydown', listener);
   }, [onClose, replay.moves.length]);
-  const game = useMemo(() => replay.positions.length ? new Chess(replay.positions[ply]) : null, [replay.positions, ply]);
+  const game = useMemo(() => replay.timeline ? replayPosition(replay.timeline, Math.min(ply, replay.moves.length)) : null, [replay, ply]);
   const squares = game?.board() ?? [];
   const insight = useMemo(() => {
     if (!game) return null;
