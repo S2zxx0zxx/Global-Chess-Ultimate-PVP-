@@ -238,3 +238,5 @@ Exact tested head cc58b4c1a1dacae4015bebb5b61a9a076fa38c24; run [45504889269](ht
 ## P06 implementation checkpoint — pending acceptance
 
 P05 fully verified before P06. Master plan/archive/private inventory SHA-256 rechecked. All eight P06 tasks submitted: cancellable analysis, evaluation, legal SAN PV, bounded alternatives, comparable-depth classifications, batched review/cache, legal academy hints and review practice. No online analysis, no original puzzle change, no P07. Exact CI pending.
+
+P06 supplemental verification: actual home entry is Game Review, not a History button. Add offline academy exercise with actual engine-backed deterministic candidate as explicit fallback fixture if live finite-time classification is uncertain. Original five puzzles, legal hint and target selection verified by browser harness; online isolation static test. Replay hidden and cleared when entering online. No P07.

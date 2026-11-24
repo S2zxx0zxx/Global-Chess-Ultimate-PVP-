@@ -375,7 +375,7 @@ export default function App() {
   };
   const labelResult = (result: GameResult) => result === 'draw' ? 'A royal draw' : result.startsWith('timeout') ? 'Time expired' : result === 'white' ? 'White triumphs' : 'Black triumphs';
 
-  const screen = (target: Page) => { if(page==='game'&&target!=='game'){pauseMatch();persist(mode,active&&!endedRef.current,seconds);}else invalidateAI(); setPage(target); setMenu(false); setMessage(''); };
+  const screen = (target: Page) => { if(target==='online')setReplayRecord(null); if(page==='game'&&target!=='game'){pauseMatch();persist(mode,active&&!endedRef.current,seconds);}else invalidateAI(); setPage(target); setMenu(false); setMessage(''); };
   const openRoyal = (target: RoyalScreen) => {
     if(page==='game'){pauseMatch();persist(mode,active&&!endedRef.current,seconds);}else invalidateAI();
     setStudioScreen(target);

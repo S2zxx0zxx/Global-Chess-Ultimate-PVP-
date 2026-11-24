@@ -24,7 +24,7 @@ export default function ReplayViewer({ record, onClose, startAnalysis=false }: P
   useEffect(() => { setPly(replay.moves.length); setPlaying(false); }, [replay]);
   useEffect(() => {
     const listener = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
+      if (event.key === 'Escape') {stopReview();position.current?.cancel();onClose();}
       if (event.key === 'ArrowLeft') {stopReview();setPly(n => Math.max(0, n - 1));}
       if (event.key === 'ArrowRight') {stopReview();setPly(n => Math.min(replay.moves.length, n + 1));}
     };
@@ -47,7 +47,7 @@ export default function ReplayViewer({ record, onClose, startAnalysis=false }: P
   const [message,setMessage]=useState('');
   const review=useRef<AnalysisSession|null>(null),position=useRef<AnalysisSession|null>(null);
   const stopReview=()=>{review.current?.cancel();review.current=null;setBusy(false);};
-  const current=entry?.game===game?entry.report:null;
+  const current=analysis&&!playing&&entry?.game===game?entry.report:null;
   useEffect(()=>()=>{review.current?.cancel();position.current?.cancel();},[record.id,record.pgn]);
   useEffect(()=>{
     if(!analysis||!game||playing||busy)return;
@@ -93,7 +93,7 @@ export default function ReplayViewer({ record, onClose, startAnalysis=false }: P
           })}
         </div>
         <div className="replay-counter">Move {ply} / {replay.moves.length} {ply > 0 ? ' · ' + replay.moves[ply - 1] : ' · Starting position'}</div>
-        <div className="royal-replay-tabs"><button type="button" className={!analysis?'active':''} onClick={()=>setAnalysis(false)}>REPLAY</button><button type="button" className={analysis?'active':''} onClick={()=>setAnalysis(true)}>ANALYSIS</button></div>
+        <div className="royal-replay-tabs"><button type="button" className={!analysis?'active':''} onClick={()=>{stopReview();position.current?.cancel();setAnalysis(false);}}>REPLAY</button><button type="button" className={analysis?'active':''} onClick={()=>setAnalysis(true)}>ANALYSIS</button></div>
         <div className="replay-controls" role="group" aria-label="Replay controls">
           <button type="button" onClick={() => {stopReview();setPly(0);}} disabled={ply === 0} aria-label="First move">|◀</button>
           <button type="button" onClick={() => {stopReview();setPly(n => Math.max(0,n-1));}} disabled={ply === 0} aria-label="Previous move">◀</button>
