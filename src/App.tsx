@@ -348,6 +348,7 @@ export default function App() {
     if (!active || mode === 'puzzle') return;
     const rewind = undoCount(game.current,mode,computer.playerSide);
     if(!rewind)return;
+    if(clockEnabled&&!pausedRef.current){const t=advanceClock(clockRef.current,Date.now());clockRef.current=t.state;setSeconds([Math.ceil(t.state.remainingMs[0]/1000),Math.ceil(t.state.remainingMs[1]/1000)]);if(t.flagged){recordEnd(t.flagged==='w'?'timeout-white':'timeout-black',mode);return;}}
     invalidateAI();
     let changed = false;
     for (let i = 0; i < rewind; i++) changed = Boolean(game.current.undo()) || changed;

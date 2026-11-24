@@ -220,3 +220,7 @@ Corrected CI 45500108634 SUCCESS; 51/51 tests; all earlier browser checks, fixed
 ## P05 implementation checkpoint
 
 Four truthful budget presets, validated preferences, color selection, bot controller, clock/pause/undo/restart/resign/navigation and offline precache implementation submitted. Tests and difficulty/self-play/offline browser harness added. P05 acceptance pending actual CI and prior P04 memory gate. See docs/P05_COMPUTER_MODES.md. No main merge or PR.
+
+### P05 verification handoff
+
+Initial implementation 3866bb1cfae4a10c7ef7a3988c173de53d84384a, run 45501310630: 57/58 tests passed; old source-wiring assertion expected two-argument begin callback, revised assertion verifies real new options wiring. Follow-up fe112216afe62d0b48799962ca882de12a039157 replaces ES2023 findLastIndex with ES2022 loop, preserves bot job on zero-undo, injects build fingerprint into production service worker and adds actual storage-denied gameplay probe. f10549acc268895a42ad202f9e5c0e0e14c92c50 updates old wiring assertion; corrected CI 45501387494 started. This follow-up also settles active elapsed clock before undo (no refund, no post-timeout move). New final-head CI required. P04 memory run 45498659864 still in progress at last observation; src/ai, soak script unchanged. P04 T01–T07 verified; T08 pending. P05 eight deliverables submitted, no phase sign-off, no P06; final PR deferred.
