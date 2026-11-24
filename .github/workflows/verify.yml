@@ -36,6 +36,13 @@ jobs:
         run: node scripts/p05-lifecycle.mjs
       - name: P06 offline match analysis
         run: node --experimental-strip-types scripts/p06-analysis.mjs
+      - name: P07 gameplay input and motion
+        run: node scripts/p07-gameplay.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: p07-gameplay
+          path: reports/p07-gameplay.json
+          if-no-files-found: error
       - uses: actions/upload-artifact@v4
         with:
           name: p06-analysis

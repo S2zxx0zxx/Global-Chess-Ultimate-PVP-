@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
-import { Chess, type Square } from 'chess.js';
+import { Chess, type Square, type Move } from 'chess.js';
 import { FILES, loadJSON , resultOf, saveJSON, shortResult, SQUARES, STORAGE_KEYS, type GameResult, type MatchRecord, type PlayMode } from './game';
 import { PUZZLES, PUZZLE_PROGRESS_KEY, isPuzzleSolution, type Puzzle } from './academy';
 import RoyalStudio, { type RoyalScreen } from './RoyalStudio';
@@ -8,6 +8,8 @@ import { newClock, advanceClock, displayClock } from './clock';
 import { startAdvisory, searchId, liveCandidate, type Job } from './ai/client';
 import { legalHint } from './match-analysis';
 import ReviewPractice from './ReviewPractice';
+import { committedEvents, endedEvent, dropAllowed, type GameplayEvent, type MoveCommitted } from './gameplay-events';
+import { useBoardDrag } from './use-board-drag';
 import { computerJob, normalizeComputer, otherSide, undoCount, DEFAULT_COMPUTER, PRESETS, type ComputerOptions } from './computer-mode';
 
 const ChessBoard3D = lazy(() => import('./ChessBoard3D'));
@@ -74,7 +76,14 @@ export default function App() {
   const [clockEnabled, setClockEnabled] = useState(false);
   const [storageWarning, setStorageWarning] = useState(false);
   const [lastMove, setLastMove] = useState<[Square, Square] | null>(null);
-  const [captureSquare, setCaptureSquare] = useState<Square | null>(null);
+  const [moveEvents,setMoveEvents]=useState<GameplayEvent[]>([]);
+  const [terminalEvent,setTerminalEvent]=useState<GameplayEvent|null>(null);
+  const [captureEffect,setCaptureEffect]=useState<{id:string;square:Square}|null>(null);
+  const eventRevision=useRef(0);
+  const motion=moveEvents.find((e):e is MoveCommitted=>e.kind==='MoveCommitted');
+  const publishMove=(m:Move,source:'human'|'computer')=>setMoveEvents(committedEvents(game.current,m,aiGameId.current,++eventRevision.current,source));
+  const resetMotion=()=>{setMoveEvents([]);setTerminalEvent(null);setCaptureEffect(null);};
+  useEffect(()=>{const c=moveEvents.find(e=>e.kind==='Capture');if(!c||settings.reducedMotion){setCaptureEffect(null);return;}setCaptureEffect({id:c.eventId,square:c.destination});const timer=window.setTimeout(()=>setCaptureEffect(null),600);return()=>window.clearTimeout(timer);},[moveEvents,settings.reducedMotion]);
 
   const turn = game.current.turn();
   const botSide=otherSide(computer.playerSide);
@@ -92,6 +101,7 @@ export default function App() {
   const recordEnd = (outcome: GameResult, currentMode: PlayMode) => {
     if (endedRef.current) return;
     endedRef.current = true;
+    setTerminalEvent(endedEvent(aiGameId.current,++eventRevision.current,outcome));
     invalidateAI();
     const id = Date.now() + '-' + Math.random().toString(36).slice(2, 7);
     const item: MatchRecord = { id, endedAt: new Date().toISOString(), mode: currentMode, result: outcome, pgn: game.current.pgn(), moves: game.current.history().length, ...(currentMode==='computer'?{playerSide:computerRef.current.playerSide,difficulty:computerRef.current.difficulty}:{}) };
@@ -118,7 +128,7 @@ export default function App() {
     if (outcome && currentMode !== 'puzzle') recordEnd(outcome, currentMode);
   };
   const start = (nextMode: PlayMode, timed = false, puzzle: Puzzle = currentPuzzle, options:ComputerOptions=computerRef.current) => {
-    invalidateAI(); aiGameId.current='game-'+searchId();
+    invalidateAI(); aiGameId.current='game-'+searchId();eventRevision.current=0;resetMotion();
     pausedRef.current=false;setAIStatus('');setResignDialog(false);
     if(nextMode==='computer'){const c=normalizeComputer(options);computerRef.current=c;setComputer(c);setSettings(s=>({...s,flipped:c.playerSide==='b'}));}
     if (nextMode === 'puzzle') setCurrentPuzzle(puzzle);
@@ -135,7 +145,7 @@ export default function App() {
     setClockEnabled(timed && nextMode !== 'puzzle');
     setActive(true);
     setLastMove(null);
-    setCaptureSquare(null);
+    resetMotion();
     setPage('game');
     setMenu(false);
     setDrawDialog(false);
@@ -151,7 +161,7 @@ export default function App() {
       const restored = new Chess();
       if (old.pgn) restored.loadPgn(old.pgn);
       else restored.load(old.fen);
-      invalidateAI(); aiGameId.current='game-'+searchId();
+      invalidateAI(); aiGameId.current='game-'+searchId();eventRevision.current=0;resetMotion();
       if(restored.fen()!==old.fen||restored.isGameOver())throw Error('Invalid or ended saved match');
       const c=normalizeComputer(old.computer??{difficulty:'easy',playerSide:'w'});computerRef.current=c;setComputer(c);
       if(old.mode==='computer')setSettings(s=>({...s,flipped:c.playerSide==='b'}));
@@ -173,7 +183,7 @@ export default function App() {
   };
 
   const execute = (from: Square, to: Square, promote: string = 'q') => {
-    if (!active || endResult || pausedRef.current || (mode === 'computer' && turn === botSide)) return;
+    if (!active || endedRef.current || endResult || pausedRef.current || puzzleDone || (mode === 'computer' && game.current.turn() === botSide)) return;
     if (mode === 'puzzle' && !isPuzzleSolution(currentPuzzle, from, to, promote)) {
       notify('Not quite. ' + currentPuzzle.prompt);
       setSelected(null);
@@ -186,11 +196,8 @@ export default function App() {
         if (ticked.flagged) { recordEnd(ticked.flagged === 'w' ? 'timeout-white' : 'timeout-black', mode); return; }
       }
       const moved = game.current.move({ from, to, promotion: promote });
-      if (moved?.captured) {
-        setCaptureSquare(to);
-        window.setTimeout(()=>setCaptureSquare(current=>current===to?null:current),600);
-      }
       if (!moved) { setSelected(null); return; }
+      publishMove(moved,'human');
       invalidateAI();
       clockRef.current = { ...clockRef.current, turn: game.current.turn(), lastAt: Date.now() };
       if (mode === 'puzzle') {
@@ -210,7 +217,7 @@ export default function App() {
     }
   };
   const onSquare = (square: Square) => {
-    if (!active || endResult || pausedRef.current || (mode === 'computer' && turn === botSide) || puzzleDone) return;
+    if (!active || endedRef.current || endResult || pausedRef.current || promotion || (mode === 'computer' && game.current.turn() === botSide) || puzzleDone) return;
     const piece = game.current.get(square);
     if (selected && legal.includes(square)) {
       const sourcePiece = game.current.get(selected);
@@ -223,6 +230,13 @@ export default function App() {
     else setSelected(null);
   };
 
+  const canDrag=page==='game'&&!view3D&&active&&!endResult&&!endedRef.current&&!pausedRef.current&&!menu&&!resignDialog&&!drawDialog&&!promotion&&!puzzleDone&&!gameOver&&(mode!=='computer'||turn!==botSide);
+  const drag=useBoardDrag({token:aiGameId.current+':'+aiEpoch.current+':'+fen+':'+page+':'+view3D,flipped:settings.flipped,enabled:canDrag,reducedMotion:settings.reducedMotion,piece:s=>{const p=game.current.get(s);return p?.color===game.current.turn()?p.color+'-'+p.type:null;},drop:(from,to)=>{
+    if(!canDrag||pausedRef.current||endedRef.current||!to||!dropAllowed(game.current,from,to))return false;
+    const moves=game.current.moves({square:from,verbose:true}).filter(m=>m.to===to);
+    if(moves.some(m=>m.promotion)){setSelected(from);setPromotion({from,to});return true;}
+    execute(from,to);return true;
+  }});
   // Both strategies execute in a dedicated worker. Foundation scoring is opt-in.
   useEffect(() => {
     if (page !== 'game' || mode !== 'computer' || !active || turn !== botSide || endResult || gameOver || menu || resignDialog || drawDialog) return;
@@ -248,10 +262,7 @@ export default function App() {
           if(ticked.flagged){recordEnd(ticked.flagged==='w'?'timeout-white':'timeout-black','computer');return;}
         }
         const played=root.move(next);
-        if(played.captured){
-          setCaptureSquare(played.to);
-          window.setTimeout(()=>setCaptureSquare(current=>current===played.to?null:current),600);
-        }
+        publishMove(played,'computer');
         invalidateAI();
         clockRef.current={...clockRef.current,turn:root.turn(),lastAt:Date.now()};
         refresh('computer');
@@ -356,7 +367,7 @@ export default function App() {
     invalidateAI();
     let changed = false;
     for (let i = 0; i < rewind; i++) changed = Boolean(game.current.undo()) || changed;
-    if (changed) { setAIStatus('');clockRef.current = { ...clockRef.current, turn: game.current.turn(), lastAt: Date.now() }; setEndResult(null); refresh(mode); }
+    if (changed) { resetMotion();setAIStatus('');clockRef.current = { ...clockRef.current, turn: game.current.turn(), lastAt: Date.now() }; setEndResult(null); refresh(mode); }
   };
   const saveAndExit = () => {
     invalidateAI();
@@ -441,8 +452,8 @@ export default function App() {
               <button type="button" className={!view3D?'active':''} onClick={()=>setView3D(false)} aria-pressed={!view3D}>2D BOARD</button>
               <button type="button" className={view3D?'active':''} onClick={()=>setView3D(true)} aria-pressed={view3D}>3D BOARD</button>
             </div>
-          {view3D ? <Suspense fallback={<div className="board3d-loading" role="status">Loading 3D renderer…</div>}><ChessBoard3D fen={fen} selected={selected} legal={settings.hints ? legal : []} lastMove={lastMove} theme={settings.modelTheme || "deco"} useLibraryAssets={Boolean(settings.useLibraryAssets)} flipped={settings.flipped} reducedMotion={settings.reducedMotion} onSquare={onSquare}/></Suspense> : <div className="board-surround">
-            <div className="board" role="grid" aria-label="Chess board. Select a piece then a destination.">
+          {view3D ? <Suspense fallback={<div className="board3d-loading" role="status">Loading 3D renderer…</div>}><ChessBoard3D fen={fen} selected={selected} legal={settings.hints ? legal : []} lastMove={lastMove} motion={motion} theme={settings.modelTheme || "deco"} useLibraryAssets={Boolean(settings.useLibraryAssets)} flipped={settings.flipped} reducedMotion={settings.reducedMotion} onSquare={onSquare}/></Suspense> : <div className="board-surround">
+            <div ref={drag.ref} {...drag.handlers} className="board gcu-drag-board" role="grid" aria-label="Chess board. Select a piece then a destination, or drag a piece." data-event-id={motion?.eventId} data-ended-event={terminalEvent?.eventId} data-reduced-motion={settings.reducedMotion}>
               {Array.from({ length: 64 }, (_, idx) => {
                 const r = Math.floor(idx / 8), c = idx % 8;
                 const row = settings.flipped ? 7 - r : r;
@@ -454,14 +465,15 @@ export default function App() {
                 const isLast = lastMove?.includes(square);
                 const isLegal = settings.hints && legal.includes(square);
                 const checkingKing = Boolean(inCheck && piece?.type === 'k' && piece.color === turn);
-                return <button type="button" role="gridcell" aria-selected={isSelected} key={square} onClick={() => onSquare(square)} className={'square ' + (light ? 'light' : 'dark') + (isSelected ? ' selected' : '') + (isLast ? ' last-move' : '') + (checkingKing ? ' in-check' : '')} aria-label={square + (piece ? ': ' + (piece.color === 'w' ? 'White ' : 'Black ') + piece.type : ': empty') }>
+                return <button type="button" role="gridcell" aria-selected={isSelected} key={square} data-square={square} onClick={() => onSquare(square)} className={'square ' + (light ? 'light' : 'dark') + (isSelected ? ' selected' : '') + (isLast ? ' last-move' : '') + (checkingKing ? ' in-check' : '')} aria-label={square + (piece ? ': ' + (piece.color === 'w' ? 'White ' : 'Black ') + piece.type : ': empty') }>
                   {c === 0 && <span className="rank-label">{8 - row}</span>}
                   {r === 7 && <span className="file-label">{FILES[col]}</span>}
-                  {piece && <img alt="" draggable={false} className="piece-img" src={'/pieces/' + piece.color + '-' + piece.type + '.svg'} />}
+                  {piece && <img key={motion&&(motion.to===square||motion.rook?.to===square)?motion.eventId:square} alt="" draggable={false} className={'piece-img'+(drag.ghost?.source===square?' drag-source':'')} src={'/pieces/' + piece.color + '-' + piece.type + '.svg'} style={!settings.reducedMotion&&motion?.after===fen&&(motion.to===square||motion.rook?.to===square)?{animation:'gcu-committed-slide .22s ease-out both','--move-x':((FILES.indexOf((motion.to===square?motion.from:motion.rook!.from)[0])-FILES.indexOf(square[0]))*(settings.flipped?-1:1)*106)+'%','--move-y':((Number(square[1])-Number((motion.to===square?motion.from:motion.rook!.from)[1]))*(settings.flipped?-1:1)*106)+'%'} as React.CSSProperties:undefined} />}
                   {isLegal && <span className={piece ? 'legal-capture' : 'legal-dot'} />}
-                  {captureSquare===square && !settings.reducedMotion && <span className="royal-capture-smoke" aria-hidden="true"/>}
+                  {captureEffect?.square===square && !settings.reducedMotion && <span key={captureEffect.id} className="royal-capture-smoke" aria-hidden="true"/>}
                 </button>;
               })}
+              {drag.ghost&&<img aria-hidden="true" alt="" draggable={false} className={'gcu-drag-ghost'+(drag.ghost.returning?' returning':'')} src={'/pieces/'+drag.ghost.piece+'.svg'} style={{left:drag.ghost.x,top:drag.ghost.y,width:drag.ghost.size,height:drag.ghost.size}}/>}
             </div>
           </div>}
           <div className={'royal-match-status '+(inCheck?'is-check':'')+(endResult?' is-ended':'')} role="status">
@@ -529,6 +541,6 @@ export default function App() {
         </div>
       </section>
     </div>}
-    {promotion && <div className="modal-mask"><div className="promotion-modal" role="dialog" aria-modal="true" aria-label="Choose a promotion piece"><h2>ROYAL PROMOTION</h2><p>Choose a piece</p><div className="promotion-options">{(['q','r','b','n'] as const).map(type => <button type="button" key={type} onClick={() => { const { from, to } = promotion; setPromotion(null); execute(from, to, type); }} aria-label={'Promote to ' + ({q:'queen',r:'rook',b:'bishop',n:'knight'}[type])}><img className="royal-promotion-piece" src={'/pieces/'+turn+'-'+type+'.svg'} alt="" /><small>{({q:'Queen',r:'Rook',b:'Bishop',n:'Knight'}[type])}</small></button>)}</div></div></div>}
+    {promotion && <div className="modal-mask"><div className="promotion-modal" role="dialog" aria-modal="true" aria-label="Choose a promotion piece"><h2>ROYAL PROMOTION</h2><p>Choose a piece</p><div className="promotion-options">{(['q','r','b','n'] as const).map(type => <button type="button" key={type} onClick={() => { const { from, to } = promotion; setPromotion(null); execute(from, to, type); }} aria-label={'Promote to ' + ({q:'queen',r:'rook',b:'bishop',n:'knight'}[type])}><img className="royal-promotion-piece" src={'/pieces/'+turn+'-'+type+'.svg'} alt="" /><small>{({q:'Queen',r:'Rook',b:'Bishop',n:'Knight'}[type])}</small></button>)}</div><button type="button" className="btn btn-secondary" onClick={()=>{setPromotion(null);setSelected(null);}}>CANCEL PROMOTION</button></div></div>}
   </div>;
 }

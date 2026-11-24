@@ -497,3 +497,15 @@ h1,h2,h3{font-family:var(--font-title);font-weight:600}
 
 /* P06 bounded analysis panel. */
 .analysis-eval{height:14px;border:1px solid #9e743e;border-radius:4px;background:#171717;overflow:hidden}.analysis-eval>div{height:100%;background:#f6ead4}.replay-square.analysis-from{box-shadow:inset 0 0 0 3px #b89727}.replay-square.analysis-to{box-shadow:inset 0 0 0 4px #39734a}.analysis-review{display:grid;gap:7px}.analysis-review progress{width:100%;accent-color:#c8a05e}.analysis-row{display:flex;gap:5px;flex-wrap:wrap}.analysis-row button{background:#3d271b;color:#f5d4a1;border:1px solid #936c42;border-radius:5px;padding:7px}.royal-analysis-panel p{font-size:12px;overflow-wrap:anywhere}.royal-analysis-panel select{max-width:100%;padding:9px;color:#fbe9c7;background:#372419;border:1px solid #936c42}
+
+/* P07: visual state follows canonical committed move events; drag is only a preview. */
+.gcu-drag-board{position:relative;touch-action:none;user-select:none;overflow:hidden}
+.gcu-drag-board .square{touch-action:none;overflow:visible}
+.gcu-drag-board .square.last-move .piece-img{animation:none}
+.gcu-drag-board .square .drag-source{opacity:0}
+.gcu-drag-board .square:focus-visible{outline:3px solid #fff1a4;outline-offset:-3px;z-index:8}
+.gcu-drag-ghost{position:absolute;z-index:20;pointer-events:none;transform:translate(-50%,-50%);object-fit:contain;filter:drop-shadow(0 5px 4px #0008)}
+.gcu-drag-ghost.returning{transition:left .14s ease-out,top .14s ease-out}
+@keyframes gcu-committed-slide{from{transform:translate(var(--move-x),var(--move-y));z-index:7}to{transform:translate(0,0)}}
+.gcu-drag-board[data-reduced-motion=true] .piece-img,.gcu-drag-board[data-reduced-motion=true] .gcu-drag-ghost{animation:none!important;transition:none!important}
+@media(prefers-reduced-motion:reduce){.gcu-drag-board .piece-img,.gcu-drag-ghost{animation:none!important;transition:none!important}}

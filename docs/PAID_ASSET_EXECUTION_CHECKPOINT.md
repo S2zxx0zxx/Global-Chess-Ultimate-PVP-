@@ -103,14 +103,14 @@ Performance protocol (provisional design targets, not measured): fixed seed and 
 | GCU-P06-T06 | VERIFIED | Sequential 12-ply batch, actual 1/1 fixture review; versioned 48-entry/256000-char cache and cancellation tests passed |
 | GCU-P06-T07 | VERIFIED | Legal academy hint d3 to d5 and correct move check offline; original five puzzles preserved; online module unchanged |
 | GCU-P06-T08 | VERIFIED | Actual review UI saved practice candidate both viewports; legal/dedup/corrupt storage tests passed, no seeded fallback needed |
-| GCU-P07-T01 | PLANNED | Not started; previous phase gate required |
-| GCU-P07-T02 | PLANNED | Not started; previous phase gate required |
-| GCU-P07-T03 | PLANNED | Not started; previous phase gate required |
-| GCU-P07-T04 | PLANNED | Not started; previous phase gate required |
-| GCU-P07-T05 | PLANNED | Not started; previous phase gate required |
-| GCU-P07-T06 | PLANNED | Not started; previous phase gate required |
-| GCU-P07-T07 | PLANNED | Not started; previous phase gate required |
-| GCU-P07-T08 | PLANNED | Not started; previous phase gate required |
+| GCU-P07-T01 | IMPLEMENTED_PENDING_VERIFY | Exact-head P07 tests/browser evidence pending |
+| GCU-P07-T02 | IMPLEMENTED_PENDING_VERIFY | Exact-head P07 tests/browser evidence pending |
+| GCU-P07-T03 | IMPLEMENTED_PENDING_VERIFY | Exact-head P07 tests/browser evidence pending |
+| GCU-P07-T04 | IMPLEMENTED_PENDING_VERIFY | Exact-head P07 tests/browser evidence pending |
+| GCU-P07-T05 | IMPLEMENTED_PENDING_VERIFY | Exact-head P07 tests/browser evidence pending |
+| GCU-P07-T06 | IMPLEMENTED_PENDING_VERIFY | Exact-head P07 tests/browser evidence pending |
+| GCU-P07-T07 | IMPLEMENTED_PENDING_VERIFY | Exact-head P07 tests/browser evidence pending |
+| GCU-P07-T08 | IMPLEMENTED_PENDING_VERIFY | Exact-head P07 tests/browser evidence pending |
 | GCU-P08-T01 | PLANNED | Not started; previous phase gate required |
 | GCU-P08-T02 | PLANNED | Not started; previous phase gate required |
 | GCU-P08-T03 | PLANNED | Not started; previous phase gate required |
@@ -247,3 +247,7 @@ P06 supplemental verification: actual home entry is Game Review, not a History b
 - Verified exact implementation [23e99273ce4fca1bfb123e2f1f847ea8ab7bb892](https://github.com/S2zxx0zxx/Global-Chess-Ultimate-PVP-/commit/23e99273ce4fca1bfb123e2f1f847ea8ab7bb892), [run 45506657266 attempt 2](https://github.com/S2zxx0zxx/Global-Chess-Ultimate-PVP-/actions/runs/45506657266/attempts/2), job 138844709752 SUCCESS: 67/67 tests, zero failure, production build 2.06s, AI worker unchanged 51.48 kB. All P01–P06 browser/profile/CI stages and artifact uploads success.
 - [Actual analysis artifact 14972868486](https://github.com/S2zxx0zxx/Global-Chess-Ultimate-PVP-/actions/runs/45506657266/artifacts/14972868486): 360 and 414px simulated mobile production PWA offline. Custom fixture saved PGN Rd2: root best Rxd5 +5.22, PV Rxd5 Ke7; played Rd2 -4.38, PV Rd2 Qe4+ Kd1; Ra3 -4.42, Rb3 -9.52. 4/16 legal candidates examined, depth two, 960cp heuristic loss/blunder. Both viewports verified legal highlights, score bar, sampled alternatives, review 1/1, actual UI practice save, academy hint and correct target, five original puzzles and original saved history unchanged. No seeded candidate fallback needed. Limited fixture, not exhaustive tactical/accuracy or physical-device evidence.
 - New analysis module uses verified P03 advanced strategy (no default optimized rollout), distinct analysis-purpose worker, root 900ms depth 2, max four candidates at child depth 1/350ms, conservative same-depth/root-score agreement classification; cache 48 entries/256000 chars; local practice 24 entries/96000 chars. Unit cancellation and UI scrub/exit, cache/perspective/legality/uncertainty/dedup verified. No engine source changes, online room analysis exposure or P07 work. Physical Android and full release acceptance remain P09. P00 distribution restrictions intact. P06 all eight deliverables verified within defined bounded scope. 54/84 task dispositions closed. P07 PLANNED, NOT STARTED; next only on explicit user instruction. Main remains 9469a533de86539260fd0483a187f31ffc16a515; final PR after P09. Ledger-only signoff commit requires own CI check at next phase.
+
+## P07 execution checkpoint — verification pending
+
+User explicitly authorized P07 after P06. P06 exact ledger CI 45507762884 SUCCESS. P07 original typed committed event contract, pointer capture drag/drop, legal promotion/castle/EP, event-driven motion/capture, canonical 3D animation and keyboard focus implemented. Real production browser harness covers mouse/touch, cancellation, orientations, special moves and software WebGL at multiple viewports; no physical Android claim. No P08, no main merge. Exact-head acceptance pending.

@@ -1,22 +1,23 @@
 import {useEffect, useRef, useState} from 'react';
 import {Chess, type Square} from 'chess.js';
 import type * as THREE from 'three';
+import type {MoveCommitted} from './gameplay-events';
 
 export type ThreeTheme = 'deco'|'bauhaus'|'scifi'|'egypt'|'classic';
-type Props = {fen:string;selected:Square|null;legal:Square[];lastMove:[Square,Square]|null;theme:ThreeTheme;useLibraryAssets:boolean;flipped:boolean;reducedMotion:boolean;onSquare:(square:Square)=>void};
+type Props = {fen:string;selected:Square|null;legal:Square[];lastMove:[Square,Square]|null;motion?:MoveCommitted;theme:ThreeTheme;useLibraryAssets:boolean;flipped:boolean;reducedMotion:boolean;onSquare:(square:Square)=>void};
 const names:Record<string,string>={p:'pawn',n:'knight',b:'bishop',r:'rook',q:'queen',k:'king'};
 const heights:Record<string,number>={p:.8,n:1.04,b:1.13,r:.94,q:1.29,k:1.4};
 const files='abcdefgh';
 
-export default function ChessBoard3D({fen,selected,legal,lastMove,theme,useLibraryAssets,flipped,reducedMotion,onSquare}:Props){
+export default function ChessBoard3D({fen,selected,legal,lastMove,motion,theme,useLibraryAssets,flipped,reducedMotion,onSquare}:Props){
   const mount=useRef<HTMLDivElement>(null);
   const onSquareRef=useRef(onSquare);
-  const positionRef=useRef({fen,selected,legal,lastMove});
+  const positionRef=useRef({fen,selected,legal,lastMove,motion});
   const updateRef=useRef<(()=>void)|null>(null);
   const [status,setStatus]=useState('Starting 3D renderer…');
   onSquareRef.current=onSquare;
-  positionRef.current={fen,selected,legal,lastMove};
-  useEffect(()=>{updateRef.current?.();},[fen,selected,legal,lastMove]);
+  positionRef.current={fen,selected,legal,lastMove,motion};
+  useEffect(()=>{updateRef.current?.();},[fen,selected,legal,lastMove,motion]);
   useEffect(()=>{
     let alive=true;
     let cleanup=()=>{};
@@ -80,11 +81,12 @@ export default function ChessBoard3D({fen,selected,legal,lastMove,theme,useLibra
       for(const color of ['w','b'])for(const type of Object.keys(names))prototypes.set(color+type,makeFallback(type,color));
       const coord=(square:string)=>new THREE.Vector3(files.indexOf(square[0])-3.5,.02,8-Number(square[1])-3.5);
       let previousFen=positionRef.current.fen;
-      let slide:{node:THREE.Group;from:THREE.Vector3;to:THREE.Vector3;started:number}|null=null;
-      const redraw=()=>{
+      let slides:{node:THREE.Group;from:THREE.Vector3;to:THREE.Vector3;started:number}[]=[];let renderedFen='';let lastEvent='';
+      const redraw=(force=false)=>{
         if(!alive)return;
         const state=positionRef.current;
         const chess=new Chess(state.fen);
+        if(force||renderedFen!==state.fen){slides=[];
         while(pieces.children.length)pieces.remove(pieces.children[0]);
         const ranks=chess.board();
         for(const row of ranks)for(const p of row){
@@ -95,23 +97,23 @@ export default function ChessBoard3D({fen,selected,legal,lastMove,theme,useLibra
           if(mesh)node.add(mesh.clone(true));
           pieces.add(node);
         }
-        const last=state.lastMove;
-        if(!reducedMotion && last && state.fen!==previousFen){
-          const moving=pieces.children.find(child=>child.userData.square===last[1]);
-          if(moving instanceof THREE.Group){
-            const from=coord(last[0]),to=coord(last[1]);
-            moving.position.copy(from);
-            slide={node:moving,from,to,started:performance.now()};
+        const event=state.motion;
+        if(!reducedMotion&&event&&event.eventId!==lastEvent&&event.before===previousFen&&event.after===state.fen){
+          for(const move of [event,...(event.rook?[event.rook]:[])]){
+            const moving=pieces.children.find(child=>child.userData.square===move.to);
+            if(moving instanceof THREE.Group){const from=coord(move.from),to=coord(move.to);moving.position.copy(from);slides.push({node:moving,from,to,started:performance.now()});}
           }
         }
-        previousFen=state.fen;
+        if(event)lastEvent=event.eventId;
+        previousFen=state.fen;renderedFen=state.fen;
+        }
         for(const t of tiles){
           const sq=t.userData.square as Square;
           const r=8-Number(sq[1]),c=files.indexOf(sq[0]);
           t.material=sq===state.selected?selectMat:state.legal.includes(sq)?legalMat:state.lastMove?.includes(sq)?lastMat:(r+c)%2?wood:cream;
         }
       };
-      updateRef.current=redraw;redraw();
+      updateRef.current=()=>redraw();redraw();
       const ray=new THREE.Raycaster(),pointer=new THREE.Vector2();
       const click=(event:PointerEvent)=>{
         const rect=renderer.domElement.getBoundingClientRect();
@@ -131,15 +133,16 @@ export default function ChessBoard3D({fen,selected,legal,lastMove,theme,useLibra
       const animate=()=>{
         if(!alive)return;
         if(!document.hidden){
-          if(slide){
+          for(const slide of slides){
             const now=performance.now();
             const t=Math.min(1,(now-slide.started)/320);
             const eased=t*t*(3-2*t);
             slide.node.position.lerpVectors(slide.from,slide.to,eased);
             slide.node.position.y+=Math.sin(t*Math.PI)*.18;
             // Restore the exact ground height next frame; never accumulate y-offset.
-            if(t>=1){slide.node.position.copy(slide.to);slide=null;}
+            if(t>=1)slide.node.position.copy(slide.to);
           }
+          slides=slides.filter(s=>performance.now()-s.started<320);
           if(!reducedMotion)key.intensity=2.2+Math.sin(performance.now()*.0005)*.07;
           renderer.render(scene,camera);
         }
@@ -197,7 +200,7 @@ export default function ChessBoard3D({fen,selected,legal,lastMove,theme,useLibra
                 // FBX materials may not embed texture paths. Users may prepare PBR WebP separately.
                 object.traverse(item=>{if(item instanceof THREE.Mesh)item.material=classicMaterials.get(color)||ivory;});
               }
-              prototypes.set(color+type,object);loaded++;redraw();setStatus('Library 3D models: '+loaded+'/12 loaded · '+theme);
+              prototypes.set(color+type,object);loaded++;redraw(true);setStatus('Library 3D models: '+loaded+'/12 loaded · '+theme);
             }catch{ /* A damaged optional model never blocks chess gameplay. */ }
           }
           if(alive)setStatus('Library '+theme+': '+loaded+'/12 models; missing models use fallback');
