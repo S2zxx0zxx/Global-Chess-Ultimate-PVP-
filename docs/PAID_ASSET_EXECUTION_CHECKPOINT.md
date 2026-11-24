@@ -55,14 +55,14 @@ Performance protocol (provisional design targets, not measured): fixed seed and 
 | GCU-P00-T04 | VERIFIED | Exact-main CI and source baseline rechecked; checkpoint CI passed |
 | GCU-P00-T05 | VERIFIED | 84 task IDs/dependencies revalidated; 12 risks mapped; decisions recorded |
 | GCU-P00-T06 | VERIFIED | Worker/event/storage and benchmark protocol reviewed against plan; implementation pending |
-| GCU-P01-T01 | IMPLEMENTED_PENDING_VERIFY | P01 changes submitted; exact-head acceptance evidence pending |
-| GCU-P01-T02 | IMPLEMENTED_PENDING_VERIFY | P01 changes submitted; exact-head acceptance evidence pending |
-| GCU-P01-T03 | IMPLEMENTED_PENDING_VERIFY | P01 changes submitted; exact-head acceptance evidence pending |
-| GCU-P01-T04 | IMPLEMENTED_PENDING_VERIFY | P01 changes submitted; exact-head acceptance evidence pending |
-| GCU-P01-T05 | IMPLEMENTED_PENDING_VERIFY | P01 changes submitted; exact-head acceptance evidence pending |
-| GCU-P01-T06 | IMPLEMENTED_PENDING_VERIFY | P01 changes submitted; exact-head acceptance evidence pending |
-| GCU-P01-T07 | IMPLEMENTED_PENDING_VERIFY | P01 changes submitted; exact-head acceptance evidence pending |
-| GCU-P01-T08 | IMPLEMENTED_PENDING_VERIFY | P01 changes submitted; exact-head acceptance evidence pending |
+| GCU-P01-T01 | VERIFIED | Canonical chess.js retained; unchanged dependency, rules authority, storage and wire schema; CI parity passed |
+| GCU-P01-T02 | VERIFIED | BigInt perft/divide; start d1–4 20/400/8902/197281; root snapshot unchanged |
+| GCU-P01-T03 | VERIFIED | Kiwipete d1–3 48/2039/97862; castling-through-check, pins and rook rights tests passed |
+| GCU-P01-T04 | VERIFIED | White/black en passant, expiry, discovered check rejection; 16 promotion cases incl captures and underpromotion passed |
+| GCU-P01-T05 | VERIFIED | Mate, stalemate, insufficient material, threefold, fifty-move and counters; current automatic casual draw policy documented |
+| GCU-P01-T06 | VERIFIED | Seeded legal walks, full undo, FEN/PGN and replay custom-start/repetition regression passed |
+| GCU-P01-T07 | VERIFIED | Misnamed original test corrected, real EP test and server/local legal/terminal parity passed |
+| GCU-P01-T08 | VERIFIED | 360 heuristic p50/p95 20.2/69.6 ms; 414 18.8/71.7 ms; 30 long tasks each; replay p50/p95 1.2/1.4 ms each; 180/180 selected tactical trials |
 | GCU-P02-T01 | PLANNED | Not started; previous phase gate required |
 | GCU-P02-T02 | PLANNED | Not started; previous phase gate required |
 | GCU-P02-T03 | PLANNED | Not started; previous phase gate required |
@@ -136,8 +136,21 @@ Performance protocol (provisional design targets, not measured): fixed seed and 
 
 ## Resume rule
 
-P00 engineering gate accepted: five verified tasks and one accepted with restrictions, six dispositions complete. P01 authorized and implementation submitted; gate pending exact-head CI and benchmark evidence. Resume GCU-P01-T01 through T08 on the same integration branch. Re-fetch exact main and branch head before edits; validate canonical chess.js rules, perft and state compatibility against the master plan. Never treat the ownership attestation as independent publisher/license verification or permission to redistribute raw assets in public. Revisit distribution at P08/P09. No PR created, no main merge, no raw package committed. Record actual tests and exact commits at each phase, with no fabricated results. Final PR only after P09.
+P00 engineering gate accepted: five verified tasks and one accepted with restrictions, six dispositions complete. P01 complete; G1 PASS on verified implementation head 31befb030931973f63299367d3e8c92147d1ab0f. P02 not started. Resume GCU-P02-T01 through T08 only on explicit user instruction, same integration branch; re-fetch exact main and branch head before edits. P01 correctness and performance evidence below is the comparison baseline. Never treat the ownership attestation as independent publisher/license verification or permission to redistribute raw assets in public. Revisit distribution at P08/P09. No PR created, no main merge, no raw package committed. Record actual tests and exact commits at each phase, with no fabricated results. Final PR only after P09.
 
-## P01 execution checkpoint
+## P01 execution checkpoint — G1 PASS
 
-P01 authorized after G0; exact main unchanged. P00 exact-head CI run 45490682938 passed. Master plan, archive and inventory hashes rechecked and matched. P01 implementation includes independent perft/divide harness, standard fixtures, legal/terminal/history tests, replay setup/history fix, actual en passant regression and repeatable browser baseline. G1 remains pending until exact-head test/build/browser evidence is inspected. No P02, PR or main merge.
+- User authorized P01 only. Original plan/archive/private inventory SHA-256 matched P00. Main stayed pinned to 9469a533de86539260fd0483a187f31ffc16a515. No raw paid assets in public branch. Perft/Board/FEN mechanisms referenced only; independent BigInt public-API implementation.
+- Implementation commit [8613348411f3acce1f8f8483a1d1e9c4cc172092](https://github.com/S2zxx0zxx/Global-Chess-Ultimate-PVP-/commit/8613348411f3acce1f8f8483a1d1e9c4cc172092): 27/27 tests, worker and build succeeded; browser step failed in run [45493411978](https://github.com/S2zxx0zxx/Global-Chess-Ultimate-PVP-/actions/runs/45493411978) because ubuntu-latest had moved to Ubuntu 26.04, incompatible with Playwright 1.56.1. No test was disabled or bypassed.
+- Corrected runner commit [31befb030931973f63299367d3e8c92147d1ab0f](https://github.com/S2zxx0zxx/Global-Chess-Ultimate-PVP-/commit/31befb030931973f63299367d3e8c92147d1ab0f) pins ubuntu-24.04. [Run 45493547072](https://github.com/S2zxx0zxx/Global-Chess-Ultimate-PVP-/actions/runs/45493547072), job 138797917389, completed SUCCESS. Exact-head npm verify: 27 tests, 27 pass, 0 fail; Worker bundle 93.1 kB; TypeScript/Vite build success (Vite 1.98s). Existing large Three.js chunk warning remains; not a P01 failure. Browser setup, baseline and both artifact uploads succeeded.
+- Test anchors: tests/helpers/perft.mjs, tests/p01-correctness.test.mjs, tests/chess.test.mjs; src/chess-state.ts and src/ReplayViewer.tsx fix nonstandard FEN replay and preserve prefix history. src/game.ts, storage keys, server/src/rules.mjs and dependency versions unchanged. P01 document: docs/P01_CORRECTNESS_BASELINE.md.
+- Measured headless Chromium 141.0.7390.37 / Linux, 360x800 and 414x896 simulated touch/mobile viewports. Fixed six-position corpus, 30 rounds each = 180 heuristic calls and 30 replay reconstructions per viewport; 360 legal/nonmutating calls overall, 60 replay reconstructions, 180/180 selected tactical trials (three distinct simple tactical positions repeated; not broad strength or Elo). Artifact [14968226062](https://github.com/S2zxx0zxx/Global-Chess-Ultimate-PVP-/actions/runs/45493547072/artifacts/14968226062); production preview artifact [14967008918](https://github.com/S2zxx0zxx/Global-Chess-Ultimate-PVP-/actions/runs/45493547072/artifacts/14967008918).
+
+| Viewport | Existing heuristic p50 / p95 / max (ms) | Replay rebuild p50 / p95 / max (ms) | Observed long tasks / max (ms) |
+|---|---|---|---|
+| 360x800 | 20.2 / 69.6 / 71.9 | 1.2 / 1.4 / 2.9 | 30 / 76 |
+| 414x896 | 18.8 / 71.7 / 75.8 | 1.2 / 1.4 / 2.8 | 30 / 80 |
+
+Long tasks are observed during the benchmark interval (includes harness work), not exclusively attributed to the engine. Existing synchronous heuristic exceeds the provisional 50 ms main-thread target. This is baseline evidence motivating P02 worker isolation and later G7 performance remediation, not a G7 pass. No physical Android, full browser UI journey, hosted-runtime or production-release certification claimed. T08 requires recording a baseline, not yet meeting future performance targets.
+
+G1 PASS: all eight task deliverables implemented, exact-head CI and baseline verified, root state and live history unchanged after search, no known correctness regression in tested scope, no raw asset disclosure. 14/84 task dispositions closed (P00 includes owner attestation accepted with restrictions). P02 is PLANNED, not started. Main remains untouched; final consolidated PR and merge only after P09. This ledger-only follow-up commit records evidence from the exact tested implementation head; its own CI must be checked before subsequent code changes.
