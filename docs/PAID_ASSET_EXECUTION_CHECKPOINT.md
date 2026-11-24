@@ -71,14 +71,14 @@ Performance protocol (provisional design targets, not measured): fixed seed and 
 | GCU-P02-T06 | VERIFIED | Isolated mobility/pawn/shelter terms, deterministic seeded one-ply result; evaluation p95 0.030 ms both viewports |
 | GCU-P02-T07 | VERIFIED | Bounded legal fallback, deadline/node cap, no fabricated depth or score; silent-port hard-stop 142.3 ms both viewports |
 | GCU-P02-T08 | VERIFIED | Opt-in evaluator, legacy strategy off-thread; live identity/history/legal checks; actual React saved computer match resume passed both viewports |
-| GCU-P03-T01 | IMPLEMENTED_PENDING_VERIFY | Exact-head CI and paired benchmark pending |
-| GCU-P03-T02 | IMPLEMENTED_PENDING_VERIFY | Exact-head CI and paired benchmark pending |
-| GCU-P03-T03 | IMPLEMENTED_PENDING_VERIFY | Exact-head CI and paired benchmark pending |
-| GCU-P03-T04 | IMPLEMENTED_PENDING_VERIFY | Exact-head CI and paired benchmark pending |
-| GCU-P03-T05 | IMPLEMENTED_PENDING_VERIFY | Exact-head CI and paired benchmark pending |
-| GCU-P03-T06 | IMPLEMENTED_PENDING_VERIFY | Exact-head CI and paired benchmark pending |
-| GCU-P03-T07 | IMPLEMENTED_PENDING_VERIFY | Exact-head CI and paired benchmark pending |
-| GCU-P03-T08 | IMPLEMENTED_PENDING_VERIFY | Exact-head CI and paired benchmark pending |
+| GCU-P03-T01 | VERIFIED | Independent Negamax Alpha-Beta, exhaustive shallow minimax parity, signed mate-distance tests passed |
+| GCU-P03-T02 | VERIFIED | History-aware draw/terminal scoring; threefold, fifty-move, insufficient material, stalemate, mate priority passed |
+| GCU-P03-T03 | VERIFIED | Stable completed iteration retained under node/deadline interruption; early incomplete search has no fabricated score/depth |
+| GCU-P03-T04 | VERIFIED | Bounded quiescence, all legal check evasions, capture/quiet promotions and recapture trap tested |
+| GCU-P03-T05 | VERIFIED | 1ms and 2000ms engine budget tests; real browser 1ms round trip 19.6/21.7ms, 2000ms 2015.9/2017.1ms; node and recursion limits verified |
+| GCU-P03-T06 | VERIFIED | Full legal PV replay, invalid tails/forged mate rejection and canonical live state validation passed |
+| GCU-P03-T07 | VERIFIED | Seven-position tactical corpus with independent forced mate-in-two oracle, decisive capture promotion and quiet-promotion regression |
+| GCU-P03-T08 | VERIFIED | Paired fixed seed/browser tests: foundation 30/42, advanced 42/42; 0 observed long tasks, measured latency/depth/node/timeout evidence recorded |
 | GCU-P04-T01 | PLANNED | Not started; previous phase gate required |
 | GCU-P04-T02 | PLANNED | Not started; previous phase gate required |
 | GCU-P04-T03 | PLANNED | Not started; previous phase gate required |
@@ -177,6 +177,24 @@ Artifacts: [P02 measured report 14967932737](https://github.com/S2zxx0zxx/Global
 
 P02 phase acceptance PASS: eight task deliverables implemented and verified within the one-ply worker foundation scope. Master acceptance matrix G2 full advanced search parity/deadline/memory/tactical improvement is NOT complete; P03/P04 must independently verify it. 22/84 task dispositions closed, including P00 ownership attestation accepted with restrictions. P03 PLANNED, not started; resume GCU-P03-T01 only on explicit user instruction, after verifying latest branch/main and ledger-only CI. Final consolidated PR remains deferred until P09. No merge to main.
 
-## P03 execution checkpoint — pending verification
+## P03 execution checkpoint — phase gate PASS
 
-P03 authorized; P02 ledger CI 45495194850 succeeded; main unchanged; original archive, plan and private inventory SHA-256 matched. Reviewed AI.cs lines 36–60, 104–243, 248–313, 342; independent TypeScript negamax, bounded checked quiescence, iterative completion, full PV validation, fixed tactical corpus and paired browser benchmark submitted. No P04 ordering/cache heuristics or raw paid content. Phase gate pending actual evidence.
+- User authorized P03 only. Original package SHA-256 d79d87045aadd506c9ba5714a3699eadbb60004b1f2737190ba2344b28098f1c, plan af8e19f57ad529cf2f8525728ba4441319a55716e69c6b9e5b813bebe81530a9, private inventory be2b8d8c27735336131beb9704d6b552e5f58c86e9a3f78ed36695e39c386952 all matched. Prior P02 ledger CI [45495194850](https://github.com/S2zxx0zxx/Global-Chess-Ultimate-PVP-/actions/runs/45495194850) succeeded. Main pinned to 9469a533de86539260fd0483a187f31ffc16a515. No PR or merge. No raw paid package, media or source copied. AI.cs mechanism reviewed (lines 36–60, 104–243, 248–313, 342); independent TypeScript implementation.
+- Implementation 7f82c4c1c8d8d12e435e64c1959bf039eba25f93 had Node strip-only parameter-property syntax failure [45496219812](https://github.com/S2zxx0zxx/Global-Chess-Ultimate-PVP-/actions/runs/45496219812); corrected in c783044245c9c7444911cc237415c96cc6df0fb3. Second run [45496250597](https://github.com/S2zxx0zxx/Global-Chess-Ultimate-PVP-/actions/runs/45496250597) had 42/43 tests pass: ambiguous quiet promotion root expected immediate promotion despite a legal delayed promotion PV. Corrected to decisive capture-promotion fixture and separately retained quiet promotion frontier test. No test disabled.
+- Verified exact implementation head [fcc7daf395edc90d7f5d7ab8775c7d2a41dfcb30](https://github.com/S2zxx0zxx/Global-Chess-Ultimate-PVP-/commit/fcc7daf395edc90d7f5d7ab8775c7d2a41dfcb30), [run 45496467113](https://github.com/S2zxx0zxx/Global-Chess-Ultimate-PVP-/actions/runs/45496467113), job 138808192573, completed SUCCESS. 43/43 tests (8 new P03 tests), zero failures; all P01/P02 browser regressions and paired P03 browser benchmark passed. TypeScript/Vite production build 2.06s; AI worker bundle 46.69 kB uncompressed; Cloudflare server worker unchanged 93.1 kB. All four artifacts uploaded.
+- Source: src/ai/advanced.ts; src/ai/protocol.ts, client.ts, search.ts; tests/p03-search.test.mjs; scripts/p03-tactical-corpus.mjs and p03-advanced-benchmark.mjs. See docs/P03_ADVANCED_SEARCH.md. Original legacy/foundation strategy compatibility preserved. Advanced opt-in VITE_AI_ADVANCED_SEARCH=true; default legacy until later rollout. P04 capture ordering, killers/history, hashes/TT not implemented. No new runtime dependency. Current search limits: depth 6, quiescence extension 8, nodes 50,000, time 2,000 ms, worker grace 120 ms. No unbounded table; bounded depth, node counts and PV (14 plies); heap profiling and 30-minute repeated search remain P04/P09. Checked frontier cap aborts iteration instead of stand-pat; nonchecked frontier can statically evaluate at cap. Existing game policy auto-draw at threefold/fifty moves remains unchanged, not full FIDE claim UI.
+
+### Verified paired browser report
+
+Chromium 141.0.7390.37 / Linux, simulated mobile viewports 360x800 and 414x896, same seven fixed tactical positions, seed 7, 1500 ms budget, three repetitions each. Foundation depth 1 vs advanced max depth 3. Each strategy 42 trials overall, seven distinct positions. Root FEN/history unchanged, all accepted moves/PVs legal; saved React computer match resumed on both viewports.
+
+| Viewport | Foundation correct / total | Advanced correct / total | Foundation wall p50 / p95 (ms) | Advanced wall p50 / p95 (ms) | Advanced worker p50 / p95 (ms) |
+|---|---|---|---|---|---|
+| 360x800 | 15/21 | 21/21 | 25.4 / 34.6 | 537.2 / 1516.1 | 522.4 / 1502.1 |
+| 414x896 | 15/21 | 21/21 | 25.6 / 32.2 | 552.1 / 1515.6 | 536.5 / 1501.9 |
+
+Totals 30/42 (71.43%) vs 42/42 (100%); +12 correct, +28.57 percentage points. Foundation missed mate-two and recapture trap in every repetition; advanced solved both and retained other five cases. Advanced 24 complete, 18 budget-timeout results with stable completed depth >=1; depth 1/2/3 counts 6/18/18; max observed nodes 1641 (paired trials). Zero observed main-thread long tasks in paired interval both viewports. 1 ms budget produced timeout in 19.6 / 21.7 ms round-trip (startup included), no fake depth/score; 2000 ms budget produced legal stable timeout at 2015.9 / 2017.1 ms wall, depth 3, nodes 2476 / 2427. These are observed benchmark timings, not guarantees or physical-device measurements. Advanced is slower than the one-ply foundation; P04 optimization is important. No Elo claim, no broad strength certification; seven positions, repeated. No heap measurement yet, no full lifecycle, offline or release certification.
+
+Artifacts: [P03 report 14968079088](https://github.com/S2zxx0zxx/Global-Chess-Ultimate-PVP-/actions/runs/45496467113/artifacts/14968079088), [P02 rerun 14968951894](https://github.com/S2zxx0zxx/Global-Chess-Ultimate-PVP-/actions/runs/45496467113/artifacts/14968951894), [P01 rerun 14967989192](https://github.com/S2zxx0zxx/Global-Chess-Ultimate-PVP-/actions/runs/45496467113/artifacts/14967989192), [production preview 14968632277](https://github.com/S2zxx0zxx/Global-Chess-Ultimate-PVP-/actions/runs/45496467113/artifacts/14968632277).
+
+P03 phase acceptance PASS: eight deliverables verified, legal PV, deterministic fixed-depth parity, bounded search and measured tactical improvement. Full cross-phase memory/device/long-duration validation remains P04/P09, not waived. 30/84 task dispositions closed (P00 T03 ownership attestation accepted with restrictions; independent publisher/distribution verification outstanding). P04 PLANNED, NOT STARTED; resume GCU-P04-T01 only on explicit user instruction after checking latest branch/main and ledger-only CI. Final consolidated PR after P09; no main merge.
