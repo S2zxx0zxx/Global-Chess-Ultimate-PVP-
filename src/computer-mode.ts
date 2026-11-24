@@ -35,7 +35,7 @@ export function undoCount(game:Chess,mode:'local'|'computer'|'puzzle',human:Play
  if(mode==='puzzle')return 0;
  if(mode==='local')return Math.min(1,game.history().length);
  const moves=game.history({verbose:true});
- const lastHuman=moves.findLastIndex(m=>m.color===human);
+ let lastHuman=-1;for(let i=moves.length-1;i>=0;i--)if(moves[i].color===human){lastHuman=i;break;}
  return lastHuman<0?0:moves.length-lastHuman;
 }
 export function winForHuman(record:{result:string;playerSide?:PlayerSide}){

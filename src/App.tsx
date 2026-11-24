@@ -346,11 +346,12 @@ export default function App() {
   };
   const undo = () => {
     if (!active || mode === 'puzzle') return;
-    invalidateAI();
     const rewind = undoCount(game.current,mode,computer.playerSide);
+    if(!rewind)return;
+    invalidateAI();
     let changed = false;
     for (let i = 0; i < rewind; i++) changed = Boolean(game.current.undo()) || changed;
-    if (changed) { clockRef.current = { ...clockRef.current, turn: game.current.turn(), lastAt: Date.now() }; setEndResult(null); refresh(mode); }
+    if (changed) { setAIStatus('');clockRef.current = { ...clockRef.current, turn: game.current.turn(), lastAt: Date.now() }; setEndResult(null); refresh(mode); }
   };
   const saveAndExit = () => {
     invalidateAI();
