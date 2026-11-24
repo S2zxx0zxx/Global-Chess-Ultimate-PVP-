@@ -79,14 +79,14 @@ Performance protocol (provisional design targets, not measured): fixed seed and 
 | GCU-P03-T06 | VERIFIED | Full legal PV replay, invalid tails/forged mate rejection and canonical live state validation passed |
 | GCU-P03-T07 | VERIFIED | Seven-position tactical corpus with independent forced mate-in-two oracle, decisive capture promotion and quiet-promotion regression |
 | GCU-P03-T08 | VERIFIED | Paired fixed seed/browser tests: foundation 30/42, advanced 42/42; 0 observed long tasks, measured latency/depth/node/timeout evidence recorded |
-| GCU-P04-T01 | PLANNED | Not started; previous phase gate required |
-| GCU-P04-T02 | PLANNED | Not started; previous phase gate required |
-| GCU-P04-T03 | PLANNED | Not started; previous phase gate required |
-| GCU-P04-T04 | PLANNED | Not started; previous phase gate required |
-| GCU-P04-T05 | PLANNED | Not started; previous phase gate required |
-| GCU-P04-T06 | PLANNED | Not started; previous phase gate required |
-| GCU-P04-T07 | PLANNED | Not started; previous phase gate required |
-| GCU-P04-T08 | PLANNED | Not started; previous phase gate required |
+| GCU-P04-T01 | IMPLEMENTED_PENDING_VERIFY | Exact-head CI/profile/soak evidence pending |
+| GCU-P04-T02 | IMPLEMENTED_PENDING_VERIFY | Exact-head CI/profile/soak evidence pending |
+| GCU-P04-T03 | IMPLEMENTED_PENDING_VERIFY | Exact-head CI/profile/soak evidence pending |
+| GCU-P04-T04 | IMPLEMENTED_PENDING_VERIFY | Exact-head CI/profile/soak evidence pending |
+| GCU-P04-T05 | IMPLEMENTED_PENDING_VERIFY | Exact-head CI/profile/soak evidence pending |
+| GCU-P04-T06 | IMPLEMENTED_PENDING_VERIFY | Exact-head CI/profile/soak evidence pending |
+| GCU-P04-T07 | IMPLEMENTED_PENDING_VERIFY | Exact-head CI/profile/soak evidence pending |
+| GCU-P04-T08 | IMPLEMENTED_PENDING_VERIFY | Exact-head CI/profile/soak evidence pending |
 | GCU-P05-T01 | PLANNED | Not started; previous phase gate required |
 | GCU-P05-T02 | PLANNED | Not started; previous phase gate required |
 | GCU-P05-T03 | PLANNED | Not started; previous phase gate required |
@@ -198,3 +198,7 @@ Totals 30/42 (71.43%) vs 42/42 (100%); +12 correct, +28.57 percentage points. Fo
 Artifacts: [P03 report 14968079088](https://github.com/S2zxx0zxx/Global-Chess-Ultimate-PVP-/actions/runs/45496467113/artifacts/14968079088), [P02 rerun 14968951894](https://github.com/S2zxx0zxx/Global-Chess-Ultimate-PVP-/actions/runs/45496467113/artifacts/14968951894), [P01 rerun 14967989192](https://github.com/S2zxx0zxx/Global-Chess-Ultimate-PVP-/actions/runs/45496467113/artifacts/14967989192), [production preview 14968632277](https://github.com/S2zxx0zxx/Global-Chess-Ultimate-PVP-/actions/runs/45496467113/artifacts/14968632277).
 
 P03 phase acceptance PASS: eight deliverables verified, legal PV, deterministic fixed-depth parity, bounded search and measured tactical improvement. Full cross-phase memory/device/long-duration validation remains P04/P09, not waived. 30/84 task dispositions closed (P00 T03 ownership attestation accepted with restrictions; independent publisher/distribution verification outstanding). P04 PLANNED, NOT STARTED; resume GCU-P04-T01 only on explicit user instruction after checking latest branch/main and ledger-only CI. Final consolidated PR after P09; no main merge.
+
+## P04 execution checkpoint — pending verification
+
+P04 authorized; prior exact ledger CI 45496984100 passed; master plan/archive/inventory hashes matched; inspected MvvLva.cs, AI.cs, Zobrist.cs, PVTable.cs, Magics.cs. Independent ordering/identity/cache and profiling implementation submitted. Full 30-minute repeated-search memory gate required; no P05 or final PR until passed. See docs/P04_SEARCH_OPTIMIZATION.md.

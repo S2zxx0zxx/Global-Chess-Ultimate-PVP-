@@ -19,7 +19,7 @@ function rank(score:Score):number {
 }
 // P02 is only a one-ply evaluator. P03 will supply recursive search.
 export function runSearch(req:Request, clock:()=>number=now):Response {
-  if(req.strategy==='advanced')return runAdvanced(req,clock);
+  if(req.strategy==='advanced'||req.strategy==='optimized')return runAdvanced(req,clock);
   const start=clock(),elapsed=()=>Math.max(0,clock()-start);
   if(!validRequest(req))return result(req);
   let game:Chess;

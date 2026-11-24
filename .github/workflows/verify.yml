@@ -24,6 +24,17 @@ jobs:
         run: node scripts/p02-worker-baseline.mjs
       - name: P03 paired advanced search
         run: node scripts/p03-advanced-benchmark.mjs
+      - name: P04 fixed-depth and bitboard profile
+        run: node --experimental-strip-types scripts/p04-search-profile.mjs
+      - name: P04 browser comparison
+        run: node scripts/p04-browser.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: p04-profile
+          path: |
+            reports/p04-search-profile.json
+            reports/p04-browser.json
+          if-no-files-found: error
       - uses: actions/upload-artifact@v4
         with:
           name: p03-advanced-search
