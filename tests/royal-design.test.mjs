@@ -29,7 +29,7 @@ test('all key sheet sections and existing gameplay paths are connected', () => {
     assert.ok(routes.includes(id), 'Missing required design screen '+id);
   }
   assert.match(integration, /<RoyalStudio/);
-  assert.match(integration, /begin=\{\(nextMode,timed\) => start\(nextMode,timed\)\}/);
+  assert.match(integration, /begin=\{\(nextMode,timed,options\) => start\(nextMode,timed,currentPuzzle,options\)\}/);
   assert.match(integration, /onSkinChange=\{skin => setBoardSkin\(skin\)\}/);
   assert.match(integration, /RESUME SAVED MATCH/);
   assert.match(integration, /role="alertdialog"/);
