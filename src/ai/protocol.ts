@@ -4,22 +4,26 @@ export const PROTOCOL = 1 as const;
 export const MAX_HISTORY = 1024;
 export const MAX_TIME_MS = 2000;
 export const MAX_NODES = 256;
+export const MAX_ADVANCED_NODES = 50000;
+export const MAX_DEPTH = 6;
+export const MAX_Q_PLY = 8;
+export const MAX_PV = MAX_DEPTH + MAX_Q_PLY;
 export const HARD_GRACE_MS = 120;
-export type Strategy = 'legacy' | 'foundation';
+export type Strategy = 'legacy' | 'foundation' | 'advanced';
 export type Identity = { searchId: string; gameId: string; revision: number };
 export type Position = { initialFen: string; moves: string[]; fen: string };
 export type Request = Identity & {
   protocol: 1; type: 'search'; purpose: 'play' | 'analysis'; strategy: Strategy;
-  position: Position; limits: { timeMs: number; maxDepth: 1; maxNodes: number }; seed: number;
+  position: Position; limits: { timeMs: number; maxDepth: number; maxNodes: number }; seed: number;
 };
 export type Score = { kind: 'cp'; value: number; perspective: 'w' | 'b' } |
   { kind: 'mate'; winner: 'w' | 'b'; plies: number; perspective: 'w' | 'b' };
 export type Status = 'complete' | 'timeout' | 'terminal' | 'error' | 'fallback' | 'cancelled';
-export type Reason = 'none' | 'deadline' | 'node-limit' | 'invalid-request' | 'worker-error' |
+export type Reason = 'none' | 'deadline' | 'node-limit' | 'frontier-limit' | 'invalid-request' | 'worker-error' |
   'invalid-response' | 'unavailable' | 'cancelled' | 'terminal' | 'legacy-recovery';
 export type Response = Identity & {
   protocol: 1; type: 'result'; status: Status; reason: Reason;
-  move: string | null; pv: string[]; score: Score | null; completedDepth: 0 | 1;
+  move: string | null; pv: string[]; score: Score | null; completedDepth: number;
   nodes: number | null; elapsedMs: number; strategy: Strategy;
 };
 const isObject = (x: unknown): x is Record<string, unknown> => typeof x === 'object' && x !== null && !Array.isArray(x);
@@ -45,16 +49,17 @@ export function samePosition(game: Chess, expected: Position): boolean {
 export function validRequest(x: unknown): x is Request {
   if(!isObject(x)||x.protocol!==PROTOCOL||x.type!=='search'||!id(x.searchId)||!id(x.gameId)||
      !integer(x.revision,0,Number.MAX_SAFE_INTEGER)||!integer(x.seed,0,0xffffffff)||
-     !['play','analysis'].includes(String(x.purpose))||!['legacy','foundation'].includes(String(x.strategy))) return false;
+     !['play','analysis'].includes(String(x.purpose))||!['legacy','foundation','advanced'].includes(String(x.strategy))) return false;
   const p=x.position,l=x.limits;
   return isObject(p)&&fen(p.initialFen)&&fen(p.fen)&&Array.isArray(p.moves)&&p.moves.length<=MAX_HISTORY&&p.moves.every(isUci)&&
-    isObject(l)&&integer(l.timeMs,1,MAX_TIME_MS)&&l.maxDepth===1&&integer(l.maxNodes,1,MAX_NODES);
+    isObject(l)&&integer(l.timeMs,1,MAX_TIME_MS)&&integer(l.maxDepth,1,x.strategy==='advanced'?MAX_DEPTH:1)&&integer(l.maxNodes,1,x.strategy==='advanced'?MAX_ADVANCED_NODES:MAX_NODES);
 }
-export function reconstruct(req: Request): Chess {
+export function reconstruct(req: Request, checkpoint:()=>void=()=>{}): Chess {
   if(!validRequest(req))throw new Error('Invalid request');
   const g=new Chess(req.position.initialFen);
   if(g.fen()!==req.position.initialFen)throw new Error('Noncanonical initial FEN');
   for(const u of req.position.moves) {
+    checkpoint();
     if(g.isGameOver())throw new Error('Moves after terminal position');
     const m=g.move(moveInput(u));
     if(uci(m)!==u)throw new Error('Move mismatch');
@@ -67,18 +72,45 @@ export function result(req: Request, patch: Partial<Omit<Response,keyof Identity
     status:'error',reason:'invalid-request',move:null,pv:[],score:null,completedDepth:0,nodes:null,elapsedMs:0,...patch };
 }
 const validScore=(s:unknown):s is Score=>isObject(s)&&['w','b'].includes(String(s.perspective))&&
-  (s.kind==='cp'?integer(s.value,-100000,100000):s.kind==='mate'&&['w','b'].includes(String(s.winner))&&integer(s.plies,0,1));
+  (s.kind==='cp'?integer(s.value,-100000,100000):s.kind==='mate'&&['w','b'].includes(String(s.winner))&&integer(s.plies,0,MAX_PV));
+/** Reconstruct history once for full PV validation; reject moves after a terminal node. */
+export function legalPV(req:Request,pv:readonly string[]):boolean {
+  if(pv.length>MAX_PV)return false;
+  try{
+    const game=reconstruct(req);
+    for(const u of pv){
+      if(!isUci(u)||game.isGameOver()||uci(game.move(moveInput(u)))!==u)return false;
+    }
+    return true;
+  }catch{return false;}
+}
 export function validResponse(x:unknown, req:Request, legal:ReadonlySet<string>, terminal:boolean): x is Response {
+  const advanced=req.strategy==='advanced',depthMax=advanced?req.limits.maxDepth:1;
   if(!isObject(x)||x.protocol!==PROTOCOL||x.type!=='result'||x.searchId!==req.searchId||x.gameId!==req.gameId||
      x.revision!==req.revision||x.strategy!==req.strategy||!['complete','timeout','terminal','error'].includes(String(x.status))||
-     !['none','deadline','node-limit','invalid-request','worker-error','terminal','legacy-recovery'].includes(String(x.reason))||
-     !integer(x.completedDepth,0,1)||!(x.nodes===null||integer(x.nodes,0,MAX_NODES))||
+     !['none','deadline','node-limit','frontier-limit','invalid-request','worker-error','terminal','legacy-recovery'].includes(String(x.reason))||
+     !integer(x.completedDepth,0,depthMax)||!(x.nodes===null||integer(x.nodes,0,advanced?req.limits.maxNodes:MAX_NODES))||
      typeof x.elapsedMs!=='number'||!Number.isFinite(x.elapsedMs)||x.elapsedMs<0||x.elapsedMs>60000||
-     !Array.isArray(x.pv)||x.pv.length>1||!(x.score===null||validScore(x.score))) return false;
-  if(x.move===null ? x.pv.length!==0 : !isUci(x.move)||!legal.has(x.move)||x.pv.length!==1||x.pv[0]!==x.move)return false;
+     !Array.isArray(x.pv)||x.pv.length>(advanced?MAX_PV:1)||!x.pv.every(isUci)||!(x.score===null||validScore(x.score)))return false;
+  if(x.move===null ? x.pv.length!==0 : !isUci(x.move)||!legal.has(x.move)||x.pv.length===0||x.pv[0]!==x.move)return false;
   if(x.status==='terminal')return terminal&&x.move===null&&x.completedDepth===0&&x.reason==='terminal';
   if(terminal)return false;
   if(x.status==='error')return x.move===null&&x.score===null&&x.completedDepth===0&&['invalid-request','worker-error'].includes(String(x.reason));
+  if(advanced){
+    if(typeof x.nodes!=='number')return false;
+    if(x.status==='timeout'&&!['deadline','node-limit','frontier-limit'].includes(String(x.reason)))return false;
+    if(x.status==='complete'&&(x.reason!=='none'||x.completedDepth===0))return false;
+    if(x.completedDepth===0)return x.status==='timeout'&&x.score===null&&x.pv.length<=1;
+    if(x.move===null||x.score===null||x.nodes===0||!legalPV(req,x.pv))return false;
+    if(x.score.perspective!==req.position.fen.split(' ')[1])return false;
+    if(x.score.kind==='mate'){
+      if(x.score.plies!==x.pv.length)return false;
+      try{const g=reconstruct(req);for(const u of x.pv)g.move(moveInput(u));
+        if(!g.isCheckmate()||g.turn()===x.score.winner)return false;
+      }catch{return false;}
+    }
+    return true;
+  }
   if(x.status==='timeout')return x.completedDepth===0&&x.score===null&&['deadline','node-limit'].includes(String(x.reason));
   if(x.move===null)return false;
   if(req.strategy==='legacy'||x.reason==='legacy-recovery')return x.completedDepth===0&&x.score===null&&x.nodes===null&&(x.reason==='none'||x.reason==='legacy-recovery');

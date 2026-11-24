@@ -1,5 +1,5 @@
 import type { Chess, Move } from 'chess.js';
-import { HARD_GRACE_MS, MAX_NODES, MAX_TIME_MS, PROTOCOL, positionOf, result, samePosition, uci, validRequest, validResponse,
+import { HARD_GRACE_MS, MAX_NODES, MAX_ADVANCED_NODES, MAX_TIME_MS, MAX_DEPTH, PROTOCOL, positionOf, result, samePosition, uci, validRequest, validResponse,
   type Identity, type Reason, type Request, type Response, type Strategy } from './protocol.ts';
 
 export type Port={onmessage:((e:MessageEvent<unknown>)=>void)|null;onerror:((e:ErrorEvent)=>void)|null;onmessageerror:((e:MessageEvent)=>void)|null;postMessage:(m:Request)=>void;terminate:()=>void};
@@ -8,10 +8,10 @@ type Factory=()=>Port;
 const workerFactory:Factory=()=>new Worker(new URL('./engine.worker.ts',import.meta.url),{type:'module'}) as unknown as Port;
 let nextId=0;
 export function searchId():string {return 'search-'+(++nextId).toString(36);}
-export function configuredStrategy():Strategy{return import.meta.env?.VITE_AI_WORKER_FOUNDATION==='true'?'foundation':'legacy';}
-export function buildRequest(game:Chess,identity:Identity,purpose:Request['purpose'],strategy:Strategy,timeMs=500,maxNodes=MAX_NODES,seed=0):Request{
+export function configuredStrategy():Strategy{return import.meta.env?.VITE_AI_ADVANCED_SEARCH==='true'?'advanced':import.meta.env?.VITE_AI_WORKER_FOUNDATION==='true'?'foundation':'legacy';}
+export function buildRequest(game:Chess,identity:Identity,purpose:Request['purpose'],strategy:Strategy,timeMs=500,maxNodes=strategy==='advanced'?MAX_ADVANCED_NODES:MAX_NODES,seed=0,maxDepth=strategy==='advanced'?3:1):Request{
   return {...identity,protocol:PROTOCOL,type:'search',purpose,strategy,position:positionOf(game),
-    limits:{timeMs:Math.max(1,Math.min(MAX_TIME_MS,Math.floor(timeMs))),maxDepth:1,maxNodes},seed};
+    limits:{timeMs:Math.max(1,Math.min(MAX_TIME_MS,Math.floor(timeMs))),maxDepth:Math.min(MAX_DEPTH,maxDepth),maxNodes},seed};
 }
 /** One bounded job, one worker, one resolution. No expensive synchronous AI fallback. */
 export function startJob(req:Request,legal:ReadonlySet<string>,terminal:boolean,factory:Factory=workerFactory):Job{

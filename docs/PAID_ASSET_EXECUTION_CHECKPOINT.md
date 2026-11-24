@@ -71,14 +71,14 @@ Performance protocol (provisional design targets, not measured): fixed seed and 
 | GCU-P02-T06 | VERIFIED | Isolated mobility/pawn/shelter terms, deterministic seeded one-ply result; evaluation p95 0.030 ms both viewports |
 | GCU-P02-T07 | VERIFIED | Bounded legal fallback, deadline/node cap, no fabricated depth or score; silent-port hard-stop 142.3 ms both viewports |
 | GCU-P02-T08 | VERIFIED | Opt-in evaluator, legacy strategy off-thread; live identity/history/legal checks; actual React saved computer match resume passed both viewports |
-| GCU-P03-T01 | PLANNED | Not started; previous phase gate required |
-| GCU-P03-T02 | PLANNED | Not started; previous phase gate required |
-| GCU-P03-T03 | PLANNED | Not started; previous phase gate required |
-| GCU-P03-T04 | PLANNED | Not started; previous phase gate required |
-| GCU-P03-T05 | PLANNED | Not started; previous phase gate required |
-| GCU-P03-T06 | PLANNED | Not started; previous phase gate required |
-| GCU-P03-T07 | PLANNED | Not started; previous phase gate required |
-| GCU-P03-T08 | PLANNED | Not started; previous phase gate required |
+| GCU-P03-T01 | IMPLEMENTED_PENDING_VERIFY | Exact-head CI and paired benchmark pending |
+| GCU-P03-T02 | IMPLEMENTED_PENDING_VERIFY | Exact-head CI and paired benchmark pending |
+| GCU-P03-T03 | IMPLEMENTED_PENDING_VERIFY | Exact-head CI and paired benchmark pending |
+| GCU-P03-T04 | IMPLEMENTED_PENDING_VERIFY | Exact-head CI and paired benchmark pending |
+| GCU-P03-T05 | IMPLEMENTED_PENDING_VERIFY | Exact-head CI and paired benchmark pending |
+| GCU-P03-T06 | IMPLEMENTED_PENDING_VERIFY | Exact-head CI and paired benchmark pending |
+| GCU-P03-T07 | IMPLEMENTED_PENDING_VERIFY | Exact-head CI and paired benchmark pending |
+| GCU-P03-T08 | IMPLEMENTED_PENDING_VERIFY | Exact-head CI and paired benchmark pending |
 | GCU-P04-T01 | PLANNED | Not started; previous phase gate required |
 | GCU-P04-T02 | PLANNED | Not started; previous phase gate required |
 | GCU-P04-T03 | PLANNED | Not started; previous phase gate required |
@@ -176,3 +176,7 @@ Silent-port timeout test: 20 ms requested + 120 ms grace, 142.3 ms observed each
 Artifacts: [P02 measured report 14967932737](https://github.com/S2zxx0zxx/Global-Chess-Ultimate-PVP-/actions/runs/45494899170/artifacts/14967932737), [P01 rerun 14968431648](https://github.com/S2zxx0zxx/Global-Chess-Ultimate-PVP-/actions/runs/45494899170/artifacts/14968431648), [production preview 14968770272](https://github.com/S2zxx0zxx/Global-Chess-Ultimate-PVP-/actions/runs/45494899170/artifacts/14968770272).
 
 P02 phase acceptance PASS: eight task deliverables implemented and verified within the one-ply worker foundation scope. Master acceptance matrix G2 full advanced search parity/deadline/memory/tactical improvement is NOT complete; P03/P04 must independently verify it. 22/84 task dispositions closed, including P00 ownership attestation accepted with restrictions. P03 PLANNED, not started; resume GCU-P03-T01 only on explicit user instruction, after verifying latest branch/main and ledger-only CI. Final consolidated PR remains deferred until P09. No merge to main.
+
+## P03 execution checkpoint — pending verification
+
+P03 authorized; P02 ledger CI 45495194850 succeeded; main unchanged; original archive, plan and private inventory SHA-256 matched. Reviewed AI.cs lines 36–60, 104–243, 248–313, 342; independent TypeScript negamax, bounded checked quiescence, iterative completion, full PV validation, fixed tactical corpus and paired browser benchmark submitted. No P04 ordering/cache heuristics or raw paid content. Phase gate pending actual evidence.
