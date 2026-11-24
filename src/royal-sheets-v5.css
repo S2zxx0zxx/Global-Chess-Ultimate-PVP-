@@ -494,3 +494,6 @@ h1,h2,h3{font-family:var(--font-title);font-weight:600}
 .royal-inventory-summary span{flex:1;color:#e4d0af;font-size:12px}
 .royal-inventory-summary strong{font:650 12px var(--font-title);color:#f5daab;text-align:right}
 @media(max-width:360px){.royal-profile-photo{flex-basis:63px;width:63px;height:65px}.royal-profile-photo img{height:54px;width:54px}.royal-profile-identity strong{font-size:16px}.royal-avatar-picker button,.royal-frame-picker button{min-height:137px}.royal-frame-picker span{height:63px;width:63px}}
+
+/* P06 bounded analysis panel. */
+.analysis-eval{height:14px;border:1px solid #9e743e;border-radius:4px;background:#171717;overflow:hidden}.analysis-eval>div{height:100%;background:#f6ead4}.replay-square.analysis-from{box-shadow:inset 0 0 0 3px #b89727}.replay-square.analysis-to{box-shadow:inset 0 0 0 4px #39734a}.analysis-review{display:grid;gap:7px}.analysis-review progress{width:100%;accent-color:#c8a05e}.analysis-row{display:flex;gap:5px;flex-wrap:wrap}.analysis-row button{background:#3d271b;color:#f5d4a1;border:1px solid #936c42;border-radius:5px;padding:7px}.royal-analysis-panel p{font-size:12px;overflow-wrap:anywhere}.royal-analysis-panel select{max-width:100%;padding:9px;color:#fbe9c7;background:#372419;border:1px solid #936c42}

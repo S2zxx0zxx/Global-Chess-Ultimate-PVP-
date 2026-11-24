@@ -34,6 +34,13 @@ jobs:
         run: node scripts/p05-offline.mjs
       - name: P05 fault-injected lifecycle acceptance
         run: node scripts/p05-lifecycle.mjs
+      - name: P06 offline match analysis
+        run: node scripts/p06-analysis.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: p06-analysis
+          path: reports/p06-analysis.json
+          if-no-files-found: error
       - uses: actions/upload-artifact@v4
         with:
           name: p05-computer-mode

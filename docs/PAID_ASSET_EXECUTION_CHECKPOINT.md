@@ -95,14 +95,14 @@ Performance protocol (provisional design targets, not measured): fixed seed and 
 | GCU-P05-T06 | VERIFIED | Timeout before response and visibility-change expiry verified; no post-timeout move |
 | GCU-P05-T07 | VERIFIED | Seven-position difficulty profile, paired 16-ply self-play, legal fallback tested |
 | GCU-P05-T08 | VERIFIED | Production offline reload/worker cache on 360/414; zero external requests; storage-denial graceful |
-| GCU-P06-T01 | PLANNED | Not started; previous phase gate required |
-| GCU-P06-T02 | PLANNED | Not started; previous phase gate required |
-| GCU-P06-T03 | PLANNED | Not started; previous phase gate required |
-| GCU-P06-T04 | PLANNED | Not started; previous phase gate required |
-| GCU-P06-T05 | PLANNED | Not started; previous phase gate required |
-| GCU-P06-T06 | PLANNED | Not started; previous phase gate required |
-| GCU-P06-T07 | PLANNED | Not started; previous phase gate required |
-| GCU-P06-T08 | PLANNED | Not started; previous phase gate required |
+| GCU-P06-T01 | IMPLEMENTED_PENDING_VERIFY | Exact-head CI and browser acceptance pending |
+| GCU-P06-T02 | IMPLEMENTED_PENDING_VERIFY | Exact-head CI and browser acceptance pending |
+| GCU-P06-T03 | IMPLEMENTED_PENDING_VERIFY | Exact-head CI and browser acceptance pending |
+| GCU-P06-T04 | IMPLEMENTED_PENDING_VERIFY | Exact-head CI and browser acceptance pending |
+| GCU-P06-T05 | IMPLEMENTED_PENDING_VERIFY | Exact-head CI and browser acceptance pending |
+| GCU-P06-T06 | IMPLEMENTED_PENDING_VERIFY | Exact-head CI and browser acceptance pending |
+| GCU-P06-T07 | IMPLEMENTED_PENDING_VERIFY | Exact-head CI and browser acceptance pending |
+| GCU-P06-T08 | IMPLEMENTED_PENDING_VERIFY | Exact-head CI and browser acceptance pending |
 | GCU-P07-T01 | PLANNED | Not started; previous phase gate required |
 | GCU-P07-T02 | PLANNED | Not started; previous phase gate required |
 | GCU-P07-T03 | PLANNED | Not started; previous phase gate required |
@@ -234,3 +234,7 @@ P05 exact CI 45501519372 passed including real production offline worker, 360/41
 ## P05 final acceptance — PASS
 
 Exact tested head cc58b4c1a1dacae4015bebb5b61a9a076fa38c24; run [45504889269](https://github.com/S2zxx0zxx/Global-Chess-Ultimate-PVP-/actions/runs/45504889269), job 138837424288 SUCCESS, 58/58 tests, 0 fail; all P01–P05 profiling and browser gates passed. Artifact [14973527832](https://github.com/S2zxx0zxx/Global-Chess-Ultimate-PVP-/actions/runs/45504889269/artifacts/14973527832) contains real production offline report plus 18/18 simulated mobile production-UI fault-injection scenarios across 360/414: pause/resume, undo, restart, navigation, resign, timeout-before-response, visibility-change timeout, worker failure, black opening. All 22 injected requests terminated exactly once; no duplicate terminal history or stale move accepted. Actual offline Worker test separately passed both viewports and storage-denied shell. P04 30-minute gate previously accepted. No physical-device certification or Elo claim. 46/84 task dispositions closed, P00 conditional attestation unchanged. User authorized P06 after P05 verification; P07 must not start before P06 gate. Main unchanged; no PR/merge.
+
+## P06 implementation checkpoint — pending acceptance
+
+P05 fully verified before P06. Master plan/archive/private inventory SHA-256 rechecked. All eight P06 tasks submitted: cancellable analysis, evaluation, legal SAN PV, bounded alternatives, comparable-depth classifications, batched review/cache, legal academy hints and review practice. No online analysis, no original puzzle change, no P07. Exact CI pending.

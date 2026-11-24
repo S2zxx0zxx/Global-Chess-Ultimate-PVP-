@@ -1,0 +1,10 @@
+import {useState} from 'react';
+import {readPractice,copyPosition,legalHint,type Practice} from './match-analysis';
+import {uci} from './ai/protocol';
+export default function ReviewPractice(){
+ const [items]=useState(()=>readPractice()),[chosen,setChosen]=useState<Practice|null>(null),[feedback,setFeedback]=useState(''),[selection,setSelection]=useState('');
+ const g=chosen?copyPosition(chosen.position):null;
+ return <section className="royal-analysis-panel" aria-label="Review practice"><strong>YOUR MATCH REVIEW PRACTICE</strong><small>Optional local positions. Best found move is a training target, not a guarantee of uniqueness. Original five tactics unchanged.</small>{items.length===0?<p>No saved review positions yet. Save one from match analysis.</p>:items.map((p,i)=><button type="button" className="btn btn-secondary" key={i} onClick={()=>{setChosen(p);setSelection('');setFeedback('');}}>PRACTICE POSITION {i+1} · {p.position.fen.split(' ')[1]==='w'?'White':'Black'} to move</button>)}
+ {g&&chosen&&<><div className="replay-board" role="grid" aria-label="Practice chessboard">{g.board().flat().map((p,i)=><div className={'replay-square '+((Math.floor(i/8)+i%8)%2?'dark':'light')} key={i} role="gridcell" aria-label={'abcdefgh'[i%8]+(8-Math.floor(i/8))}>{p&&<img src={'/pieces/'+p.color+'-'+p.type+'.svg'} alt=""/>}</div>)}</div><label htmlFor="review-practice-move">Choose a legal move</label><select id="review-practice-move" value={selection} onChange={e=>setSelection(e.target.value)}><option value="">Choose move</option>{g.moves({verbose:true}).map(m=><option value={uci(m)} key={uci(m)}>{m.san}</option>)}</select><button type="button" className="btn btn-primary" disabled={!selection} onClick={()=>setFeedback(legalHint(g,selection)&&selection===chosen.best?'Matches the engine training target.':'Try another legal move. Other good moves may exist.')}>CHECK MOVE</button><button type="button" className="btn btn-secondary" onClick={()=>{const m=legalHint(g,chosen.best);setFeedback(m?'Hint: consider '+m.from+' → '+m.to:'Hint unavailable.');}}>SHOW LEGAL HINT</button><p role="status">{feedback}</p></>}
+ </section>;
+}

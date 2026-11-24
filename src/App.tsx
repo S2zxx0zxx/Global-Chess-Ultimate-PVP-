@@ -6,6 +6,8 @@ import RoyalStudio, { type RoyalScreen } from './RoyalStudio';
 import RoyalIcon from './RoyalIcon';
 import { newClock, advanceClock, displayClock } from './clock';
 import { startAdvisory, searchId, liveCandidate, type Job } from './ai/client';
+import { legalHint } from './match-analysis';
+import ReviewPractice from './ReviewPractice';
 import { computerJob, normalizeComputer, otherSide, undoCount, DEFAULT_COMPUTER, PRESETS, type ComputerOptions } from './computer-mode';
 
 const ChessBoard3D = lazy(() => import('./ChessBoard3D'));
@@ -283,8 +285,10 @@ export default function App() {
   const hint = () => {
     if (!active || endResult || pausedRef.current || puzzleDone || (mode === 'computer' && game.current.turn() === botSide)) return;
     if (mode === 'puzzle') {
-      setSelected(currentPuzzle.from as Square);
-      notify('Tactics hint: consider the piece on ' + currentPuzzle.from + '.');
+      const suggested=legalHint(game.current,currentPuzzle.from+currentPuzzle.to+(currentPuzzle.promotion??''));
+      if(!suggested){notify('No verified hint for this position.');return;}
+      setSelected(suggested.from);
+      notify('Tactics hint: consider the piece on ' + suggested.from + '.');
       return;
     }
     hintJob.current?.cancel();
@@ -490,7 +494,7 @@ export default function App() {
             <div className="history-list">{history.map(record => <article key={record.id} className="history-card"><span className="history-token">{record.result === 'draw' ? '½' : '♛'}</span><div><strong>{record.mode === 'computer' ? 'VS Computer' : 'Pass & Play'}</strong><small>{new Date(record.endedAt).toLocaleDateString()} · {record.moves} plies</small></div><span className="history-score">{shortResult(record.result)}</span><button type="button" onClick={() => { navigator.clipboard?.writeText(record.pgn).then(() => notify('PGN copied.')).catch(() => notify('Clipboard unavailable in this browser.')); }} aria-label="Copy game PGN">COPY PGN</button><button type="button" onClick={() => setReplayRecord(record)} aria-label="Replay saved game">REPLAY GAME</button></article>)}</div>}
         </>}
 
-        {page === 'training' && <><section className="heading-block"><p className="eyebrow">THE ACADEMY</p><h1>Sharpen your <em>Mind.</em></h1><p>{solvedPuzzles.length} of {PUZZLES.length} original tactics solved. Progress is saved on this device.</p></section><div className="puzzle-list">{PUZZLES.map((puzzle, index) => <article className="puzzle-entry" key={puzzle.id}><div className="puzzle-number">{String(index + 1).padStart(2, '0')}</div><div><span className="eyebrow">{puzzle.level.toUpperCase()}{solvedPuzzles.includes(puzzle.id) ? ' · SOLVED' : ''}</span><h3>{puzzle.title}</h3><p>{puzzle.prompt}</p></div><button type="button" className="btn btn-small" onClick={() => start('puzzle', false, puzzle)}>{solvedPuzzles.includes(puzzle.id) ? 'REPLAY' : 'PLAY'}</button></article>)}</div></>}
+        {page === 'training' && <><section className="heading-block"><p className="eyebrow">THE ACADEMY</p><h1>Sharpen your <em>Mind.</em></h1><p>{solvedPuzzles.length} of {PUZZLES.length} original tactics solved. Progress is saved on this device.</p></section><div className="puzzle-list">{PUZZLES.map((puzzle, index) => <article className="puzzle-entry" key={puzzle.id}><div className="puzzle-number">{String(index + 1).padStart(2, '0')}</div><div><span className="eyebrow">{puzzle.level.toUpperCase()}{solvedPuzzles.includes(puzzle.id) ? ' · SOLVED' : ''}</span><h3>{puzzle.title}</h3><p>{puzzle.prompt}</p></div><button type="button" className="btn btn-small" onClick={() => start('puzzle', false, puzzle)}>{solvedPuzzles.includes(puzzle.id) ? 'REPLAY' : 'PLAY'}</button></article>)}</div><ReviewPractice/></>}
 
         {page === 'profile' && <><section className="heading-block"><p className="eyebrow">THE ROYAL PROFILE</p><h1>Your <em>Legacy.</em></h1></section><div className="profile-card"><div className="profile-crest">{initials(guest)}</div><h2>{guest}</h2><p>Local guest profile · No sign-in needed</p></div><div className="stats-grid"><div className="stat"><span>MATCHES</span><strong>{history.length}</strong></div><div className="stat"><span>TACTICS</span><strong>{solvedPuzzles.length}</strong></div><div className="stat"><span>ONLINE ELO</span><strong>—</strong></div></div><label className="form-label" htmlFor="playername">Display name</label><div className="name-row"><input id="playername" value={newName} maxLength={25} onChange={e => setNewName(e.target.value)}/><button type="button" className="btn btn-small" onClick={() => { const value = newName.trim(); if (value) { setGuest(value); notify('Display name saved locally.'); } }}>SAVE</button></div><section className="avatar-animation-entry"><h3>Royal Character Animation Studio</h3><p>Preview the supplied 43 humanoid animations; downloads only when opened.</p><button type="button" className="btn btn-secondary" onClick={() => setShowAvatarAnimations(v => !v)}>{showAvatarAnimations ? 'CLOSE' : 'OPEN'} ANIMATION STUDIO</button>{showAvatarAnimations && <Suspense fallback={<p>Loading 3D animation studio…</p>}><AnimationShowcase/></Suspense>}</section></>}
 
@@ -501,7 +505,7 @@ export default function App() {
         {royalTab('home','home','Home')}{royalTab('modes','sword','Play')}{royalTab('events','trophy','Events')}{royalTab('club','profile','Club')}{royalTab('shop','star','Store')}
       </nav>
     </div>
-    {replayRecord && <Suspense fallback={<div role="status">Loading match replay…</div>}><ReplayViewer key={replayRecord.id+(replayAnalysis?'-analysis':'-replay')} record={replayRecord} startAnalysis={replayAnalysis} onClose={() => setReplayRecord(null)}/></Suspense>}
+    {page!=='online'&&replayRecord && <Suspense fallback={<div role="status">Loading match replay…</div>}><ReplayViewer key={replayRecord.id+(replayAnalysis?'-analysis':'-replay')} record={replayRecord} startAnalysis={replayAnalysis} onClose={() => setReplayRecord(null)}/></Suspense>}
     {menu && <div className="modal-mask" onClick={() => setMenu(false)}><div className="action-sheet" role="dialog" aria-modal="true" aria-label="Match menu" onClick={e => e.stopPropagation()}><div className="sheet-heading"><h2>Game Paused</h2><button onClick={() => setMenu(false)} aria-label="Close menu"><Icon name="close" size={28}/></button></div><button type="button" className="royal-resume-action" onClick={()=>setMenu(false)}>▶ Resume Game</button><button type="button" onClick={() => { setMenu(false); undo(); }} disabled={!active || mode === 'puzzle'}>↶ Undo last move</button><button type="button" onClick={() => { setMenu(false); setSettings(p => ({ ...p, flipped: !p.flipped })); }}>⇅ Flip board</button><button type="button" onClick={saveAndExit}>▤ Save and exit</button><button type="button" onClick={()=>start(mode,clockEnabled,currentPuzzle,computerRef.current)}>↻ Restart match</button><button type="button" className="destructive" onClick={() => { if (mode === 'puzzle') saveAndExit(); else resign(); }}>{mode === 'puzzle' ? '↩ Exit puzzle' : '⚑ Resign match'}</button></div></div>}
     {drawDialog && <div className="modal-mask" onClick={()=>setDrawDialog(false)}>
       <section className="rv-resign-dialog royal-draw-dialog" role="alertdialog" aria-modal="true" aria-labelledby="royal-draw-title" onClick={e=>e.stopPropagation()}>
