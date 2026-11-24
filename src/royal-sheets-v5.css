@@ -509,3 +509,7 @@ h1,h2,h3{font-family:var(--font-title);font-weight:600}
 @keyframes gcu-committed-slide{from{transform:translate(var(--move-x),var(--move-y));z-index:7}to{transform:translate(0,0)}}
 .gcu-drag-board[data-reduced-motion=true] .piece-img,.gcu-drag-board[data-reduced-motion=true] .gcu-drag-ghost{animation:none!important;transition:none!important}
 @media(prefers-reduced-motion:reduce){.gcu-drag-board .piece-img,.gcu-drag-ghost{animation:none!important;transition:none!important}}
+
+/* Keep the board above fixed navigation in short landscape viewports. */
+@media (orientation:landscape) and (max-height:560px){.royal-match-panel .board-surround{width:min(100%,calc(100dvh - 110px),575px)}.royal-match-panel .board3d{height:min(70dvh,575px)}}
+.gcu-drag-board .square img,.gcu-drag-board .square span{pointer-events:none}

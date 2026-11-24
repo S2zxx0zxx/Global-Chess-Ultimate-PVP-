@@ -1,7 +1,7 @@
 import {useEffect,useRef,useState,type PointerEvent,type MouseEvent,type KeyboardEvent} from 'react';
 import type {Square} from 'chess.js';
 import {squareAt,squareCenter,sameRect,type Rect} from './gameplay-events';
-type Config={token:string;flipped:boolean;enabled:boolean;reducedMotion:boolean;piece:(s:Square)=>string|null;drop:(from:Square,to:Square|null)=>boolean};
+type Config={token:string;flipped:boolean;enabled:boolean;reducedMotion:boolean;piece:(s:Square)=>string|null;tap:(s:Square)=>void;drop:(from:Square,to:Square|null)=>boolean};
 type Drag={pointer:number;source:Square;piece:string;token:string;rect:Rect;flipped:boolean;startX:number;startY:number;dragging:boolean;target:HTMLElement};
 type Ghost={source:Square;piece:string;x:number;y:number;size:number;returning:boolean};
 export function useBoardDrag(config:Config){
@@ -21,19 +21,21 @@ export function useBoardDrag(config:Config){
  };
  useEffect(()=>{cancel();},[config.token,config.flipped,config.enabled]);
  useEffect(()=>{
-  const stop=()=>cancel();window.addEventListener('resize',stop);window.addEventListener('scroll',stop,true);window.addEventListener('blur',stop);
+  const stop=()=>cancel();const onScroll=()=>{const d=held.current;if(d&&ref.current&&!sameRect(d.rect,ref.current.getBoundingClientRect()))cancel();};window.addEventListener('resize',stop);window.addEventListener('scroll',onScroll,true);window.addEventListener('blur',stop);
   document.addEventListener('visibilitychange',stop);
   const observer=new ResizeObserver(()=>{const d=held.current;if(d&&ref.current&&!sameRect(d.rect,ref.current.getBoundingClientRect()))cancel();});
   if(ref.current)observer.observe(ref.current);
-  return()=>{window.removeEventListener('resize',stop);window.removeEventListener('scroll',stop,true);window.removeEventListener('blur',stop);document.removeEventListener('visibilitychange',stop);observer.disconnect();const d=held.current;held.current=null;if(d)try{d.target.releasePointerCapture(d.pointer);}catch{}window.clearTimeout(timer.current);};
- },[]);
+  return()=>{window.removeEventListener('resize',stop);window.removeEventListener('scroll',onScroll,true);window.removeEventListener('blur',stop);document.removeEventListener('visibilitychange',stop);observer.disconnect();const d=held.current;held.current=null;if(d)try{d.target.releasePointerCapture(d.pointer);}catch{}window.clearTimeout(timer.current);};
+ },[config.enabled]);
  const pointerDown=(e:PointerEvent<HTMLDivElement>)=>{
   if(!e.isPrimary||e.button!==0||held.current||!ref.current)return;
   suppress.current=false;clearGhost();
-  const c=current.current,rect=ref.current.getBoundingClientRect(),source=squareAt(rect,e.clientX,e.clientY,c.flipped);
-  if(!c.enabled||!source)return;
-  const piece=c.piece(source),target=(e.target as HTMLElement).closest<HTMLElement>('[data-square]');
-  if(!piece||!target)return;
+  const c=current.current,rect=ref.current.getBoundingClientRect(),target=(e.target as HTMLElement).closest<HTMLElement>('[data-square]');
+  const source=target?.dataset.square as Square|undefined;
+  if(!c.enabled||!source||!target||!ref.current.contains(target)||squareAt(rect,e.clientX,e.clientY,c.flipped)!==source)return;
+  const piece=c.piece(source);if(!piece)return;
+  // Prevent pointer focus from auto-scrolling the board mid-gesture. Tap is handled on release; keyboard clicks remain native.
+  e.preventDefault();
   held.current={pointer:e.pointerId,source,piece,token:c.token,rect,flipped:c.flipped,startX:e.clientX,startY:e.clientY,dragging:false,target};
   try{target.setPointerCapture(e.pointerId);}catch{held.current=null;}
  };
@@ -46,11 +48,13 @@ export function useBoardDrag(config:Config){
  };
  const pointerUp=(e:PointerEvent<HTMLDivElement>)=>{
   const d=held.current,c=current.current;if(!d||d.pointer!==e.pointerId)return;
-  if(!d.dragging){cancel();return;}
   e.preventDefault();suppress.current=true;
   const valid=c.enabled&&c.token===d.token&&c.flipped===d.flipped&&ref.current&&sameRect(d.rect,ref.current.getBoundingClientRect());
   const to=valid?squareAt(d.rect,e.clientX,e.clientY,d.flipped):null;
-  const accepted=Boolean(valid&&c.drop(d.source,to));cancel(!accepted);
+  const hit=document.elementFromPoint(e.clientX,e.clientY)?.closest<HTMLElement>('[data-square]');
+  const actual=hit&&ref.current?.contains(hit)&&hit.dataset.square===to?to:null;
+  if(!d.dragging){if(valid&&actual===d.source)c.tap(d.source);cancel();return;}
+  const accepted=Boolean(valid&&actual&&c.drop(d.source,actual));cancel(!accepted);
  };
  const clickCapture=(e:MouseEvent<HTMLDivElement>)=>{if(suppress.current&&e.detail!==0){e.preventDefault();e.stopPropagation();suppress.current=false;}};
  const keyDown=(e:KeyboardEvent<HTMLDivElement>)=>{

@@ -231,7 +231,7 @@ export default function App() {
   };
 
   const canDrag=page==='game'&&!view3D&&active&&!endResult&&!endedRef.current&&!pausedRef.current&&!menu&&!resignDialog&&!drawDialog&&!promotion&&!puzzleDone&&!gameOver&&(mode!=='computer'||turn!==botSide);
-  const drag=useBoardDrag({token:aiGameId.current+':'+aiEpoch.current+':'+fen+':'+page+':'+view3D,flipped:settings.flipped,enabled:canDrag,reducedMotion:settings.reducedMotion,piece:s=>{const p=game.current.get(s);return p?.color===game.current.turn()?p.color+'-'+p.type:null;},drop:(from,to)=>{
+  const drag=useBoardDrag({token:aiGameId.current+':'+aiEpoch.current+':'+fen+':'+page+':'+view3D,flipped:settings.flipped,enabled:canDrag,reducedMotion:settings.reducedMotion,tap:onSquare,piece:s=>{const p=game.current.get(s);return p?.color===game.current.turn()?p.color+'-'+p.type:null;},drop:(from,to)=>{
     if(!canDrag||pausedRef.current||endedRef.current||!to||!dropAllowed(game.current,from,to))return false;
     const moves=game.current.moves({square:from,verbose:true}).filter(m=>m.to===to);
     if(moves.some(m=>m.promotion)){setSelected(from);setPromotion({from,to});return true;}
@@ -449,8 +449,8 @@ export default function App() {
               <button className="royal-match-back" type="button" aria-label="Open match settings" onClick={showGameMenu}><Icon name="menu" size={19}/></button>
             </div>
             <div className="royal-display-switch" role="group" aria-label="Choose board rendering">
-              <button type="button" className={!view3D?'active':''} onClick={()=>setView3D(false)} aria-pressed={!view3D}>2D BOARD</button>
-              <button type="button" className={view3D?'active':''} onClick={()=>setView3D(true)} aria-pressed={view3D}>3D BOARD</button>
+              <button type="button" className={!view3D?'active':''} onClick={()=>{resetMotion();setView3D(false);}} aria-pressed={!view3D}>2D BOARD</button>
+              <button type="button" className={view3D?'active':''} onClick={()=>{resetMotion();setView3D(true);}} aria-pressed={view3D}>3D BOARD</button>
             </div>
           {view3D ? <Suspense fallback={<div className="board3d-loading" role="status">Loading 3D renderer…</div>}><ChessBoard3D fen={fen} selected={selected} legal={settings.hints ? legal : []} lastMove={lastMove} motion={motion} theme={settings.modelTheme || "deco"} useLibraryAssets={Boolean(settings.useLibraryAssets)} flipped={settings.flipped} reducedMotion={settings.reducedMotion} onSquare={onSquare}/></Suspense> : <div className="board-surround">
             <div ref={drag.ref} {...drag.handlers} className="board gcu-drag-board" role="grid" aria-label="Chess board. Select a piece then a destination, or drag a piece." data-event-id={motion?.eventId} data-ended-event={terminalEvent?.eventId} data-reduced-motion={settings.reducedMotion}>

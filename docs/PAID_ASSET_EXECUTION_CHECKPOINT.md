@@ -251,3 +251,7 @@ P06 supplemental verification: actual home entry is Game Review, not a History b
 ## P07 execution checkpoint — verification pending
 
 User explicitly authorized P07 after P06. P06 exact ledger CI 45507762884 SUCCESS. P07 original typed committed event contract, pointer capture drag/drop, legal promotion/castle/EP, event-driven motion/capture, canonical 3D animation and keyboard focus implemented. Real production browser harness covers mouse/touch, cancellation, orientations, special moves and software WebGL at multiple viewports; no physical Android claim. No P08, no main merge. Exact-head acceptance pending.
+
+### P07 resumed verification
+
+Exact source hashes match P00; inspected PieceMover.cs lines 26–79 (fixed-coordinate abs mapping and unvalidated sound index excluded; audio remains P08). Run 45510389244: 70/70 tests, 0 failures, build 3.09s, all P01–P06 regressions passed. P07 browser failed on first valid e2-e4 drag (line 20); root cause not yet proven. Harden source element/rect agreement, hit-test legal destination, prevent pointer focus auto-scroll, preserve native keyboard clicks with explicit pointer tap, cancel only geometry-changing scroll, observe mounted board, short-landscape board sizing and renderer switch motion reset. Add visible source assertion, bounded timeout trace, screenshot evidence and dedicated diagnostic CI alongside full regression. P07 acceptance OPEN; P08 not started.
