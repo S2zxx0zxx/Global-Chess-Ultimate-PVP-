@@ -1,10 +1,11 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Chess, type Square } from 'chess.js';
-import { chooseComputerMove, FILES, loadJSON , resultOf, saveJSON, shortResult, SQUARES, STORAGE_KEYS, type GameResult, type MatchRecord, type PlayMode } from './game';
+import { FILES, loadJSON , resultOf, saveJSON, shortResult, SQUARES, STORAGE_KEYS, type GameResult, type MatchRecord, type PlayMode } from './game';
 import { PUZZLES, PUZZLE_PROGRESS_KEY, isPuzzleSolution, type Puzzle } from './academy';
 import RoyalStudio, { type RoyalScreen } from './RoyalStudio';
 import RoyalIcon from './RoyalIcon';
 import { newClock, advanceClock, displayClock } from './clock';
+import { startAdvisory, searchId, liveCandidate, configuredStrategy, type Job } from './ai/client';
 
 const ChessBoard3D = lazy(() => import('./ChessBoard3D'));
 const AnimationShowcase = lazy(() => import('./AnimationShowcase'));
@@ -26,6 +27,11 @@ export default function App() {
   const game = useRef(new Chess());
   const clockRef = useRef(newClock(Date.now()));
   const endedRef = useRef(false);
+  const aiEpoch=useRef(0);
+  const aiGameId=useRef('game-'+searchId());
+  const botJob=useRef<Job|null>(null);
+  const hintJob=useRef<Job|null>(null);
+  const invalidateAI=()=>{aiEpoch.current++;botJob.current?.cancel();hintJob.current?.cancel();botJob.current=null;hintJob.current=null;};
   const stored = useRef(loadJSON<Snapshot | null>(STORAGE_KEYS.lastMatch, null));
   const [page, setPage] = useState<Page>(() => new URLSearchParams(location.search).has('room') ? 'online' : (loadJSON<{completedIntro?:boolean}>('gcu.royal-ui.v1',{}).completedIntro ? 'home' : 'studio'));
   const [studioScreen, setStudioScreen] = useState<RoyalScreen>('splash');
@@ -78,6 +84,7 @@ export default function App() {
   const recordEnd = (outcome: GameResult, currentMode: PlayMode) => {
     if (endedRef.current) return;
     endedRef.current = true;
+    invalidateAI();
     const id = Date.now() + '-' + Math.random().toString(36).slice(2, 7);
     const item: MatchRecord = { id, endedAt: new Date().toISOString(), mode: currentMode, result: outcome, pgn: game.current.pgn(), moves: game.current.history().length };
     setHistory(old => {
@@ -102,6 +109,7 @@ export default function App() {
     if (outcome && currentMode !== 'puzzle') recordEnd(outcome, currentMode);
   };
   const start = (nextMode: PlayMode, timed = false, puzzle: Puzzle = currentPuzzle) => {
+    invalidateAI(); aiGameId.current='game-'+searchId();
     if (nextMode === 'puzzle') setCurrentPuzzle(puzzle);
     game.current = nextMode === 'puzzle' ? new Chess(puzzle.fen) : new Chess();
     setMode(nextMode);
@@ -132,6 +140,7 @@ export default function App() {
       const restored = new Chess();
       if (old.pgn) restored.loadPgn(old.pgn);
       else restored.load(old.fen);
+      invalidateAI(); aiGameId.current='game-'+searchId();
       game.current = restored;
       setFen(restored.fen());
       setMode(old.mode);
@@ -165,6 +174,7 @@ export default function App() {
         window.setTimeout(()=>setCaptureSquare(current=>current===to?null:current),600);
       }
       if (!moved) { setSelected(null); return; }
+      invalidateAI();
       clockRef.current = { ...clockRef.current, turn: game.current.turn(), lastAt: Date.now() };
       if (mode === 'puzzle') {
         setPuzzleDone(true);
@@ -196,31 +206,42 @@ export default function App() {
     else setSelected(null);
   };
 
-  // Computer turns are intentionally single-worker-free and use a bounded deterministic
-  // shallow material heuristic. This is not an engine-strength or anti-cheat claim.
+  // Both strategies execute in a dedicated worker. Foundation scoring is opt-in.
   useEffect(() => {
-    if (page !== 'game' || mode !== 'computer' || !active || turn !== 'b' || endResult || gameOver) return;
-    const timer = window.setTimeout(() => {
-      const next = chooseComputerMove(game.current);
-      if (next) {
-        if (clockEnabled) {
-          const ticked = advanceClock(clockRef.current, Date.now());
-          clockRef.current = ticked.state;
-          if (ticked.flagged) { recordEnd('timeout-black', 'computer'); return; }
+    if (page !== 'game' || mode !== 'computer' || !active || turn !== 'b' || endResult || gameOver || menu || resignDialog || drawDialog) return;
+    const root=game.current,revision=aiEpoch.current,gameId=aiGameId.current;
+    let disposed=false,job:Job|undefined;
+    const timer=window.setTimeout(()=>{
+      if(disposed||endedRef.current||aiEpoch.current!==revision||game.current!==root)return;
+      const identity={searchId:searchId(),gameId,revision};
+      const timeMs=clockEnabled?Math.max(1,Math.min(500,clockRef.current.remainingMs[1])):500;
+      job=startAdvisory(root,identity,'play',configuredStrategy(),timeMs);
+      botJob.current=job;
+      const ownJob=job;
+      void ownJob.promise.then(response=>{
+        if(botJob.current===ownJob)botJob.current=null;
+        if(disposed||endedRef.current||aiEpoch.current!==revision||aiGameId.current!==gameId||game.current!==root||root.turn()!=='b')return;
+        const next=liveCandidate(root,ownJob.request,response,identity);
+        if(!next)return;
+        if(clockEnabled){
+          const ticked=advanceClock(clockRef.current,Date.now());
+          clockRef.current=ticked.state;
+          if(ticked.flagged){recordEnd('timeout-black','computer');return;}
         }
-        const played=game.current.move(next);
-        if (played?.captured) {
+        const played=root.move(next);
+        if(played.captured){
           setCaptureSquare(played.to);
           window.setTimeout(()=>setCaptureSquare(current=>current===played.to?null:current),600);
         }
-        clockRef.current = { ...clockRef.current, turn: game.current.turn(), lastAt: Date.now() };
+        invalidateAI();
+        clockRef.current={...clockRef.current,turn:root.turn(),lastAt:Date.now()};
         refresh('computer');
-      }
+      });
     }, 480);
-    return () => window.clearTimeout(timer);
-    // fen is required: the new position triggers one computer turn.
+    return ()=>{disposed=true;window.clearTimeout(timer);job?.cancel();if(botJob.current===job)botJob.current=null;};
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fen, mode, active, page, endResult, gameOver, turn]);
+  }, [fen, mode, active, page, endResult, gameOver, turn, menu, resignDialog, drawDialog, clockEnabled]);
+  useEffect(()=>()=>{botJob.current?.cancel();hintJob.current?.cancel();},[]);
 
   // Local clocks are wall-time reconciled to avoid drift after a throttled/background tab.
   // Network/rated clocks must still use a server-authoritative clock.
@@ -248,13 +269,23 @@ export default function App() {
       notify('Tactics hint: consider the piece on ' + currentPuzzle.from + '.');
       return;
     }
-    const suggested = chooseComputerMove(game.current);
-    if (!suggested) { notify('No legal move available.'); return; }
-    setSelected(suggested.from);
-    notify('Suggestion: ' + suggested.from + ' → ' + suggested.to + '. This is a basic heuristic, not engine analysis.');
+    hintJob.current?.cancel();
+    const root=game.current,identity={searchId:searchId(),gameId:aiGameId.current,revision:aiEpoch.current};
+    const job=startAdvisory(root,identity,'analysis');
+    hintJob.current=job;
+    void job.promise.then(response=>{
+      if(hintJob.current!==job)return;
+      hintJob.current=null;
+      if(endedRef.current||game.current!==root||aiEpoch.current!==identity.revision||aiGameId.current!==identity.gameId)return;
+      const suggested=liveCandidate(root,job.request,response,identity);
+      if(!suggested){notify('No legal move available.');return;}
+      setSelected(suggested.from);
+      notify('Suggestion: '+suggested.from+' → '+suggested.to+(response.status==='fallback'?'. Legal fallback, not engine analysis.':'. This is a basic heuristic, not engine analysis.'));
+    });
   };
   const resign = () => {
     if (!active || mode === 'puzzle' || endResult) return;
+    invalidateAI();
     setMenu(false);
     setResignDialog(true);
   };
@@ -264,6 +295,7 @@ export default function App() {
     recordEnd(game.current.turn() === 'w' ? 'black' : 'white', mode);
   };
   const showGameMenu=()=>{
+    invalidateAI();
     if(clockEnabled && active && mode!=='puzzle' && !endResult){
       const ticked=advanceClock(clockRef.current,Date.now());
       clockRef.current=ticked.state;
@@ -292,12 +324,14 @@ export default function App() {
   };
   const undo = () => {
     if (!active || mode === 'puzzle') return;
+    invalidateAI();
     const rewind = mode === 'computer' && game.current.turn() === 'w' ? 2 : 1;
     let changed = false;
     for (let i = 0; i < rewind; i++) changed = Boolean(game.current.undo()) || changed;
     if (changed) { clockRef.current = { ...clockRef.current, turn: game.current.turn(), lastAt: Date.now() }; setEndResult(null); refresh(mode); }
   };
   const saveAndExit = () => {
+    invalidateAI();
     if (clockEnabled && active) clockRef.current = advanceClock(clockRef.current, Date.now()).state;
     persist(mode, active, seconds);
     setMenu(false);
@@ -313,8 +347,9 @@ export default function App() {
   };
   const labelResult = (result: GameResult) => result === 'draw' ? 'A royal draw' : result.startsWith('timeout') ? 'Time expired' : result === 'white' ? 'White triumphs' : 'Black triumphs';
 
-  const screen = (target: Page) => { setPage(target); setMenu(false); setMessage(''); };
+  const screen = (target: Page) => { invalidateAI(); setPage(target); setMenu(false); setMessage(''); };
   const openRoyal = (target: RoyalScreen) => {
+    invalidateAI();
     setStudioScreen(target);
     setMessage('');
     setMenu(false);

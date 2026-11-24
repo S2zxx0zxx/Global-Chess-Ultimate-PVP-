@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { replayTimeline, replayPosition } from './chess-state';
 import type { ReplayTimeline } from './chess-state';
-import { chooseComputerMove, type MatchRecord } from './game';
+import type { MatchRecord } from './game';
+import { startAdvisory, liveCandidate, searchId } from './ai/client';
 
 type Props = { record: MatchRecord; onClose: () => void; startAnalysis?: boolean };
 const glyph = (color: string, type: string) => '/pieces/' + color + '-' + type + '.svg';
@@ -35,9 +36,21 @@ export default function ReplayViewer({ record, onClose, startAnalysis=false }: P
     if (!game) return null;
     const points:Record<string,number>={p:1,n:3,b:3.25,r:5,q:9,k:0};
     const material=game.board().flat().reduce((total,piece)=>total+(piece?points[piece.type]*(piece.color==='w'?1:-1):0),0);
-    const next=game.isGameOver()?null:chooseComputerMove(game);
-    return { material, next:next?.san||'None', turn:game.turn()==='w'?'White':'Black' };
+    return { material, turn:game.turn()==='w'?'White':'Black' };
   },[game]);
+  const [suggestion,setSuggestion]=useState<{game:typeof game; label:string}|null>(null);
+  useEffect(()=>{
+    if(!analysis||!game||game.isGameOver())return;
+    const identity={searchId:searchId(),gameId:'replay-'+searchId(),revision:Math.max(0,ply)};
+    const job=startAdvisory(game,identity,'analysis');
+    let disposed=false;
+    void job.promise.then(res=>{
+      if(disposed)return;
+      const m=liveCandidate(game,job.request,res,identity);
+      setSuggestion({game,label:m?m.san+(res.status==='fallback'?' (legal fallback)':''):'None'});
+    });
+    return()=>{disposed=true;job.cancel();};
+  },[analysis,game,ply]);
   useEffect(()=>{
     if(!playing || replay.error)return;
     if(ply>=replay.moves.length){setPlaying(false);return;}
@@ -76,7 +89,7 @@ export default function ReplayViewer({ record, onClose, startAnalysis=false }: P
         {analysis && insight && <div className="royal-analysis-panel">
           <strong>LOCAL HEURISTIC · NOT STOCKFISH</strong>
           <span>Material balance: {insight.material===0?'Equal':(insight.material>0?'+':'')+insight.material.toFixed(2)} (White perspective)</span>
-          <span>{insight.turn} to move · Suggested move: {insight.next}</span>
+          <span>{insight.turn} to move · Suggested move: {game?.isGameOver()?'None':suggestion?.game===game?suggestion.label:'Calculating…'}</span>
           <small>This is a single-ply material/move heuristic, not a depth-18 engine or an official rating.</small>
         </div>}
         <div className="replay-moves">{replay.moves.map((san, i) => <button type="button" key={i} onClick={() => setPly(i + 1)} className={ply === i + 1 ? 'active' : ''} aria-label={'Jump to move ' + (i + 1) + ' ' + san}>{i % 2 === 0 ? Math.floor(i / 2) + 1 + '.' : ''} {san}</button>)}</div>

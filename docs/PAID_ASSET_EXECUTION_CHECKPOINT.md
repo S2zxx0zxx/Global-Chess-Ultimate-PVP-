@@ -63,14 +63,14 @@ Performance protocol (provisional design targets, not measured): fixed seed and 
 | GCU-P01-T06 | VERIFIED | Seeded legal walks, full undo, FEN/PGN and replay custom-start/repetition regression passed |
 | GCU-P01-T07 | VERIFIED | Misnamed original test corrected, real EP test and server/local legal/terminal parity passed |
 | GCU-P01-T08 | VERIFIED | 360 heuristic p50/p95 20.2/69.6 ms; 414 18.8/71.7 ms; 30 long tasks each; replay p50/p95 1.2/1.4 ms each; 180/180 selected tactical trials |
-| GCU-P02-T01 | PLANNED | Not started; previous phase gate required |
-| GCU-P02-T02 | PLANNED | Not started; previous phase gate required |
-| GCU-P02-T03 | PLANNED | Not started; previous phase gate required |
-| GCU-P02-T04 | PLANNED | Not started; previous phase gate required |
-| GCU-P02-T05 | PLANNED | Not started; previous phase gate required |
-| GCU-P02-T06 | PLANNED | Not started; previous phase gate required |
-| GCU-P02-T07 | PLANNED | Not started; previous phase gate required |
-| GCU-P02-T08 | PLANNED | Not started; previous phase gate required |
+| GCU-P02-T01 | IMPLEMENTED_PENDING_VERIFY | Exact-head P02 unit/build/browser verification pending |
+| GCU-P02-T02 | IMPLEMENTED_PENDING_VERIFY | Exact-head P02 unit/build/browser verification pending |
+| GCU-P02-T03 | IMPLEMENTED_PENDING_VERIFY | Exact-head P02 unit/build/browser verification pending |
+| GCU-P02-T04 | IMPLEMENTED_PENDING_VERIFY | Exact-head P02 unit/build/browser verification pending |
+| GCU-P02-T05 | IMPLEMENTED_PENDING_VERIFY | Exact-head P02 unit/build/browser verification pending |
+| GCU-P02-T06 | IMPLEMENTED_PENDING_VERIFY | Exact-head P02 unit/build/browser verification pending |
+| GCU-P02-T07 | IMPLEMENTED_PENDING_VERIFY | Exact-head P02 unit/build/browser verification pending |
+| GCU-P02-T08 | IMPLEMENTED_PENDING_VERIFY | Exact-head P02 unit/build/browser verification pending |
 | GCU-P03-T01 | PLANNED | Not started; previous phase gate required |
 | GCU-P03-T02 | PLANNED | Not started; previous phase gate required |
 | GCU-P03-T03 | PLANNED | Not started; previous phase gate required |
@@ -154,3 +154,7 @@ P00 engineering gate accepted: five verified tasks and one accepted with restric
 Long tasks are observed during the benchmark interval (includes harness work), not exclusively attributed to the engine. Existing synchronous heuristic exceeds the provisional 50 ms main-thread target. This is baseline evidence motivating P02 worker isolation and later G7 performance remediation, not a G7 pass. No physical Android, full browser UI journey, hosted-runtime or production-release certification claimed. T08 requires recording a baseline, not yet meeting future performance targets.
 
 G1 PASS: all eight task deliverables implemented, exact-head CI and baseline verified, root state and live history unchanged after search, no known correctness regression in tested scope, no raw asset disclosure. 14/84 task dispositions closed (P00 includes owner attestation accepted with restrictions). P02 is PLANNED, not started. Main remains untouched; final consolidated PR and merge only after P09. This ledger-only follow-up commit records evidence from the exact tested implementation head; its own CI must be checked before subsequent code changes.
+
+## P02 execution checkpoint — verification pending
+
+P02 authorized; prior exact ledger CI 45493816235 successful; main unchanged; archive, plan and inventory hashes rechecked. Source references AI.cs 30–78/342, Engine.cs 75/87 and Evaluation.cs 183–223 inspected. Independent one-ply evaluation, typed worker client/protocol, lifecycle, history reconstruction, internal opt-in and legal fallback implemented. Existing heuristic off-thread; no recursive search, no paid content, no P03. P02 gate pending exact-head CI and actual benchmark evidence. See docs/P02_AI_WORKER_FOUNDATION.md.
