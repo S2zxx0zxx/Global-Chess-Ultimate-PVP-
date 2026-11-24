@@ -63,14 +63,14 @@ Performance protocol (provisional design targets, not measured): fixed seed and 
 | GCU-P01-T06 | VERIFIED | Seeded legal walks, full undo, FEN/PGN and replay custom-start/repetition regression passed |
 | GCU-P01-T07 | VERIFIED | Misnamed original test corrected, real EP test and server/local legal/terminal parity passed |
 | GCU-P01-T08 | VERIFIED | 360 heuristic p50/p95 20.2/69.6 ms; 414 18.8/71.7 ms; 30 long tasks each; replay p50/p95 1.2/1.4 ms each; 180/180 selected tactical trials |
-| GCU-P02-T01 | IMPLEMENTED_PENDING_VERIFY | Exact-head P02 unit/build/browser verification pending |
-| GCU-P02-T02 | IMPLEMENTED_PENDING_VERIFY | Exact-head P02 unit/build/browser verification pending |
-| GCU-P02-T03 | IMPLEMENTED_PENDING_VERIFY | Exact-head P02 unit/build/browser verification pending |
-| GCU-P02-T04 | IMPLEMENTED_PENDING_VERIFY | Exact-head P02 unit/build/browser verification pending |
-| GCU-P02-T05 | IMPLEMENTED_PENDING_VERIFY | Exact-head P02 unit/build/browser verification pending |
-| GCU-P02-T06 | IMPLEMENTED_PENDING_VERIFY | Exact-head P02 unit/build/browser verification pending |
-| GCU-P02-T07 | IMPLEMENTED_PENDING_VERIFY | Exact-head P02 unit/build/browser verification pending |
-| GCU-P02-T08 | IMPLEMENTED_PENDING_VERIFY | Exact-head P02 unit/build/browser verification pending |
+| GCU-P02-T01 | VERIFIED | Protocol v1 typed bounds, identity, legal one-ply PV, malformed request and response regression passed |
+| GCU-P02-T02 | VERIFIED | One worker/job, exactly-once resolution, cancellation, late-callback rejection; browser real cancellation and silent-port hard-stop passed |
+| GCU-P02-T03 | VERIFIED | Legal move history reconstruction, canonical FEN equality, repetition and counters; invalid history rejected |
+| GCU-P02-T04 | VERIFIED | Independent centipawn material and terminal result separation; perspective fixtures passed |
+| GCU-P02-T05 | VERIFIED | Original mirrored piece-square formulas and phase-aware king activity; symmetry and endgame fixtures passed |
+| GCU-P02-T06 | VERIFIED | Isolated mobility/pawn/shelter terms, deterministic seeded one-ply result; evaluation p95 0.030 ms both viewports |
+| GCU-P02-T07 | VERIFIED | Bounded legal fallback, deadline/node cap, no fabricated depth or score; silent-port hard-stop 142.3 ms both viewports |
+| GCU-P02-T08 | VERIFIED | Opt-in evaluator, legacy strategy off-thread; live identity/history/legal checks; actual React saved computer match resume passed both viewports |
 | GCU-P03-T01 | PLANNED | Not started; previous phase gate required |
 | GCU-P03-T02 | PLANNED | Not started; previous phase gate required |
 | GCU-P03-T03 | PLANNED | Not started; previous phase gate required |
@@ -136,7 +136,7 @@ Performance protocol (provisional design targets, not measured): fixed seed and 
 
 ## Resume rule
 
-P00 engineering gate accepted: five verified tasks and one accepted with restrictions, six dispositions complete. P01 complete; G1 PASS on verified implementation head 31befb030931973f63299367d3e8c92147d1ab0f. P02 not started. Resume GCU-P02-T01 through T08 only on explicit user instruction, same integration branch; re-fetch exact main and branch head before edits. P01 correctness and performance evidence below is the comparison baseline. Never treat the ownership attestation as independent publisher/license verification or permission to redistribute raw assets in public. Revisit distribution at P08/P09. No PR created, no main merge, no raw package committed. Record actual tests and exact commits at each phase, with no fabricated results. Final PR only after P09.
+P00 engineering gate accepted: five verified tasks and one accepted with restrictions, six dispositions complete. P01 complete; G1 PASS on verified implementation head 31befb030931973f63299367d3e8c92147d1ab0f. P02 completed; resume rule and measured evidence updated in P02 checkpoint below. P02 verified; resume GCU-P03-T01 through T08 only on explicit user instruction on the same integration branch; re-fetch exact main and branch head before edits. P01 and P02 evidence are the comparison baselines. Never treat the ownership attestation as independent publisher/license verification or permission to redistribute raw assets in public. Revisit distribution at P08/P09. No PR created, no main merge, no raw package committed. Record actual tests and exact commits at each phase, with no fabricated results. Final PR only after P09.
 
 ## P01 execution checkpoint — G1 PASS
 
@@ -155,6 +155,24 @@ Long tasks are observed during the benchmark interval (includes harness work), n
 
 G1 PASS: all eight task deliverables implemented, exact-head CI and baseline verified, root state and live history unchanged after search, no known correctness regression in tested scope, no raw asset disclosure. 14/84 task dispositions closed (P00 includes owner attestation accepted with restrictions). P02 is PLANNED, not started. Main remains untouched; final consolidated PR and merge only after P09. This ledger-only follow-up commit records evidence from the exact tested implementation head; its own CI must be checked before subsequent code changes.
 
-## P02 execution checkpoint — verification pending
+## P02 execution checkpoint — phase gate PASS
 
-P02 authorized; prior exact ledger CI 45493816235 successful; main unchanged; archive, plan and inventory hashes rechecked. Source references AI.cs 30–78/342, Engine.cs 75/87 and Evaluation.cs 183–223 inspected. Independent one-ply evaluation, typed worker client/protocol, lifecycle, history reconstruction, internal opt-in and legal fallback implemented. Existing heuristic off-thread; no recursive search, no paid content, no P03. P02 gate pending exact-head CI and actual benchmark evidence. See docs/P02_AI_WORKER_FOUNDATION.md.
+- User authorized P02 only. Original archive, master plan and private inventory hashes matched. P01 ledger CI [45493816235](https://github.com/S2zxx0zxx/Global-Chess-Ultimate-PVP-/actions/runs/45493816235) succeeded. Main remains 9469a533de86539260fd0483a187f31ffc16a515. Single integration branch, no PR/merge, no proprietary code/media uploaded. Re-inspected AI.cs, Engine.cs and Evaluation.cs; independent formulas and lifecycle adaptation only.
+- Exact implementation head [acee17e1d50281b97d85a2cbf2b4b46aea3d8acc](https://github.com/S2zxx0zxx/Global-Chess-Ultimate-PVP-/commit/acee17e1d50281b97d85a2cbf2b4b46aea3d8acc), [CI run 45494899170](https://github.com/S2zxx0zxx/Global-Chess-Ultimate-PVP-/actions/runs/45494899170), job 138802665959, completed SUCCESS: 35/35 tests (8 new P02 tests, all P01 tests retained), zero failed; TypeScript/Vite build 2.89s; dedicated AI worker JS 43.81 kB uncompressed, server worker 93.1 kB; P01 rerun and P02 browser steps and all artifact uploads succeeded. No disabled gates.
+- Source: src/ai/protocol.ts, evaluation.ts, search.ts, engine.worker.ts, client.ts; App and ReplayViewer call advisory worker, never directly commit worker results. Existing chess.js, room rules, saved-game schema, Royal V5 styles and routes unchanged. Default legacy strategy runs off-thread; VITE_AI_WORKER_FOUNDATION=true selects original one-ply positional evaluator. No recursive search or P03 work.
+- Tests: tests/p02-worker.test.mjs maps T01–T08; scripts/p02-worker-baseline.mjs measures actual module workers, live state rejection, cancellation, legacy compatibility and simulated mobile React saved-match resume; docs/P02_AI_WORKER_FOUNDATION.md documents architecture and limits.
+
+### Actual browser measurements
+
+Headless Chromium 141.0.7390.37 / Linux, simulated mobile viewports. Six P01 positions x 10 rounds per viewport; 120 total successful one-ply results, all legal and root state unchanged; 60/60 selected tactical trials (three simple positions repeated across viewports). Both viewports passed real worker cancellation and stale-result rejection, legacy worker and React saved computer match resume. Max 48 root candidates evaluated.
+
+| Viewport | Round trip p50 / p95 / max (ms) | Worker elapsed p50 / p95 / max (ms) | Evaluation p95 (ms) | Observed long tasks |
+|---|---|---|---|---|
+| 360x800 | 38.2 / 60.5 / 71.0 | 16.3 / 36.3 / 45.7 | 0.030 | 0 |
+| 414x896 | 41.7 / 82.7 / 179.6 | 16.3 / 38.3 / 41.6 | 0.030 | 0 |
+
+Silent-port timeout test: 20 ms requested + 120 ms grace, 142.3 ms observed each, terminated once, legal fallback and no fabricated depth/score. This is a controller scheduling test using an injected silent port, not a physical-device or busy-worker timing test. Compare P01 observed long tasks 60 over 360 baseline heuristic calls; P02 observed 0 over 120 foundation worker calls. Different sample counts and algorithms; not a controlled speedup or Elo claim. Round-trip includes fresh worker startup; slower elapsed round trip may coexist with improved responsiveness. No heap profiling, actual physical device, deployed runtime, offline worker-cache acceptance or full restart/undo/pause/navigation browser matrix claimed here. Those cross-phase requirements remain for later G2/G3/G6/G7/P09.
+
+Artifacts: [P02 measured report 14967932737](https://github.com/S2zxx0zxx/Global-Chess-Ultimate-PVP-/actions/runs/45494899170/artifacts/14967932737), [P01 rerun 14968431648](https://github.com/S2zxx0zxx/Global-Chess-Ultimate-PVP-/actions/runs/45494899170/artifacts/14968431648), [production preview 14968770272](https://github.com/S2zxx0zxx/Global-Chess-Ultimate-PVP-/actions/runs/45494899170/artifacts/14968770272).
+
+P02 phase acceptance PASS: eight task deliverables implemented and verified within the one-ply worker foundation scope. Master acceptance matrix G2 full advanced search parity/deadline/memory/tactical improvement is NOT complete; P03/P04 must independently verify it. 22/84 task dispositions closed, including P00 ownership attestation accepted with restrictions. P03 PLANNED, not started; resume GCU-P03-T01 only on explicit user instruction, after verifying latest branch/main and ledger-only CI. Final consolidated PR remains deferred until P09. No merge to main.
