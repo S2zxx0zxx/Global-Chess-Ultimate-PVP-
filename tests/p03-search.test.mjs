@@ -49,7 +49,8 @@ test('P03-T03 interruption returns the last fully completed iteration, never par
 test('P03-T04 quiet search includes checked evasion, promotion, recapture and bounded stack',()=>{
   const g=prep(tacticalCorpus[4]),line=fixedSearch(g,req(g),0,zero);
   assert.equal(line.pv[0],'h1g1');assert.ok(line.peakPly<=MAX_Q_PLY);
-  const prom=prep(tacticalCorpus[5]),q=fixedSearch(prom,req(prom),0,zero);assert.equal(q.pv[0],'a7a8q');
+  const prom=prep(tacticalCorpus[5]),q=fixedSearch(prom,req(prom),0,zero);assert.equal(q.pv[0],'a7b8q');
+  const quietProm=new Chess('7k/P7/8/8/8/8/8/7K w - - 0 1');assert.equal(fixedSearch(quietProm,req(quietProm),0,zero).pv[0],'a7a8q');
   const trap=prep(tacticalCorpus[3]),s=runSearch(req(trap,1),zero);assert.ok(passes(tacticalCorpus[3],s.move));
 });
 test('P03-T05 monotonic deadline 1ms, multi-second budget, node limits and actual client hard stop',async()=>{
