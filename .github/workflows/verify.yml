@@ -28,6 +28,17 @@ jobs:
         run: node --experimental-strip-types scripts/p04-search-profile.mjs
       - name: P04 browser comparison
         run: node scripts/p04-browser.mjs
+      - name: P05 difficulty and paired self-play
+        run: node --experimental-strip-types scripts/p05-difficulty.mjs
+      - name: P05 production offline lifecycle
+        run: node scripts/p05-offline.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: p05-computer-mode
+          path: |
+            reports/p05-difficulty.json
+            reports/p05-offline.json
+          if-no-files-found: error
       - uses: actions/upload-artifact@v4
         with:
           name: p04-profile

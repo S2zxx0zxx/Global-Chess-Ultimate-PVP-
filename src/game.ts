@@ -2,7 +2,7 @@ import { Chess, type Move, type Square } from 'chess.js';
 
 export type PlayMode = 'local' | 'computer' | 'puzzle';
 export type GameResult = 'white' | 'black' | 'draw' | 'timeout-white' | 'timeout-black';
-export type MatchRecord = { id: string; endedAt: string; mode: PlayMode; result: GameResult; pgn: string; moves: number };
+export type MatchRecord = { id: string; endedAt: string; mode: PlayMode; result: GameResult; pgn: string; moves: number; playerSide?:'w'|'b'; difficulty?:'easy'|'medium'|'hard'|'expert' };
 export const STORAGE_KEYS = {
   guest: 'gcu.guest.v1',
   lastMatch: 'gcu.lastMatch.v1',

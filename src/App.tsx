@@ -5,7 +5,8 @@ import { PUZZLES, PUZZLE_PROGRESS_KEY, isPuzzleSolution, type Puzzle } from './a
 import RoyalStudio, { type RoyalScreen } from './RoyalStudio';
 import RoyalIcon from './RoyalIcon';
 import { newClock, advanceClock, displayClock } from './clock';
-import { startAdvisory, searchId, liveCandidate, configuredStrategy, type Job } from './ai/client';
+import { startAdvisory, searchId, liveCandidate, type Job } from './ai/client';
+import { computerJob, normalizeComputer, otherSide, undoCount, DEFAULT_COMPUTER, PRESETS, type ComputerOptions } from './computer-mode';
 
 const ChessBoard3D = lazy(() => import('./ChessBoard3D'));
 const AnimationShowcase = lazy(() => import('./AnimationShowcase'));
@@ -16,7 +17,7 @@ type ThreeTheme = 'deco' | 'bauhaus' | 'scifi' | 'egypt' | 'classic';
 type Page = 'home' | 'play' | 'game' | 'history' | 'training' | 'profile' | 'settings' | 'about' | 'online' | 'studio';
 type Promotion = { from: Square; to: Square };
 type Settings = { flipped: boolean; reducedMotion: boolean; hints: boolean; modelTheme?: ThreeTheme; useLibraryAssets?: boolean };
-type Snapshot = { fen: string; mode: PlayMode; pgn: string; active: boolean; seconds: [number, number]; timed?: boolean; remainingMs?: [number, number] };
+type Snapshot = { fen: string; mode: PlayMode; pgn: string; active: boolean; seconds: [number, number]; timed?: boolean; remainingMs?: [number, number]; computer?: ComputerOptions };
 const DEFAULT_SETTINGS: Settings = { flipped: false, reducedMotion: false, hints: true };
 const initials = (text: string) => text.trim().slice(0, 2).toUpperCase() || 'GC';
 function randomGuest() { return 'Chess Guest ' + Math.floor(1000 + Math.random() * 9000); }
@@ -37,6 +38,10 @@ export default function App() {
   const [studioScreen, setStudioScreen] = useState<RoyalScreen>('splash');
   const [boardSkin, setBoardSkin] = useState<'wood'|'ivory'|'onyx'|'stone'>(() => loadJSON<{skin?:'wood'|'ivory'|'onyx'|'stone'}>('gcu.royal-ui.v1',{}).skin || 'wood');
   const [mode, setMode] = useState<PlayMode>('local');
+  const [computer,setComputer]=useState<ComputerOptions>(DEFAULT_COMPUTER);
+  const computerRef=useRef<ComputerOptions>(DEFAULT_COMPUTER);
+  const pausedRef=useRef(false);
+  const [aiStatus,setAIStatus]=useState('');
   const [view3D, setView3D] = useState(false);
   const [showAvatarAnimations, setShowAvatarAnimations] = useState(false);
   const [replayRecord, setReplayRecord] = useState<MatchRecord | null>(null);
@@ -70,6 +75,7 @@ export default function App() {
   const [captureSquare, setCaptureSquare] = useState<Square | null>(null);
 
   const turn = game.current.turn();
+  const botSide=otherSide(computer.playerSide);
   const legal = useMemo(() => selected ? game.current.moves({ square: selected, verbose: true }).map(m => m.to) : [], [selected, fen]);
   const board = game.current.board();
   const inCheck = game.current.isCheck();
@@ -77,7 +83,7 @@ export default function App() {
 
   const notify = (text: string) => { setMessage(text); };
   const persist = (currentMode: PlayMode, currentActive: boolean, currentSeconds: [number, number], timed = clockEnabled) => {
-    const next: Snapshot = { fen: game.current.fen(), pgn: game.current.pgn(), mode: currentMode, active: currentActive, seconds: currentSeconds, timed, remainingMs: [...clockRef.current.remainingMs] };
+    const next: Snapshot = { fen: game.current.fen(), pgn: game.current.pgn(), mode: currentMode, active: currentActive, seconds: timed ? [Math.ceil(clockRef.current.remainingMs[0]/1000),Math.ceil(clockRef.current.remainingMs[1]/1000)] : currentSeconds, timed, remainingMs: [...clockRef.current.remainingMs], ...(currentMode==='computer'?{computer:computerRef.current}:{}) };
     stored.current = next;
     if (!saveJSON(STORAGE_KEYS.lastMatch, next)) setStorageWarning(true);
   };
@@ -86,12 +92,13 @@ export default function App() {
     endedRef.current = true;
     invalidateAI();
     const id = Date.now() + '-' + Math.random().toString(36).slice(2, 7);
-    const item: MatchRecord = { id, endedAt: new Date().toISOString(), mode: currentMode, result: outcome, pgn: game.current.pgn(), moves: game.current.history().length };
+    const item: MatchRecord = { id, endedAt: new Date().toISOString(), mode: currentMode, result: outcome, pgn: game.current.pgn(), moves: game.current.history().length, ...(currentMode==='computer'?{playerSide:computerRef.current.playerSide,difficulty:computerRef.current.difficulty}:{}) };
     setHistory(old => {
       const next = [item, ...old].slice(0, 100);
       if (!saveJSON(STORAGE_KEYS.history, next)) setStorageWarning(true);
       return next;
     });
+    pausedRef.current=true;setAIStatus('');
     setEndResult(outcome);
     setActive(false);
     persist(currentMode, false, seconds);
@@ -108,8 +115,10 @@ export default function App() {
     const outcome = resultOf(game.current);
     if (outcome && currentMode !== 'puzzle') recordEnd(outcome, currentMode);
   };
-  const start = (nextMode: PlayMode, timed = false, puzzle: Puzzle = currentPuzzle) => {
+  const start = (nextMode: PlayMode, timed = false, puzzle: Puzzle = currentPuzzle, options:ComputerOptions=computerRef.current) => {
     invalidateAI(); aiGameId.current='game-'+searchId();
+    pausedRef.current=false;setAIStatus('');setResignDialog(false);
+    if(nextMode==='computer'){const c=normalizeComputer(options);computerRef.current=c;setComputer(c);setSettings(s=>({...s,flipped:c.playerSide==='b'}));}
     if (nextMode === 'puzzle') setCurrentPuzzle(puzzle);
     game.current = nextMode === 'puzzle' ? new Chess(puzzle.fen) : new Chess();
     setMode(nextMode);
@@ -141,12 +150,18 @@ export default function App() {
       if (old.pgn) restored.loadPgn(old.pgn);
       else restored.load(old.fen);
       invalidateAI(); aiGameId.current='game-'+searchId();
+      if(restored.fen()!==old.fen||restored.isGameOver())throw Error('Invalid or ended saved match');
+      const c=normalizeComputer(old.computer??{difficulty:'easy',playerSide:'w'});computerRef.current=c;setComputer(c);
+      if(old.mode==='computer')setSettings(s=>({...s,flipped:c.playerSide==='b'}));
+      pausedRef.current=false;setAIStatus('');setEndResult(null);setMenu(false);setResignDialog(false);setDrawDialog(false);setSelected(null);setPromotion(null);setPuzzleDone(false);
       game.current = restored;
       setFen(restored.fen());
       setMode(old.mode);
       setActive(true);
       setSeconds(old.seconds || [600, 600]);
-      const ms = old.remainingMs || [old.seconds[0] * 1000, old.seconds[1] * 1000];
+      const raw=old.remainingMs??(old.seconds??[600,600]).map(x=>x*1000);
+      const ms:[number,number]=[0,1].map(i=>Number.isFinite(raw[i])?Math.max(0,Math.min(600000,raw[i])):600000) as [number,number];
+      setSeconds([Math.ceil(ms[0]/1000),Math.ceil(ms[1]/1000)]);
       clockRef.current = { remainingMs: [...ms], turn: restored.turn(), lastAt: Date.now() };
       endedRef.current = false;
       setClockEnabled(Boolean(old.timed));
@@ -156,7 +171,7 @@ export default function App() {
   };
 
   const execute = (from: Square, to: Square, promote: string = 'q') => {
-    if (!active || endResult || (mode === 'computer' && turn === 'b')) return;
+    if (!active || endResult || pausedRef.current || (mode === 'computer' && turn === botSide)) return;
     if (mode === 'puzzle' && !isPuzzleSolution(currentPuzzle, from, to, promote)) {
       notify('Not quite. ' + currentPuzzle.prompt);
       setSelected(null);
@@ -193,7 +208,7 @@ export default function App() {
     }
   };
   const onSquare = (square: Square) => {
-    if (!active || endResult || (mode === 'computer' && turn === 'b') || puzzleDone) return;
+    if (!active || endResult || pausedRef.current || (mode === 'computer' && turn === botSide) || puzzleDone) return;
     const piece = game.current.get(square);
     if (selected && legal.includes(square)) {
       const sourcePiece = game.current.get(selected);
@@ -208,25 +223,27 @@ export default function App() {
 
   // Both strategies execute in a dedicated worker. Foundation scoring is opt-in.
   useEffect(() => {
-    if (page !== 'game' || mode !== 'computer' || !active || turn !== 'b' || endResult || gameOver || menu || resignDialog || drawDialog) return;
+    if (page !== 'game' || mode !== 'computer' || !active || turn !== botSide || endResult || gameOver || menu || resignDialog || drawDialog) return;
     const root=game.current,revision=aiEpoch.current,gameId=aiGameId.current;
+    setAIStatus('Computer thinking…');
     let disposed=false,job:Job|undefined;
     const timer=window.setTimeout(()=>{
-      if(disposed||endedRef.current||aiEpoch.current!==revision||game.current!==root)return;
+      if(disposed||endedRef.current||pausedRef.current||aiEpoch.current!==revision||game.current!==root)return;
       const identity={searchId:searchId(),gameId,revision};
-      const timeMs=clockEnabled?Math.max(1,Math.min(500,clockRef.current.remainingMs[1])):500;
-      job=startAdvisory(root,identity,'play',configuredStrategy(),timeMs);
+      if(clockEnabled){const ticked=advanceClock(clockRef.current,Date.now());clockRef.current=ticked.state;if(ticked.flagged){recordEnd(ticked.flagged==='w'?'timeout-white':'timeout-black','computer');return;}}
+      job=computerJob(root,identity,computerRef.current,clockEnabled?clockRef.current.remainingMs[botSide==='w'?0:1]:null);
       botJob.current=job;
       const ownJob=job;
       void ownJob.promise.then(response=>{
         if(botJob.current===ownJob)botJob.current=null;
-        if(disposed||endedRef.current||aiEpoch.current!==revision||aiGameId.current!==gameId||game.current!==root||root.turn()!=='b')return;
+        if(disposed||endedRef.current||aiEpoch.current!==revision||aiGameId.current!==gameId||game.current!==root||pausedRef.current||root.turn()!==botSide)return;
         const next=liveCandidate(root,ownJob.request,response,identity);
-        if(!next)return;
+        if(!next){setAIStatus('Computer move unavailable');return;}
+        setAIStatus(response.status==='fallback'||response.completedDepth===0&&response.status==='timeout'?'Legal fallback used':response.status==='timeout'?'Time budget reached · last completed search':'Computer move ready');
         if(clockEnabled){
           const ticked=advanceClock(clockRef.current,Date.now());
           clockRef.current=ticked.state;
-          if(ticked.flagged){recordEnd('timeout-black','computer');return;}
+          if(ticked.flagged){recordEnd(ticked.flagged==='w'?'timeout-white':'timeout-black','computer');return;}
         }
         const played=root.move(next);
         if(played.captured){
@@ -237,17 +254,18 @@ export default function App() {
         clockRef.current={...clockRef.current,turn:root.turn(),lastAt:Date.now()};
         refresh('computer');
       });
-    }, 480);
+    }, 80);
     return ()=>{disposed=true;window.clearTimeout(timer);job?.cancel();if(botJob.current===job)botJob.current=null;};
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fen, mode, active, page, endResult, gameOver, turn, menu, resignDialog, drawDialog, clockEnabled]);
+  }, [fen, mode, active, page, endResult, gameOver, turn, menu, resignDialog, drawDialog, clockEnabled, botSide, computer]);
   useEffect(()=>()=>{botJob.current?.cancel();hintJob.current?.cancel();},[]);
 
   // Local clocks are wall-time reconciled to avoid drift after a throttled/background tab.
   // Network/rated clocks must still use a server-authoritative clock.
   useEffect(() => {
-    if (!clockEnabled || !active || page !== 'game' || endResult || mode === 'puzzle' || menu) return;
+    if (!clockEnabled || !active || page !== 'game' || endResult || mode === 'puzzle' || menu || resignDialog || drawDialog) return;
     const tick = () => {
+      if(pausedRef.current||endedRef.current)return;
       const current = advanceClock(clockRef.current, Date.now());
       clockRef.current = current.state;
       setSeconds([Math.ceil(current.state.remainingMs[0] / 1000), Math.ceil(current.state.remainingMs[1] / 1000)]);
@@ -257,13 +275,13 @@ export default function App() {
     document.addEventListener('visibilitychange', tick);
     return () => { window.clearInterval(timer); document.removeEventListener('visibilitychange', tick); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [clockEnabled, active, page, mode, endResult, menu]);
+  }, [clockEnabled, active, page, mode, endResult, menu, resignDialog, drawDialog]);
 
   useEffect(() => { if (!saveJSON(STORAGE_KEYS.settings, settings)) setStorageWarning(true); }, [settings]);
   useEffect(() => { if (!saveJSON(STORAGE_KEYS.guest, guest)) setStorageWarning(true); }, [guest]);
 
   const hint = () => {
-    if (!active || endResult || puzzleDone || (mode === 'computer' && game.current.turn() === 'b')) return;
+    if (!active || endResult || pausedRef.current || puzzleDone || (mode === 'computer' && game.current.turn() === botSide)) return;
     if (mode === 'puzzle') {
       setSelected(currentPuzzle.from as Square);
       notify('Tactics hint: consider the piece on ' + currentPuzzle.from + '.');
@@ -283,34 +301,38 @@ export default function App() {
       notify('Suggestion: '+suggested.from+' → '+suggested.to+(response.status==='fallback'?'. Legal fallback, not engine analysis.':'. This is a basic heuristic, not engine analysis.'));
     });
   };
+  const pauseMatch=()=>{
+    invalidateAI();setAIStatus('');
+    if(!pausedRef.current&&clockEnabled&&active&&!endedRef.current&&mode!=='puzzle'){
+      const t=advanceClock(clockRef.current,Date.now());clockRef.current=t.state;
+      setSeconds([Math.ceil(t.state.remainingMs[0]/1000),Math.ceil(t.state.remainingMs[1]/1000)]);
+      if(t.flagged)recordEnd(t.flagged==='w'?'timeout-white':'timeout-black',mode);
+    }
+    pausedRef.current=true;
+  };
   const resign = () => {
     if (!active || mode === 'puzzle' || endResult) return;
-    invalidateAI();
+    pauseMatch();
+    if(endedRef.current)return;
     setMenu(false);
     setResignDialog(true);
   };
   const confirmResign = () => {
     if (!active || mode === 'puzzle' || endResult) { setResignDialog(false); return; }
     setResignDialog(false);
-    recordEnd(game.current.turn() === 'w' ? 'black' : 'white', mode);
+    recordEnd((mode==='computer'?computer.playerSide:game.current.turn()) === 'w' ? 'black' : 'white', mode);
   };
-  const showGameMenu=()=>{
-    invalidateAI();
-    if(clockEnabled && active && mode!=='puzzle' && !endResult){
-      const ticked=advanceClock(clockRef.current,Date.now());
-      clockRef.current=ticked.state;
-      setSeconds([Math.ceil(ticked.state.remainingMs[0]/1000),Math.ceil(ticked.state.remainingMs[1]/1000)]);
-      if(ticked.flagged)recordEnd(ticked.flagged==='w'?'timeout-white':'timeout-black',mode);
-    }
-    setMenu(true);
-  };
+  const showGameMenu=()=>{pauseMatch();if(!endedRef.current)setMenu(true);};
   useEffect(()=>{
-    if(!menu)clockRef.current={...clockRef.current,lastAt:Date.now()};
-  },[menu]);
+    if(page==='game'&&active&&!menu&&!resignDialog&&!drawDialog&&!endedRef.current){
+      if(pausedRef.current)clockRef.current={...clockRef.current,lastAt:Date.now()};
+      pausedRef.current=false;
+    }
+  },[menu,resignDialog,drawDialog,page,active]);
   const offerDraw = () => {
     if (!active || mode === 'puzzle' || endResult) return;
     if (mode === 'computer') { notify('The offline computer does not support draw negotiation.'); return; }
-    setDrawDialog(true);
+    pauseMatch();if(!endedRef.current)setDrawDialog(true);
   };
   const confirmDraw = () => {
     if (!active || mode !== 'local' || endResult) { setDrawDialog(false); return; }
@@ -325,15 +347,15 @@ export default function App() {
   const undo = () => {
     if (!active || mode === 'puzzle') return;
     invalidateAI();
-    const rewind = mode === 'computer' && game.current.turn() === 'w' ? 2 : 1;
+    const rewind = undoCount(game.current,mode,computer.playerSide);
     let changed = false;
     for (let i = 0; i < rewind; i++) changed = Boolean(game.current.undo()) || changed;
     if (changed) { clockRef.current = { ...clockRef.current, turn: game.current.turn(), lastAt: Date.now() }; setEndResult(null); refresh(mode); }
   };
   const saveAndExit = () => {
     invalidateAI();
-    if (clockEnabled && active) clockRef.current = advanceClock(clockRef.current, Date.now()).state;
-    persist(mode, active, seconds);
+    pauseMatch();
+    persist(mode, active&&!endedRef.current, seconds);
     setMenu(false);
     setPage('home');
   };
@@ -347,9 +369,9 @@ export default function App() {
   };
   const labelResult = (result: GameResult) => result === 'draw' ? 'A royal draw' : result.startsWith('timeout') ? 'Time expired' : result === 'white' ? 'White triumphs' : 'Black triumphs';
 
-  const screen = (target: Page) => { invalidateAI(); setPage(target); setMenu(false); setMessage(''); };
+  const screen = (target: Page) => { if(page==='game'&&target!=='game'){pauseMatch();persist(mode,active&&!endedRef.current,seconds);}else invalidateAI(); setPage(target); setMenu(false); setMessage(''); };
   const openRoyal = (target: RoyalScreen) => {
-    invalidateAI();
+    if(page==='game'){pauseMatch();persist(mode,active&&!endedRef.current,seconds);}else invalidateAI();
     setStudioScreen(target);
     setMessage('');
     setMenu(false);
@@ -386,7 +408,7 @@ export default function App() {
           screen={page === 'home' ? 'home' : page === 'play' ? 'modes' : studioScreen}
           navigate={openRoyal}
           openPage={screen}
-          begin={(nextMode,timed) => start(nextMode,timed)}
+          begin={(nextMode,timed,options) => start(nextMode,timed,currentPuzzle,options)}
           guest={guest}
           saveGuest={(value) => { setGuest(value); setNewName(value); }}
           history={history}
@@ -404,9 +426,9 @@ export default function App() {
           <div className="royal-match-panel">
             <div className="royal-match-top">
               <button className="royal-match-back" type="button" onClick={saveAndExit} aria-label="Save game and return home"><Icon name="back" size={20}/></button>
-              <div className="royal-match-player"><span className="royal-match-avatar">♙</span><span><strong>{mode === 'puzzle' ? 'Scholar' : guest}</strong><small>★ {mode === 'puzzle' ? 'Training' : 'Beginner'}</small></span><b className={turn==='w'?'active-clock':''}>{mode==='puzzle'?'—':clockEnabled?formatTime(seconds[0]):'∞'}</b></div>
+              <div className="royal-match-player"><span className="royal-match-avatar">♙</span><span><strong>{mode === 'puzzle' ? 'Scholar' : mode==='computer'&&computer.playerSide==='b'?'Computer':guest}</strong><small>★ {mode === 'puzzle' ? 'Training' : mode==='computer'&&computer.playerSide==='b'?PRESETS[computer.difficulty].label:'White'}</small></span><b className={turn==='w'?'active-clock':''}>{mode==='puzzle'?'—':clockEnabled?formatTime(seconds[0]):'∞'}</b></div>
               <span className="royal-match-crown">♛</span>
-              <div className="royal-match-player opponent"><span><strong>{mode==='computer'?'Computer':mode==='puzzle'?'Tactic':'Black'}</strong><small>{mode==='computer'?'★ Basic':'Opponent'}</small></span><b className={turn==='b'?'active-clock':''}>{mode==='puzzle'?'—':clockEnabled?formatTime(seconds[1]):'∞'}</b><span className="royal-match-avatar">♟</span></div>
+              <div className="royal-match-player opponent"><span><strong>{mode==='computer'?(computer.playerSide==='w'?'Computer':guest):mode==='puzzle'?'Tactic':'Black'}</strong><small>{mode==='computer'?(computer.playerSide==='w'?PRESETS[computer.difficulty].label:'Black'):'Opponent'}</small></span><b className={turn==='b'?'active-clock':''}>{mode==='puzzle'?'—':clockEnabled?formatTime(seconds[1]):'∞'}</b><span className="royal-match-avatar">♟</span></div>
               <button className="royal-match-back" type="button" aria-label="Open match settings" onClick={showGameMenu}><Icon name="menu" size={19}/></button>
             </div>
             <div className="royal-display-switch" role="group" aria-label="Choose board rendering">
@@ -439,6 +461,7 @@ export default function App() {
           <div className={'royal-match-status '+(inCheck?'is-check':'')+(endResult?' is-ended':'')} role="status">
             {puzzleDone?'♛ Tactic Solved!':endResult?labelResult(endResult):gameOver?'Match Finished':inCheck?'⚠ Check!':mode==='puzzle'?currentPuzzle.prompt:turn==='w'?'● White to Move':'● Black to Move'}
           </div>
+          {mode==='computer'&&aiStatus&&!endResult&&<p role="status" className="royal-emote-last" data-ai-status>{aiStatus}</p>}
           <div className="royal-match-actions" aria-label="In-game interaction controls">
             <button type="button" onClick={()=>notify('Online chat is unavailable for this local game.')}><span>☷</span>Chat</button>
             <button type="button" onClick={()=>setEmoteOpen(v=>!v)} disabled={!active||Boolean(endResult)}><span>☺</span>Emote</button>
@@ -450,8 +473,8 @@ export default function App() {
           {emoteFeedback && <p className="royal-emote-last" role="status">Last local emote: {emoteFeedback}</p>}
           <div className="royal-match-history"><h3><Icon name="history" size={19}/> Move History <small>{game.current.history().length} plies</small></h3>
             <div className="royal-pgn-moves">{game.current.history().length?game.current.history().map((m,i)=><span key={i}>{i%2===0?Math.floor(i/2)+1+'. ':''}{m} </span>):<p>Move a piece to begin the record.</p>}</div>
-            <button type="button" onClick={undo} disabled={!active||mode==='puzzle'||game.current.history().length===0}>↶ UNDO</button>
-            <button type="button" onClick={hint} disabled={!active||Boolean(endResult)||puzzleDone}>✦ HINT</button>
+            <button type="button" onClick={undo} disabled={!active||mode==='puzzle'||undoCount(game.current,mode,computer.playerSide)===0}>↶ UNDO</button>
+            <button type="button" onClick={hint} disabled={!active||Boolean(endResult)||puzzleDone||(mode==='computer'&&turn===botSide)}>✦ HINT</button>
           </div>
         </div>
           {endResult && <div className="result-overlay" role="alertdialog" aria-modal="true" aria-label="Match result"><div className="result-card"><span className="result-crown">♛</span><p className="eyebrow">GAME COMPLETE</p><h2>{labelResult(endResult)}</h2><p>{shortResult(endResult)}</p><button type="button" className="btn btn-primary" onClick={() => start(mode === 'puzzle' ? 'local' : mode, clockEnabled)}>REMATCH</button><button type="button" className="btn btn-secondary" onClick={() => openLatestReplay(false)}>REPLAY</button><button type="button" className="btn btn-secondary" onClick={() => openLatestReplay(true)}>ANALYSIS</button><button type="button" className="btn btn-secondary" onClick={saveAndExit}>BACK TO LOBBY</button></div></div>}
@@ -477,7 +500,7 @@ export default function App() {
       </nav>
     </div>
     {replayRecord && <Suspense fallback={<div role="status">Loading match replay…</div>}><ReplayViewer key={replayRecord.id+(replayAnalysis?'-analysis':'-replay')} record={replayRecord} startAnalysis={replayAnalysis} onClose={() => setReplayRecord(null)}/></Suspense>}
-    {menu && <div className="modal-mask" onClick={() => setMenu(false)}><div className="action-sheet" role="dialog" aria-modal="true" aria-label="Match menu" onClick={e => e.stopPropagation()}><div className="sheet-heading"><h2>Game Paused</h2><button onClick={() => setMenu(false)} aria-label="Close menu"><Icon name="close" size={28}/></button></div><button type="button" className="royal-resume-action" onClick={()=>setMenu(false)}>▶ Resume Game</button><button type="button" onClick={() => { setMenu(false); undo(); }} disabled={!active || mode === 'puzzle'}>↶ Undo last move</button><button type="button" onClick={() => { setMenu(false); setSettings(p => ({ ...p, flipped: !p.flipped })); }}>⇅ Flip board</button><button type="button" onClick={saveAndExit}>▤ Save and exit</button><button type="button" className="destructive" onClick={() => { if (mode === 'puzzle') saveAndExit(); else resign(); }}>{mode === 'puzzle' ? '↩ Exit puzzle' : '⚑ Resign match'}</button></div></div>}
+    {menu && <div className="modal-mask" onClick={() => setMenu(false)}><div className="action-sheet" role="dialog" aria-modal="true" aria-label="Match menu" onClick={e => e.stopPropagation()}><div className="sheet-heading"><h2>Game Paused</h2><button onClick={() => setMenu(false)} aria-label="Close menu"><Icon name="close" size={28}/></button></div><button type="button" className="royal-resume-action" onClick={()=>setMenu(false)}>▶ Resume Game</button><button type="button" onClick={() => { setMenu(false); undo(); }} disabled={!active || mode === 'puzzle'}>↶ Undo last move</button><button type="button" onClick={() => { setMenu(false); setSettings(p => ({ ...p, flipped: !p.flipped })); }}>⇅ Flip board</button><button type="button" onClick={saveAndExit}>▤ Save and exit</button><button type="button" onClick={()=>start(mode,clockEnabled,currentPuzzle,computerRef.current)}>↻ Restart match</button><button type="button" className="destructive" onClick={() => { if (mode === 'puzzle') saveAndExit(); else resign(); }}>{mode === 'puzzle' ? '↩ Exit puzzle' : '⚑ Resign match'}</button></div></div>}
     {drawDialog && <div className="modal-mask" onClick={()=>setDrawDialog(false)}>
       <section className="rv-resign-dialog royal-draw-dialog" role="alertdialog" aria-modal="true" aria-labelledby="royal-draw-title" onClick={e=>e.stopPropagation()}>
         <span className="rv-resign-emblem" aria-hidden="true">♛</span>

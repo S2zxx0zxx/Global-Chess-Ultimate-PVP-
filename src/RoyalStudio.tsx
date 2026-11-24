@@ -3,6 +3,7 @@ import type { MatchRecord, PlayMode } from './game';
 import { loadJSON, saveJSON } from './game';
 import RoyalIcon from './RoyalIcon';
 import RoyalTutorial from './RoyalTutorial';
+import { PRESETS, THINKING_CHOICES, COMPUTER_PREF_KEY, normalizeComputer, winForHuman, type ComputerOptions, type Difficulty } from './computer-mode';
 
 export const ROYAL_SCREEN_GROUPS = {
   journey: ['splash', 'welcome', 'onboard-play', 'onboard-learn', 'tutorial', 'sign-in', 'register'],
@@ -19,7 +20,7 @@ type Props = {
   screen: RoyalScreen;
   navigate: (screen: RoyalScreen) => void;
   openPage: (page: RealPage) => void;
-  begin: (mode: PlayMode, timed: boolean) => void;
+  begin: (mode: PlayMode, timed: boolean, options?:ComputerOptions) => void;
   guest: string;
   saveGuest: (value: string) => void;
   history: MatchRecord[];
@@ -98,6 +99,8 @@ export default function RoyalStudio({screen,navigate,openPage,begin,guest,saveGu
   const [feedback,setFeedback]=useState('');
   const [lookup,setLookup]=useState('');
   const [mode,setMode]=useState<'local'|'computer'|'online'>('local');
+  const [computer,setComputer]=useState(()=>normalizeComputer(loadJSON(COMPUTER_PREF_KEY,null)));
+  const updateComputer=(next:ComputerOptions)=>{const c=normalizeComputer(next);setComputer(c);if(!saveJSON(COMPUTER_PREF_KEY,c))setToast('Preferences could not be saved on this device.');};
   const [minutes,setMinutes]=useState<'untimed'|'10'>('untimed');
   const [leaderboardTab,setLeaderboardTab]=useState<'global'|'country'|'friends'>('global');
   const [profileTab,setProfileTab]=useState<'overview'|'stats'|'avatars'|'frames'>('overview');
@@ -115,7 +118,7 @@ export default function RoyalStudio({screen,navigate,openPage,begin,guest,saveGu
     <span>♛</span><strong>{option.label}</strong><small>{local.frame===option.id?'✓ SELECTED':'CHOOSE'}</small></button>)}</div>;
   const doneIntro=()=>{save({...local,completedIntro:true});navigate('home');};
   const moves=history.reduce((acc,h)=>acc+h.moves,0);
-  const computerWins=history.filter(h=>h.mode==='computer'&&h.result==='white').length;
+  const computerWins=history.filter(h=>h.mode==='computer'&&winForHuman(h)).length;
   const achievementList=[
     {name:'First Match',desc:'Complete your first chess game',value:history.length,total:1},
     {name:'Win Streak',desc:'Win three computer games',value:computerWins,total:3},
@@ -136,7 +139,7 @@ export default function RoyalStudio({screen,navigate,openPage,begin,guest,saveGu
   const navigateTo=(page:RoyalScreen)=>{setToast('');navigate(page);};
   useEffect(()=>{if(toast){const t=setTimeout(()=>setToast(''),5500);return()=>clearTimeout(t);}},[toast]);
   const useHaptics=()=>{if(local.haptics&&'vibrate' in navigator)navigator.vibrate(15);};
-  const start=()=>{useHaptics();if(mode==='online')openPage('online');else begin(mode,minutes==='10'&&mode==='local');};
+  const start=()=>{useHaptics();if(mode==='online')openPage('online');else begin(mode,minutes==='10',computer);};
   const link=(name:RoyalScreen, icon:SymbolName, label:string, detail:string)=> <Tile title={label} detail={detail} icon={icon} onClick={()=>navigateTo(name)}/>;
   const renderMissions=(items=missionList)=><div className="rv-list">{items.map(item=><article key={item.name} className="rv-progress-card"><div className="rv-progress-copy"><strong>{item.name}</strong><span>{Math.min(item.value,item.total)}/{item.total}</span></div><p>{item.desc}</p><Bar value={item.value} total={item.total}/>{item.value>=item.total&&<small className="rv-complete">✓ Completed from real local activity</small>}</article>)}</div>;
   const renderSkins=()=> <div className="rv-grid rv-skins">{SKINS.map(skin=><button type="button" className={'rv-skin'+(local.skin===skin.id?' selected':'')} key={skin.id} onClick={()=>setSkin(skin.id)} aria-pressed={local.skin===skin.id}>
@@ -147,7 +150,7 @@ export default function RoyalStudio({screen,navigate,openPage,begin,guest,saveGu
   </button>)}</div>;
   const actionFeedback=()=>{if(!feedback.trim()){setToast('Write your feedback first.');return;}navigator.clipboard?.writeText(feedback).then(()=>setToast('Feedback copied. No message was sent.')).catch(()=>setToast('Copy unavailable. Select and copy your feedback manually.'));};
   const accountSave=()=>{const next=draftName.trim();if(next){saveGuest(next);setToast('Local display name saved on this device.');}else setToast('Enter a display name.');};
-  const resetData=()=>{if(!window.confirm('Delete local chess history, puzzles, profile and preferences from this browser? This cannot be undone.'))return;['gcu.guest.v1','gcu.lastMatch.v1','gcu.history.v1','gcu.settings.v1','gcu.puzzles.solved.v1',STORE_KEY,'gcu.private-room.v1'].forEach(key=>{try{localStorage.removeItem(key);sessionStorage.removeItem(key);}catch{}});window.location.reload();};
+  const resetData=()=>{if(!window.confirm('Delete local chess history, puzzles, profile and preferences from this browser? This cannot be undone.'))return;['gcu.guest.v1','gcu.lastMatch.v1','gcu.history.v1','gcu.settings.v1','gcu.puzzles.solved.v1',STORE_KEY,COMPUTER_PREF_KEY,'gcu.private-room.v1'].forEach(key=>{try{localStorage.removeItem(key);sessionStorage.removeItem(key);}catch{}});window.location.reload();};
 
   let content:ReactNode=null;
   switch(screen) {
@@ -227,16 +230,21 @@ export default function RoyalStudio({screen,navigate,openPage,begin,guest,saveGu
         <div className="royal-modes-stack">
           <button type="button" onClick={()=>{setMode('local');setMinutes('untimed');navigateTo('match-setup');}}><span><img src="/art/sheet-gold-knight.svg" alt=""/></span><div><strong>Classic Chess</strong><small>Standard rules · No clock</small></div><RoyalIcon name="arrow"/></button>
           <button type="button" onClick={()=>{setMode('local');setMinutes('10');navigateTo('match-setup');}}><span><RoyalIcon name="time" size={34}/></span><div><strong>Quick Chess</strong><small>Fast &amp; exciting · 10 min</small></div><RoyalIcon name="arrow"/></button>
-          <button type="button" onClick={()=>{setMode('computer');setMinutes('untimed');navigateTo('match-setup');}}><span><img src="/pieces/b-n.svg" alt=""/></span><div><strong>VS. Computer</strong><small>Offline · Basic AI</small></div><RoyalIcon name="arrow"/></button>
+          <button type="button" onClick={()=>{setMode('computer');setMinutes('untimed');navigateTo('match-setup');}}><span><img src="/pieces/b-n.svg" alt=""/></span><div><strong>VS. Computer</strong><small>Offline · Four difficulty levels</small></div><RoyalIcon name="arrow"/></button>
           <button type="button" onClick={()=>navigateTo('matchmaking')}><span><RoyalIcon name="friends" size={35}/></span><div><strong>Online Match</strong><small>Private invites · Server required</small></div><RoyalIcon name="arrow"/></button>
           <button type="button" onClick={()=>{setMode('local');setMinutes('untimed');navigateTo('match-setup');}}><span><RoyalIcon name="friends" size={35}/></span><div><strong>Play With Friends</strong><small>Two players on one device</small></div><RoyalIcon name="arrow"/></button>
         </div></div>;
       break;
     case 'match-setup':
-      content=<><Header eyebrow="GAME CONFIGURATION" title="Match Setup" icon="play" subtitle="These controls change the real chess mode. Computer games do not claim unavailable time settings."/><div className="rv-panel rv-form">
+      content=<><Header eyebrow="GAME CONFIGURATION" title="Match Setup" icon="play" subtitle="Choose your side, computer search budget and optional local clock."/><div className="rv-panel rv-form">
         <label htmlFor="rv-mode">MODE</label><select id="rv-mode" value={mode} onChange={e=>setMode(e.target.value as typeof mode)}><option value="local">Two Players · Local</option><option value="computer">VS Computer · Offline</option><option value="online">Private Online</option></select>
-        <label htmlFor="rv-time">TIME CONTROL</label><select id="rv-time" value={mode==='computer'?'untimed':minutes} onChange={e=>setMinutes(e.target.value as typeof minutes)} disabled={mode==='computer'||mode==='online'}><option value="untimed">No clock</option><option value="10">10 min · Each side</option></select>
-        <div className="rv-note">The current computer opponent plays Black; local mode includes both sides. Rated match and player-side randomization require a live match server.</div>
+        <label htmlFor="rv-time">TIME CONTROL</label><select id="rv-time" value={minutes} onChange={e=>setMinutes(e.target.value as typeof minutes)} disabled={mode==='online'}><option value="untimed">No clock</option><option value="10">10 min · Each side</option></select>
+        {mode==='computer'&&<>
+        <label htmlFor="rv-difficulty">DIFFICULTY</label><select id="rv-difficulty" value={computer.difficulty} onChange={e=>{const difficulty=e.target.value as Difficulty;updateComputer({...computer,difficulty,thinkingMs:PRESETS[difficulty].timeMs});}}>{Object.entries(PRESETS).map(([id,p])=><option key={id} value={id}>{p.label} · up to {p.timeMs} ms</option>)}</select>
+        <label htmlFor="rv-side">YOUR SIDE</label><select id="rv-side" value={computer.playerSide} onChange={e=>updateComputer({...computer,playerSide:e.target.value==='b'?'b':'w'})}><option value="w">White</option><option value="b">Black</option></select>
+        <label htmlFor="rv-thinking">THINKING TIME CAP</label><select id="rv-thinking" value={computer.thinkingMs} onChange={e=>updateComputer({...computer,thinkingMs:Number(e.target.value)})}>{THINKING_CHOICES.filter(n=>n<=PRESETS[computer.difficulty].timeMs).map(n=><option key={n} value={n}>{n} ms</option>)}</select>
+        <div className="rv-note">Difficulty is a search budget, not an Elo rating. On slower devices the computer may return an earlier completed result.</div></>}
+        <div className="rv-note">Local clocks pause in match menus and when saved. Online clocks remain separate.</div>
         <Action onClick={start}>{mode==='online'?'OPEN PRIVATE ONLINE':'START MATCH'} ›</Action></div></>;
       break;
     case 'matchmaking':
@@ -377,7 +385,7 @@ export default function RoyalStudio({screen,navigate,openPage,begin,guest,saveGu
       content=<><Header eyebrow="ASSISTANCE" title="Help Center" icon="info" subtitle="Documented guidance for implemented features."/><div className="rv-list">{[
         ['How do I make a move?','Tap a piece, then a highlighted legal destination. Your move record updates after the move.'],
         ['Can I practice the rules interactively?','Open the five-step Move Tutorial from Onboarding or the Learn section.'],
-        ['How does computer chess work?','The offline opponent uses a simple chess.js-based move heuristic; it is not an expert chess engine.'],
+        ['How does computer chess work?','The offline opponent uses bounded search in a worker. Difficulty controls time and depth, not an Elo rating.'],
         ['How do I replay my games?','Finish a match and open History. Select REPLAY GAME, then navigate through moves.'],
         ['How do I use 3D models?','Open a match and select 3D BOARD. Installed optional 3D models are loaded on demand.'],
         ['Is online chess ready?','The private room backend must be deployed and configured before online friends can connect.'],
@@ -388,7 +396,7 @@ export default function RoyalStudio({screen,navigate,openPage,begin,guest,saveGu
       content=<><Header eyebrow="YOUR FEEDBACK" title="Feedback" icon="info" subtitle="Copy your message to share it. There is no connected support ticket endpoint."/><div className="rv-panel rv-form"><label htmlFor="rv-feedback">SUGGESTION / BUG REPORT</label><textarea rows={7} id="rv-feedback" value={feedback} onChange={e=>setFeedback(e.target.value)} placeholder="What should we improve?"/><Action onClick={actionFeedback}>COPY FEEDBACK</Action></div></>;
       break;
     case 'offline':
-      content=<><Header eyebrow="OFFLINE FIRST" title="Play Offline" icon="play" subtitle="Local chess, the basic computer opponent and cached training do not need a live multiplayer server."/><div className="rv-halo"><span>♜</span></div><Action onClick={()=>begin('computer',false)}>PLAY OFFLINE VS COMPUTER</Action><Action secondary onClick={()=>openPage('training')}>OPEN TRAINING</Action></>;
+      content=<><Header eyebrow="OFFLINE FIRST" title="Play Offline" icon="play" subtitle="Local chess, the basic computer opponent and cached training do not need a live multiplayer server."/><div className="rv-halo"><span>♜</span></div><Action onClick={()=>begin('computer',false,computer)}>PLAY OFFLINE VS COMPUTER</Action><Action secondary onClick={()=>openPage('training')}>OPEN TRAINING</Action></>;
       break;
     case 'empty-state':
       content=<><Header eyebrow="EMPTY STATE LIBRARY" title="No Games Yet" icon="review" subtitle="These designs are functional zero-data states; they do not populate fake matches."/><Empty symbol="review" title="Start your first game" text="Complete a match to populate history, progress, notifications and achievements."><Action onClick={()=>navigateTo('modes')}>PLAY NOW</Action></Empty></>;

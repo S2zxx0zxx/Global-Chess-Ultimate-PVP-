@@ -79,22 +79,22 @@ Performance protocol (provisional design targets, not measured): fixed seed and 
 | GCU-P03-T06 | VERIFIED | Full legal PV replay, invalid tails/forged mate rejection and canonical live state validation passed |
 | GCU-P03-T07 | VERIFIED | Seven-position tactical corpus with independent forced mate-in-two oracle, decisive capture promotion and quiet-promotion regression |
 | GCU-P03-T08 | VERIFIED | Paired fixed seed/browser tests: foundation 30/42, advanced 42/42; 0 observed long tasks, measured latency/depth/node/timeout evidence recorded |
-| GCU-P04-T01 | IMPLEMENTED_PENDING_VERIFY | Exact-head CI/profile/soak evidence pending |
-| GCU-P04-T02 | IMPLEMENTED_PENDING_VERIFY | Exact-head CI/profile/soak evidence pending |
-| GCU-P04-T03 | IMPLEMENTED_PENDING_VERIFY | Exact-head CI/profile/soak evidence pending |
-| GCU-P04-T04 | IMPLEMENTED_PENDING_VERIFY | Exact-head CI/profile/soak evidence pending |
-| GCU-P04-T05 | IMPLEMENTED_PENDING_VERIFY | Exact-head CI/profile/soak evidence pending |
-| GCU-P04-T06 | IMPLEMENTED_PENDING_VERIFY | Exact-head CI/profile/soak evidence pending |
-| GCU-P04-T07 | IMPLEMENTED_PENDING_VERIFY | Exact-head CI/profile/soak evidence pending |
+| GCU-P04-T01 | VERIFIED | Corrected profile and browser CI 45500108634 passed; full P04 gate remains open at T08 |
+| GCU-P04-T02 | VERIFIED | Corrected profile and browser CI 45500108634 passed; full P04 gate remains open at T08 |
+| GCU-P04-T03 | VERIFIED | Corrected profile and browser CI 45500108634 passed; full P04 gate remains open at T08 |
+| GCU-P04-T04 | VERIFIED | Corrected profile and browser CI 45500108634 passed; full P04 gate remains open at T08 |
+| GCU-P04-T05 | VERIFIED | Corrected profile and browser CI 45500108634 passed; full P04 gate remains open at T08 |
+| GCU-P04-T06 | VERIFIED | Corrected profile and browser CI 45500108634 passed; full P04 gate remains open at T08 |
+| GCU-P04-T07 | VERIFIED | Corrected profile and browser CI 45500108634 passed; full P04 gate remains open at T08 |
 | GCU-P04-T08 | IMPLEMENTED_PENDING_VERIFY | Exact-head CI/profile/soak evidence pending |
-| GCU-P05-T01 | PLANNED | Not started; previous phase gate required |
-| GCU-P05-T02 | PLANNED | Not started; previous phase gate required |
-| GCU-P05-T03 | PLANNED | Not started; previous phase gate required |
-| GCU-P05-T04 | PLANNED | Not started; previous phase gate required |
-| GCU-P05-T05 | PLANNED | Not started; previous phase gate required |
-| GCU-P05-T06 | PLANNED | Not started; previous phase gate required |
-| GCU-P05-T07 | PLANNED | Not started; previous phase gate required |
-| GCU-P05-T08 | PLANNED | Not started; previous phase gate required |
+| GCU-P05-T01 | IMPLEMENTED_PENDING_VERIFY | User authorized parallel P05; exact CI and P04 final acceptance pending |
+| GCU-P05-T02 | IMPLEMENTED_PENDING_VERIFY | User authorized parallel P05; exact CI and P04 final acceptance pending |
+| GCU-P05-T03 | IMPLEMENTED_PENDING_VERIFY | User authorized parallel P05; exact CI and P04 final acceptance pending |
+| GCU-P05-T04 | IMPLEMENTED_PENDING_VERIFY | User authorized parallel P05; exact CI and P04 final acceptance pending |
+| GCU-P05-T05 | IMPLEMENTED_PENDING_VERIFY | User authorized parallel P05; exact CI and P04 final acceptance pending |
+| GCU-P05-T06 | IMPLEMENTED_PENDING_VERIFY | User authorized parallel P05; exact CI and P04 final acceptance pending |
+| GCU-P05-T07 | IMPLEMENTED_PENDING_VERIFY | User authorized parallel P05; exact CI and P04 final acceptance pending |
+| GCU-P05-T08 | IMPLEMENTED_PENDING_VERIFY | User authorized parallel P05; exact CI and P04 final acceptance pending |
 | GCU-P06-T01 | PLANNED | Not started; previous phase gate required |
 | GCU-P06-T02 | PLANNED | Not started; previous phase gate required |
 | GCU-P06-T03 | PLANNED | Not started; previous phase gate required |
@@ -212,3 +212,11 @@ P03 phase acceptance PASS: eight deliverables verified, legal PV, deterministic 
 ### P04 resumed verification
 
 Exact-head full run 45498660141: 51/51 tests, zero failures, build 2.00s, P01/P02/P03 browser regressions passed. Fixed-depth profiler aborted on the existing checked quiescence frontier limit; it had no handling for an incomplete iteration. Correct profiler to retain every attempted depth, compare identical completed depth across baseline/optimized/cache-disabled, require all eight fixtures at common depth and at least five at depth two, fail unexpected errors or mismatched completed score/root, verify undo even on abort. No runtime/soak script changes. Browser profile expands to three repetitions and records p50/p95, depths and caps. Corrected-head profile CI must pass; existing soak 45498659864 still running against identical runtime and soak script. Do not claim P04 pass yet.
+
+### P04 corrected performance acceptance / P05 authorization
+
+Corrected CI 45500108634 SUCCESS; 51/51 tests; all earlier browser checks, fixed-depth profile and P04 browser comparison passed. Artifact 14970303633. Eight common-depth fixtures parity; seven at depth 2, opening at depth 1 after baseline checked frontier abort at depth 2 (recorded). Array/BigInt ray parity 384; 57600 calls each 18.276/25.313 ms respectively; canonical 300 calls 50.524 ms; keep chess.js. 360/414 browser 21 trials each strategy per viewport: advanced nodes 16228/16264, optimized 11705/11799, depth totals 48/48 vs 54/54, timeout counts 9/9 vs 3/3, zero long tasks. No measured same-depth cache cutoffs in shallow corpus; improvement primarily ordering. T01–T07 accepted, T08 memory soak 45498659864 still running. P04 overall gate OPEN. User explicitly authorized P05 before completion, without waiving P04 soak or final acceptance. No changes to src/ai or soak script, no restart of running soak. P05 rollout uses verified P03 advanced engine by default, optimized remains opt-in until P04 accepted. No P06.
+
+## P05 implementation checkpoint
+
+Four truthful budget presets, validated preferences, color selection, bot controller, clock/pause/undo/restart/resign/navigation and offline precache implementation submitted. Tests and difficulty/self-play/offline browser harness added. P05 acceptance pending actual CI and prior P04 memory gate. See docs/P05_COMPUTER_MODES.md. No main merge or PR.

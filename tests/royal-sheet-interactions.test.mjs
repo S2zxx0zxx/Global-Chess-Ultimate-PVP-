@@ -25,8 +25,8 @@ test('three design sheets have distinct interactive flows and overlays',()=>{
  for(const m of ['royal-analysis-panel','setPlaying','startAdvisory','material','replay-controls'])assert.ok(replay.includes(m),'Missing replay '+m);
 });
 test('Sheet 02 timing and actions remain real, not decorative',()=>{
- assert.match(game,/if\(!menu\)clockRef\.current/);
- assert.match(game,/if \(!clockEnabled \|\| !active \|\| page !== 'game' \|\| endResult \|\| mode === 'puzzle' \|\| menu\) return;/);
+ assert.match(game,/if\(pausedRef\.current\)clockRef\.current/);
+ assert.match(game,/if \(!clockEnabled \|\| !active \|\| page !== 'game' \|\| endResult \|\| mode === 'puzzle' \|\| menu \|\| resignDialog \|\| drawDialog\) return;/);
  assert.match(game,/recordEnd\('draw', mode\)/);
  assert.match(game,/onClick=\{offerDraw\}/);
  assert.match(game,/onClick=\{resign\}/);
