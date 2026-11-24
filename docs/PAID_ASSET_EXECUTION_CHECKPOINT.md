@@ -87,14 +87,14 @@ Performance protocol (provisional design targets, not measured): fixed seed and 
 | GCU-P04-T06 | VERIFIED | Corrected profile and browser CI 45500108634 passed; full P04 gate remains open at T08 |
 | GCU-P04-T07 | VERIFIED | Corrected profile and browser CI 45500108634 passed; full P04 gate remains open at T08 |
 | GCU-P04-T08 | VERIFIED | Full 30-minute soak 45498659864 SUCCESS; 10147 searches, 1677334 nodes; bounded heap/caps; exact-head profile 45501519372 passed |
-| GCU-P05-T01 | IMPLEMENTED_PENDING_VERIFY | User authorized parallel P05; exact CI and P04 final acceptance pending |
-| GCU-P05-T02 | IMPLEMENTED_PENDING_VERIFY | User authorized parallel P05; exact CI and P04 final acceptance pending |
-| GCU-P05-T03 | IMPLEMENTED_PENDING_VERIFY | User authorized parallel P05; exact CI and P04 final acceptance pending |
-| GCU-P05-T04 | IMPLEMENTED_PENDING_VERIFY | User authorized parallel P05; exact CI and P04 final acceptance pending |
-| GCU-P05-T05 | IMPLEMENTED_PENDING_VERIFY | User authorized parallel P05; exact CI and P04 final acceptance pending |
-| GCU-P05-T06 | IMPLEMENTED_PENDING_VERIFY | User authorized parallel P05; exact CI and P04 final acceptance pending |
-| GCU-P05-T07 | IMPLEMENTED_PENDING_VERIFY | User authorized parallel P05; exact CI and P04 final acceptance pending |
-| GCU-P05-T08 | IMPLEMENTED_PENDING_VERIFY | User authorized parallel P05; exact CI and P04 final acceptance pending |
+| GCU-P05-T01 | VERIFIED | Four budget presets verified; no Elo claim |
+| GCU-P05-T02 | VERIFIED | Bounded 100/300/750/1500 ms caps; clock-aware limits tested |
+| GCU-P05-T03 | VERIFIED | Actual production worker controller plus fault-injected delayed/duplicate response matrix |
+| GCU-P05-T04 | VERIFIED | In-flight pause/resume/undo/restart/navigation/resign and exactly-once termination verified |
+| GCU-P05-T05 | VERIFIED | Both colors and black orientation/opening checked |
+| GCU-P05-T06 | VERIFIED | Timeout before response and visibility-change expiry verified; no post-timeout move |
+| GCU-P05-T07 | VERIFIED | Seven-position difficulty profile, paired 16-ply self-play, legal fallback tested |
+| GCU-P05-T08 | VERIFIED | Production offline reload/worker cache on 360/414; zero external requests; storage-denial graceful |
 | GCU-P06-T01 | PLANNED | Not started; previous phase gate required |
 | GCU-P06-T02 | PLANNED | Not started; previous phase gate required |
 | GCU-P06-T03 | PLANNED | Not started; previous phase gate required |
@@ -230,3 +230,7 @@ Initial implementation 3866bb1cfae4a10c7ef7a3988c173de53d84384a, run 45501310630
 2026-11-25: reopened exact master plan, original archive and private inventory; all SHA-256 matched. Full memory run 45498659864 completed SUCCESS on 11d71298256f9c331f4dc3f58eea91c360d6133b; job 138815770159, artifact 14972142168. Actual 1800217.49ms, 10147 repeated searches, 1677334 nodes, 942.12 nodes/s, 32 samples, max cache 29/1024, peak ply 6, 18921 evictions. Post-GC heap growth 268960 bytes, peak 9692512 bytes, final 5749544 bytes, peak RSS 135032832 bytes. Full-duration and heap assertions passed; no physical-device or universal leak-free claim. Diff to 988f56f63ac744b4a2030f41547909fa1d2551d2: src/ai and soak script unchanged, src/game.ts type-only record extension; source search dependency unchanged. Full CI 45501519372 SUCCESS: 58/58 tests, 0 failures, build 2.96s, AI worker 51.48 kB; all P01–P05 existing benchmark/browser steps passed. P04 profile artifact 14971720666: eight same-completed-depth score/root parity, cache-enabled and disabled; seven depth-two fixtures, one common depth-one after frontier abort. Browser paired 42 trials each, both strategies correct on all seven repeated tactics, optimized nodes 21217 vs 26268, depth sum 108 vs 96, timeouts 6 vs 18, no observed long tasks. No shallow cache cutoff measured; gains primarily ordering. Bitboard parity 384, 57600 array/BigInt rays 23.259/37.722 ms; retain canonical chess.js. P04 8/8 verified, phase gate PASS. Optimized remains opt-in; no default rollout in this verification-only scope.
 
 P05 exact CI 45501519372 passed including real production offline worker, 360/414 mobile viewports, black opening, undo, pause, resume, restart, resign, zero external requests, storage denial graceful. Report 14972095451. Difficulty results 5/7,6/7,6/7,7/7 (Easy/Medium/Hard/Expert) with two 16-ply unfinished color-swapped self-play samples; no Elo claim. Before P05 final acceptance, add explicit in-flight fault injection fixtures for restart/undo/pause/resign/navigation/timeout, duplicate late messages, fallback and both colors. This supplemental CI is not a runtime engine change and does not restart P04 soak. P05 remains pending until exact-head supplemental result is inspected. No P06, no PR, no merge.
+
+## P05 final acceptance — PASS
+
+Exact tested head cc58b4c1a1dacae4015bebb5b61a9a076fa38c24; run [45504889269](https://github.com/S2zxx0zxx/Global-Chess-Ultimate-PVP-/actions/runs/45504889269), job 138837424288 SUCCESS, 58/58 tests, 0 fail; all P01–P05 profiling and browser gates passed. Artifact [14973527832](https://github.com/S2zxx0zxx/Global-Chess-Ultimate-PVP-/actions/runs/45504889269/artifacts/14973527832) contains real production offline report plus 18/18 simulated mobile production-UI fault-injection scenarios across 360/414: pause/resume, undo, restart, navigation, resign, timeout-before-response, visibility-change timeout, worker failure, black opening. All 22 injected requests terminated exactly once; no duplicate terminal history or stale move accepted. Actual offline Worker test separately passed both viewports and storage-denied shell. P04 30-minute gate previously accepted. No physical-device certification or Elo claim. 46/84 task dispositions closed, P00 conditional attestation unchanged. User authorized P06 after P05 verification; P07 must not start before P06 gate. Main unchanged; no PR/merge.
