@@ -6,7 +6,7 @@ export const MATE=100000;
 const MATE_THRESHOLD=MATE-32;
 type Line={value:number;pv:string[]};
 type StopReason='deadline'|'node-limit'|'frontier-limit';
-class Stop extends Error{constructor(readonly reason:StopReason){super(reason);}}
+class Stop extends Error{readonly reason:StopReason;constructor(reason:StopReason){super(reason);this.reason=reason;}}
 type Context={nodes:number;peakPly:number;seed:number;check:()=>void;visit:(ply:number)=>void};
 function context(req:Request,clock:()=>number,start:number):Context{
   const ctx:Context={nodes:0,peakPly:0,seed:req.seed,
