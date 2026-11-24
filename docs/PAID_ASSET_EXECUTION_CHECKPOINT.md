@@ -10,9 +10,9 @@ Plan: GCU-ASSET-2026-11-v1.0. User authorized BUILD of P00 only; P01 requires an
 - Archive inspected without extracting into repo: 350 unique tar members (85 directories, 265 regular files); 85 pathname records, 77 nonempty payloads, 8 folder records. All 85 path/size/hash records and dispositions matched master plan. 70 asset.meta, 32 preview.png and one .icon.png tracked as archive auxiliary records; not adopted. No symlinks or nonregular member types. Pathname records contain a trailing newline and 00 marker, normalized before matching. 19 C# scripts / 4739 lines; 27 PNG, 5 MP3, 3 animation clips, 2 controllers, 2 scenes, 2 prefabs, 15 settings, one PDF and one ReadMe. No raw proprietary content is included in this commit.
 - All 84 task IDs unique and their dependencies resolve to preceding IDs, checked locally with Python. Counts per phase: 6, 8, 8, 8, 8, 8, 8, 8, 12, 10. Full task descriptions, asset disposition and dependencies remain in the exact local master plan; this ledger records progress and safe restart position.
 
-## License gate — BLOCKED
+## Entitlement disposition — owner attestation recorded; distribution restricted
 
-The user states the package is paid. No receipt, asset order, exact listing terms or separate third-party notice provided. No dedicated license payload found in inventory; keyword scan of scripts does not establish ownership or third-party rights. Current Unity standard EULA is a general reference only: https://unity.com/legal/as-terms and https://assetstore.unity.com/browse/eula-faq. Standard embedded product rights do not establish rights to raw source redistribution; current terms also include restrictions on use of assets as AI inputs/creation. Verify purchase-specific terms and any required express permission, including AI-assisted processing, before further proprietary asset adoption. Do not claim license clearance. Keep the package, code, media, sprites, documentation and private manifest out of public repo and public CI artifacts. General chess algorithms may be independently designed from public specifications only; do not copy proprietary code or evaluation tables. If entitlement/permission is unavailable, record an approved original/open-license alternative in a future decision, not an implicit waiver. No paid service enabled.
+2026-11-25: the user explicitly states that the entire supplied package belongs to them and authorizes adoption and implementation of its contents in Global Chess Ultimate. Record this as the user's ownership/usage attestation, not as independently verified publisher terms, a receipt, or a third-party rights audit. Previously blocked T03 is accepted for engineering progression on that basis and with the existing restricted-media policy. No purchase-specific license, independent entitlement proof or third-party notices were supplied; do not falsely report these as verified. The original archive, proprietary source, documentation and raw media remain private and out of the public repository/public CI. Continue the full technical scope via independent implementations of general chess algorithms and compatible adapters. Preserve source-to-feature dispositions; do not silently drop P08 media tasks. Any direct distribution of paid code/media requires a separate release disposition at P08/P09; use private local inputs and independently authored fallbacks where necessary. The user's attestation is not a claim that an unrelated publisher waived applicable terms. No paid service enabled. This is a conditional engineering acceptance of T03, not legal certification. General references: https://unity.com/legal/as-terms and https://assetstore.unity.com/browse/eula-faq.
 
 ## Baseline — observed, not runtime certification
 
@@ -27,6 +27,13 @@ Source anchors at pinned main:
 - src/RoyalStudio.tsx:139 mode entry, 150 data reset. Preserve 50-route registry, Royal V5 style, actual local stats and existing puzzle journeys.
 - public/sw.js:1–18 runtime cache, optional art excluded. Version worker protocol and cache, preserve old saves.
 - package.json and .github/workflows/verify.yml: existing npm verify = tests, Worker bundle, TS/Vite build; no new dependencies authorized in P00.
+
+## P00 revalidation — 2026-11-25
+
+- Reopened the exact master plan, archive and local inventory. All three file SHA-256 values above matched; freshly recomputed all 85 inventory payload entries against archive bytes (77 nonempty, 8 folder records), 350 archive members, and all 84 unique task IDs with preceding dependencies.
+- Main remained identical to pinned baseline; integration branch before this sign-off was one documentation-only commit ahead, zero behind. [Checkpoint CI run 45464253543](https://github.com/S2zxx0zxx/Global-Chess-Ultimate-PVP-/actions/runs/45464253543) completed successfully for exact head ea41d9349a30c06817dec7eb0563d70816689aec. No runtime files differed from pinned main.
+- Reviewed the six P00 task definitions in original plan lines 95–100 and G0: documented entitlement with restricted media blocked unless authorized. T04 source/CI baseline, T05 task and risk register and T06 architecture/performance protocol accepted as planning and baseline evidence only. No runtime worker, AI upgrade or benchmark is claimed implemented.
+- Gate G0: accepted with owner attestation and restricted distribution policy. Independent commercial license verification and runtime/device acceptance are not asserted. P01 may start only on next explicit instruction. This changes the earlier blanket P00 hold into a scoped distribution hold; technical requirements and all 84 IDs are retained.
 
 ## Requirements / defects / decisions
 
@@ -44,10 +51,10 @@ Performance protocol (provisional design targets, not measured): fixed seed and 
 
 | GCU-P00-T01 | VERIFIED | Package identity and version mismatch verified |
 | GCU-P00-T02 | VERIFIED | All payload hashes and dispositions verified |
-| GCU-P00-T03 | BLOCKED | Entitlement, applicable license and AI-use permission not verified |
-| GCU-P00-T04 | IN_PROGRESS | Exact-main CI and source baseline captured; prerequisite blocked |
-| GCU-P00-T05 | IN_PROGRESS | 84-ID dependency register validated; source/risk mappings prepared; prerequisite blocked |
-| GCU-P00-T06 | IN_PROGRESS | Integration and performance contract prepared; prerequisite blocked |
+| GCU-P00-T03 | ACCEPTED_WITH_RESTRICTIONS | Owner attestation recorded; publisher terms not independently verified; distribution gate retained |
+| GCU-P00-T04 | VERIFIED | Exact-main CI and source baseline rechecked; checkpoint CI passed |
+| GCU-P00-T05 | VERIFIED | 84 task IDs/dependencies revalidated; 12 risks mapped; decisions recorded |
+| GCU-P00-T06 | VERIFIED | Worker/event/storage and benchmark protocol reviewed against plan; implementation pending |
 | GCU-P01-T01 | PLANNED | Not started; previous phase gate required |
 | GCU-P01-T02 | PLANNED | Not started; previous phase gate required |
 | GCU-P01-T03 | PLANNED | Not started; previous phase gate required |
@@ -129,4 +136,4 @@ Performance protocol (provisional design targets, not measured): fixed seed and 
 
 ## Resume rule
 
-P00 gate is BLOCKED, not passed. T01–T02 verified; T03 blocked; T04–T06 independently prepared while waiting for prerequisite, not signed off. This is an explicit deviation allowing non-mutating baseline/design work in P00 without starting a later phase. Resume T03 with purchase entitlement and applicable license/publisher permission; if unavailable, obtain user approval for a revised asset-free scope and update gate explicitly. Then sign off T04–T06 against exact branch/main and evidence; do not start P01 until P00 accepted. No PR created, no main merge, no raw package committed. All later phases remain planned. Re-fetch branch head and main before every new turn; record test evidence and exact commit after each phase. 
+P00 engineering gate accepted: five verified tasks and one accepted with restrictions, six dispositions complete. P01 remains NOT STARTED until the user explicitly starts it. Resume GCU-P01-T01 through T08 on the same integration branch. Re-fetch exact main and branch head before edits; validate canonical chess.js rules, perft and state compatibility against the master plan. Never treat the ownership attestation as independent publisher/license verification or permission to redistribute raw assets in public. Revisit distribution at P08/P09. No PR created, no main merge, no raw package committed. Record actual tests and exact commits at each phase, with no fabricated results. Final PR only after P09.
