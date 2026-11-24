@@ -101,7 +101,7 @@ function score(value:number,root:'w'|'b'):Score{
   return Math.abs(value)>=MATE_THRESHOLD?{kind:'mate',winner:value>0?root:root==='w'?'b':'w',plies:MATE-Math.abs(value),perspective:root}
     :{kind:'cp',value:value===0?0:value,perspective:root};
 }
-/** Test/diagnostic entry for exact-depth parity. No transposition cache or P04 heuristics. */
+/** Test/diagnostic entry for exact-depth parity. Baseline and optimized variants share identical search semantics. */
 export function fixedSearch(game:Chess,req:Request,depth:number,clock:()=>number=()=>performance.now(),options:SearchOptions={}){
   if(!Number.isInteger(depth)||depth<0||depth>req.limits.maxDepth)throw new RangeError('Invalid depth');
   const ctx=context(req,clock,clock());
@@ -116,7 +116,7 @@ export function runAdvanced(req:Request,clock:()=>number=()=>performance.now()):
   try{
     ctx.check();game=reconstruct(req,ctx.check);enable(ctx,game,req);
     const moves=game.moves({verbose:true}),end=terminal(game,moves,0);
-    if(end!==null)return result(req,{status:'terminal',reason:'terminal',score:score(end,game.turn()),nodes:0,elapsedMs:elapsed()});
+    if(end!==null)return result(req,{status:'terminal',reason:'terminal',score:score(end,game.turn()),nodes:0,elapsedMs:elapsed(),...(req.strategy==='optimized'?{diagnostics:diagnostics(ctx)}:{})});
     fallback=uci(ordered(moves,req.seed)[0]);ctx.check();
     for(let depth=1;depth<=req.limits.maxDepth;depth++){
       const line=negamax(game,depth,-Infinity,Infinity,0,ctx);
@@ -129,8 +129,8 @@ export function runAdvanced(req:Request,clock:()=>number=()=>performance.now()):
   }catch(error){
     if(error instanceof Stop){
       const pv=stable?.pv??(fallback?[fallback]:[]);
-      return result(req,{status:'timeout',reason:error.reason,move:pv[0]??null,pv,score:stable&&game?score(stable.value,game.turn()):null,completedDepth,nodes:ctx.nodes,elapsedMs:elapsed()});
+      return result(req,{status:'timeout',reason:error.reason,move:pv[0]??null,pv,score:stable&&game?score(stable.value,game.turn()):null,completedDepth,nodes:ctx.nodes,elapsedMs:elapsed(),...(req.strategy==='optimized'?{diagnostics:diagnostics(ctx)}:{})});
     }
-    return result(req,{reason:game?'worker-error':'invalid-request',nodes:ctx.nodes,elapsedMs:elapsed()});
+    return result(req,{reason:game?'worker-error':'invalid-request',nodes:ctx.nodes,elapsedMs:elapsed(),...(req.strategy==='optimized'?{diagnostics:diagnostics(ctx)}:{})});
   }
 }
