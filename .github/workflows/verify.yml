@@ -32,12 +32,15 @@ jobs:
         run: node --experimental-strip-types scripts/p05-difficulty.mjs
       - name: P05 production offline lifecycle
         run: node scripts/p05-offline.mjs
+      - name: P05 fault-injected lifecycle acceptance
+        run: node scripts/p05-lifecycle.mjs
       - uses: actions/upload-artifact@v4
         with:
           name: p05-computer-mode
           path: |
             reports/p05-difficulty.json
             reports/p05-offline.json
+            reports/p05-lifecycle.json
           if-no-files-found: error
       - uses: actions/upload-artifact@v4
         with:
