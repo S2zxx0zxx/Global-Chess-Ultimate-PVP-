@@ -95,14 +95,14 @@ Performance protocol (provisional design targets, not measured): fixed seed and 
 | GCU-P05-T06 | VERIFIED | Timeout before response and visibility-change expiry verified; no post-timeout move |
 | GCU-P05-T07 | VERIFIED | Seven-position difficulty profile, paired 16-ply self-play, legal fallback tested |
 | GCU-P05-T08 | VERIFIED | Production offline reload/worker cache on 360/414; zero external requests; storage-denial graceful |
-| GCU-P06-T01 | IMPLEMENTED_PENDING_VERIFY | Exact-head CI and browser acceptance pending |
-| GCU-P06-T02 | IMPLEMENTED_PENDING_VERIFY | Exact-head CI and browser acceptance pending |
-| GCU-P06-T03 | IMPLEMENTED_PENDING_VERIFY | Exact-head CI and browser acceptance pending |
-| GCU-P06-T04 | IMPLEMENTED_PENDING_VERIFY | Exact-head CI and browser acceptance pending |
-| GCU-P06-T05 | IMPLEMENTED_PENDING_VERIFY | Exact-head CI and browser acceptance pending |
-| GCU-P06-T06 | IMPLEMENTED_PENDING_VERIFY | Exact-head CI and browser acceptance pending |
-| GCU-P06-T07 | IMPLEMENTED_PENDING_VERIFY | Exact-head CI and browser acceptance pending |
-| GCU-P06-T08 | IMPLEMENTED_PENDING_VERIFY | Exact-head CI and browser acceptance pending |
+| GCU-P06-T01 | VERIFIED | Separate advisory AnalysisSession with canonical history and worker identity; cancellation unit test and replay scrub/close flow passed |
+| GCU-P06-T02 | VERIFIED | White-relative cp/mate and unavailable-score handling; actual offline evaluation bar verified both viewports |
+| GCU-P06-T03 | VERIFIED | Canonical SAN/PV and legal source/destination highlights; replay controls and original history preserved |
+| GCU-P06-T04 | VERIFIED | Bounded 4/16 sampled alternatives with identical depth-two horizon, all four actual legal lines displayed both viewports |
+| GCU-P06-T05 | VERIFIED | Comparable-depth heuristic classifier and mate/uncertainty tests; actual Rd2 blunder 960 cp loss, root best +522 vs played -438 |
+| GCU-P06-T06 | VERIFIED | Sequential 12-ply batch, actual 1/1 fixture review; versioned 48-entry/256000-char cache and cancellation tests passed |
+| GCU-P06-T07 | VERIFIED | Legal academy hint d3 to d5 and correct move check offline; original five puzzles preserved; online module unchanged |
+| GCU-P06-T08 | VERIFIED | Actual review UI saved practice candidate both viewports; legal/dedup/corrupt storage tests passed, no seeded fallback needed |
 | GCU-P07-T01 | PLANNED | Not started; previous phase gate required |
 | GCU-P07-T02 | PLANNED | Not started; previous phase gate required |
 | GCU-P07-T03 | PLANNED | Not started; previous phase gate required |
@@ -240,3 +240,10 @@ Exact tested head cc58b4c1a1dacae4015bebb5b61a9a076fa38c24; run [45504889269](ht
 P05 fully verified before P06. Master plan/archive/private inventory SHA-256 rechecked. All eight P06 tasks submitted: cancellable analysis, evaluation, legal SAN PV, bounded alternatives, comparable-depth classifications, batched review/cache, legal academy hints and review practice. No online analysis, no original puzzle change, no P07. Exact CI pending.
 
 P06 supplemental verification: actual home entry is Game Review, not a History button. Add offline academy exercise with actual engine-backed deterministic candidate as explicit fallback fixture if live finite-time classification is uncertain. Original five puzzles, legal hint and target selection verified by browser harness; online isolation static test. Replay hidden and cleared when entering online. No P07.
+
+## P06 final acceptance — PASS
+
+- P05 8/8 verified before P06; closure commit cb5a3f33824ea2003ae371e7413161002d1b2faa. Exact master plan/archive/private inventory hashes verified. P06 implementation 0af8aa5277b4e25e951c64aa881966986f60ff81 passed core and P01–P05 regressions but browser fixture selected obsolete History button (run 45506508319); corrected actual Game Review selector and added academy/online checks in 23e99273ce4fca1bfb123e2f1f847ea8ab7bb892. Run 45506657266 attempt 1: 67/67 tests and build passed; P03 browser timed trial recapture-trap returned safe deadline fallback at 1620.5ms, causing failure. Same exact commit retry, no thresholds changed, all gates passed. Timing variance remains a known limitation on loaded runners; not a universal latency guarantee.
+- Verified exact implementation [23e99273ce4fca1bfb123e2f1f847ea8ab7bb892](https://github.com/S2zxx0zxx/Global-Chess-Ultimate-PVP-/commit/23e99273ce4fca1bfb123e2f1f847ea8ab7bb892), [run 45506657266 attempt 2](https://github.com/S2zxx0zxx/Global-Chess-Ultimate-PVP-/actions/runs/45506657266/attempts/2), job 138844709752 SUCCESS: 67/67 tests, zero failure, production build 2.06s, AI worker unchanged 51.48 kB. All P01–P06 browser/profile/CI stages and artifact uploads success.
+- [Actual analysis artifact 14972868486](https://github.com/S2zxx0zxx/Global-Chess-Ultimate-PVP-/actions/runs/45506657266/artifacts/14972868486): 360 and 414px simulated mobile production PWA offline. Custom fixture saved PGN Rd2: root best Rxd5 +5.22, PV Rxd5 Ke7; played Rd2 -4.38, PV Rd2 Qe4+ Kd1; Ra3 -4.42, Rb3 -9.52. 4/16 legal candidates examined, depth two, 960cp heuristic loss/blunder. Both viewports verified legal highlights, score bar, sampled alternatives, review 1/1, actual UI practice save, academy hint and correct target, five original puzzles and original saved history unchanged. No seeded candidate fallback needed. Limited fixture, not exhaustive tactical/accuracy or physical-device evidence.
+- New analysis module uses verified P03 advanced strategy (no default optimized rollout), distinct analysis-purpose worker, root 900ms depth 2, max four candidates at child depth 1/350ms, conservative same-depth/root-score agreement classification; cache 48 entries/256000 chars; local practice 24 entries/96000 chars. Unit cancellation and UI scrub/exit, cache/perspective/legality/uncertainty/dedup verified. No engine source changes, online room analysis exposure or P07 work. Physical Android and full release acceptance remain P09. P00 distribution restrictions intact. P06 all eight deliverables verified within defined bounded scope. 54/84 task dispositions closed. P07 PLANNED, NOT STARTED; next only on explicit user instruction. Main remains 9469a533de86539260fd0483a187f31ffc16a515; final PR after P09. Ledger-only signoff commit requires own CI check at next phase.
