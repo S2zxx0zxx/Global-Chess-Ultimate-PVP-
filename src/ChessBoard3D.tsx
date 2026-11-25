@@ -3,13 +3,15 @@ import {Chess, type Square} from 'chess.js';
 import type * as THREE from 'three';
 import type {MoveCommitted} from './gameplay-events';
 
-export type ThreeTheme = 'deco'|'bauhaus'|'scifi'|'egypt'|'classic';
-type Props = {fen:string;selected:Square|null;legal:Square[];lastMove:[Square,Square]|null;motion?:MoveCommitted;theme:ThreeTheme;useLibraryAssets:boolean;flipped:boolean;reducedMotion:boolean;onSquare:(square:Square)=>void};
+import { boardVariant, isPremium, isVoxel, type BoardSkin, type ThreeTheme } from './chess-cosmetics';
+import { voxelSurface, type VoxelKind } from './voxel-models';
+export type {ThreeTheme} from './chess-cosmetics';
+type Props = {fen:string;selected:Square|null;legal:Square[];lastMove:[Square,Square]|null;motion?:MoveCommitted;theme:ThreeTheme;boardSkin:BoardSkin;useLibraryAssets:boolean;flipped:boolean;reducedMotion:boolean;onSquare:(square:Square)=>void};
 const names:Record<string,string>={p:'pawn',n:'knight',b:'bishop',r:'rook',q:'queen',k:'king'};
 const heights:Record<string,number>={p:.8,n:1.04,b:1.13,r:.94,q:1.29,k:1.4};
 const files='abcdefgh';
 
-export default function ChessBoard3D({fen,selected,legal,lastMove,motion,theme,useLibraryAssets,flipped,reducedMotion,onSquare}:Props){
+export default function ChessBoard3D({fen,selected,legal,lastMove,motion,theme,boardSkin,useLibraryAssets,flipped,reducedMotion,onSquare}:Props){
   const mount=useRef<HTMLDivElement>(null);
   const onSquareRef=useRef(onSquare);
   const positionRef=useRef({fen,selected,legal,lastMove,motion});
@@ -34,7 +36,8 @@ export default function ChessBoard3D({fen,selected,legal,lastMove,motion,theme,u
       renderer.domElement.style.cssText='width:100%;height:100%;display:block;touch-action:manipulation';
       host.appendChild(renderer.domElement);
       const scene=new THREE.Scene();
-      const camera=new THREE.PerspectiveCamera(44,1,.1,80);
+      const variant=boardVariant(boardSkin);
+      const camera=new THREE.PerspectiveCamera(variant?52:44,1,.1,80);
       camera.position.set(flipped?-8.6:8.6,12,flipped?-9:9);
       camera.lookAt(0,0,0);
       scene.add(new THREE.HemisphereLight(0xffefda,0x423142,2.05));
@@ -42,8 +45,8 @@ export default function ChessBoard3D({fen,selected,legal,lastMove,motion,theme,u
       key.position.set(-5,12,5);scene.add(key);
       const board=new THREE.Group(),pieces=new THREE.Group();
       scene.add(board,pieces);
-      const cream=new THREE.MeshStandardMaterial({color:0xeed5a9,roughness:.61});
-      const wood=new THREE.MeshStandardMaterial({color:0x946044,roughness:.58});
+      const cream=new THREE.MeshStandardMaterial({color:variant?.light??0xeed5a9,roughness:.61});
+      const wood=new THREE.MeshStandardMaterial({color:variant?.dark??0x946044,roughness:.58});
       const selectMat=new THREE.MeshStandardMaterial({color:0x8fb16f});
       const legalMat=new THREE.MeshStandardMaterial({color:0xe3b75d});
       const lastMat=new THREE.MeshStandardMaterial({color:0xc99453});
@@ -55,10 +58,19 @@ export default function ChessBoard3D({fen,selected,legal,lastMove,motion,theme,u
         tile.userData.square=(files[c]+(8-r)) as Square;
         board.add(tile);tiles.push(tile);
       }
-      const base=new THREE.Mesh(new THREE.BoxGeometry(8.35,.19,8.35),new THREE.MeshStandardMaterial({color:0xb0834b,metalness:.4,roughness:.4}));
-      base.position.y=-.24;board.add(base);
-      const darkBase=new THREE.Mesh(new THREE.BoxGeometry(8.47,.13,8.47),new THREE.MeshStandardMaterial({color:0x331c24}));
-      darkBase.position.y=-.37;board.add(darkBase);
+      if(variant){
+        // Source board width 25.6, playable field 19.2, trim 19.4, thickness .6.
+        // Align the playable 8x8 field to the canonical square coordinates.
+        const base=new THREE.Mesh(new THREE.BoxGeometry(25.6/2.4,.25,25.6/2.4),new THREE.MeshStandardMaterial({color:variant.border,roughness:.8}));
+        base.position.set(0,-.16,-.3/2.4);board.add(base);
+        const trim=new THREE.Mesh(new THREE.BoxGeometry(19.4/2.4,.025,19.4/2.4),new THREE.MeshStandardMaterial({color:variant.trim,roughness:.8}));
+        trim.position.y=-.035;board.add(trim);
+      }else{
+        const base=new THREE.Mesh(new THREE.BoxGeometry(8.35,.19,8.35),new THREE.MeshStandardMaterial({color:0xb0834b,metalness:.4,roughness:.4}));
+        base.position.y=-.24;board.add(base);
+        const darkBase=new THREE.Mesh(new THREE.BoxGeometry(8.47,.13,8.47),new THREE.MeshStandardMaterial({color:0x331c24}));
+        darkBase.position.y=-.37;board.add(darkBase);
+      }
       const ivory=new THREE.MeshStandardMaterial({color:0xf4e3bf,metalness:.35,roughness:.33});
       const obsidian=new THREE.MeshStandardMaterial({color:0x392b39,metalness:.52,roughness:.28});
       const gold=new THREE.MeshStandardMaterial({color:0xd1a358,metalness:.7,roughness:.26});
@@ -78,7 +90,36 @@ export default function ChessBoard3D({fen,selected,legal,lastMove,motion,theme,u
         const bounds=new THREE.Box3().setFromObject(root).getSize(new THREE.Vector3());
         root.scale.setScalar(heights[kind]/Math.max(bounds.y,.1));return root;
       };
-      for(const color of ['w','b'])for(const type of Object.keys(names))prototypes.set(color+type,makeFallback(type,color));
+      const ownResources=new Set<THREE.Object3D>();
+      const normalize=(object:THREE.Object3D,kind:string)=>{
+        const root=new THREE.Group();root.add(object);root.updateMatrixWorld(true);
+        const bounds=new THREE.Box3().setFromObject(root),size=bounds.getSize(new THREE.Vector3()),center=bounds.getCenter(new THREE.Vector3());
+        if(bounds.isEmpty()||![size.x,size.y,size.z].every(Number.isFinite)||size.y<=0)throw Error('Invalid model bounds');
+        const scale=Math.min(heights[kind]/Math.max(size.y,.001),.85/Math.max(size.x,size.z,.001));
+        root.scale.setScalar(scale);root.position.set(-center.x*scale,-bounds.min.y*scale,-center.z*scale);return root;
+      };
+      const voxelMats={w:new THREE.MeshStandardMaterial({color:theme==='voxel-wood'?0xd7b991:0xcfcbc8,roughness:.85}),b:new THREE.MeshStandardMaterial({color:theme==='voxel-wood'?0x4e2e1f:0x313335,roughness:.85})};
+      for(const type of Object.keys(names)){
+        let geometry:THREE.BufferGeometry|undefined;
+        try{const data=voxelSurface(type as VoxelKind);geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(data.positions,3));geometry.setAttribute('normal',new THREE.Float32BufferAttribute(data.normals,3));}catch{}
+        for(const color of ['w','b'] as const){
+          let model:THREE.Group;
+          try{
+            if(!geometry)throw Error('Voxel unavailable');
+            const mesh=new THREE.Mesh(geometry,voxelMats[color]);if(color==='b')mesh.rotation.y=Math.PI;
+            model=normalize(mesh,type);
+          }catch{model=makeFallback(type,color);}
+          prototypes.set(color+type,model);ownResources.add(model);
+        }
+      }
+      const disposeTree=(objects:Iterable<THREE.Object3D>)=>{
+        const geometries=new Set<THREE.BufferGeometry>(),materials=new Set<THREE.Material>(),textures=new Set<THREE.Texture>();
+        for(const object of objects)object.traverse(node=>{if(node instanceof THREE.Mesh){
+          geometries.add(node.geometry);
+          for(const material of Array.isArray(node.material)?node.material:[node.material]){materials.add(material);for(const value of Object.values(material))if(value instanceof THREE.Texture)textures.add(value);}
+        }});
+        for(const geometry of geometries)geometry.dispose();for(const material of materials)material.dispose();for(const texture of textures)texture.dispose();
+      };
       const coord=(square:string)=>new THREE.Vector3(files.indexOf(square[0])-3.5,.02,8-Number(square[1])-3.5);
       let previousFen=positionRef.current.fen;
       let slides:{node:THREE.Group;from:THREE.Vector3;to:THREE.Vector3;started:number}[]=[];let renderedFen='';let lastEvent='';
@@ -149,8 +190,32 @@ export default function ChessBoard3D({fen,selected,legal,lastMove,motion,theme,u
         frame=requestAnimationFrame(animate);
       };
       animate();
-      cleanup=()=>{cancelAnimationFrame(frame);updateRef.current=null;observer.disconnect();renderer.domElement.removeEventListener('pointerdown',click);renderer.dispose();renderer.forceContextLoss();renderer.domElement.remove();};
-      setStatus('3D board active · procedural chess pieces');
+      cleanup=()=>{cancelAnimationFrame(frame);updateRef.current=null;observer.disconnect();renderer.domElement.removeEventListener('pointerdown',click);disposeTree([scene,...ownResources]);renderer.dispose();renderer.forceContextLoss();renderer.domElement.remove();};
+      setStatus('3D board active · bundled Kytric low-poly pieces');
+      if(isVoxel(theme))return;
+      if(isPremium(theme)){
+        try{
+          const {FBXLoader}=await import('three/addons/loaders/FBXLoader.js');
+          const asset=await new FBXLoader().loadAsync('/assets/five-resource/'+theme+'.fbx');
+          if(!alive){disposeTree([asset]);return;}
+          ownResources.add(asset);asset.updateMatrixWorld(true);
+          const candidates:THREE.Mesh[]=[];
+          asset.traverse(node=>{if(node instanceof THREE.Mesh&&/^(low|high)poly(white|black)(pawn|rook|knight|bishop|queen|king)/i.test(node.name.replace(/[^a-z]/gi,'')))candidates.push(node);});
+          const prepared=new Map<string,THREE.Group>();
+          for(const color of ['w','b'])for(const type of Object.keys(names)){
+            const prefix=(theme.includes('high')?'high':'low')+'poly'+(color==='w'?'white':'black')+names[type];
+            const source=candidates.find(node=>node.name.toLowerCase().replace(/[^a-z]/g,'').startsWith(prefix));
+            if(!source)throw Error('Missing premium piece '+prefix);
+            // FBX parent/child hierarchy contains halos/horns/antlers; preserve them.
+            const clone=source.clone(true);source.matrixWorld.decompose(clone.position,clone.quaternion,clone.scale);
+            const model=normalize(clone,type);prepared.set(color+type,model);ownResources.add(model);
+          }
+          if(prepared.size!==12)throw Error('Incomplete premium set');
+          for(const [key,model] of prepared)prototypes.set(key,model);
+          redraw(true);setStatus('Original FBX · '+theme+' · 12 piece prototypes loaded');
+        }catch{if(alive)setStatus('Optional premium FBX pack unavailable or invalid · bundled low-poly pieces active');}
+        return;
+      }
       if(useLibraryAssets){
         try{
           const response=await fetch('/assets/asset-manifest.json');
@@ -191,7 +256,8 @@ export default function ChessBoard3D({fen,selected,legal,lastMove,motion,theme,u
             if(!listed.has(path))continue;
             try{
               const object=theme==='classic'?await fbxLoader.loadAsync('/assets/'+path):(await gltfLoader.loadAsync('/assets/'+path)).scene;
-              if(!alive)return;
+              if(!alive){disposeTree([object]);return;}
+              ownResources.add(object);
               const bounds=new THREE.Box3().setFromObject(object),size=bounds.getSize(new THREE.Vector3()),center=bounds.getCenter(new THREE.Vector3());
               if(bounds.isEmpty())continue;
               const scale=Math.min(heights[type]/Math.max(size.y,.001),.85/Math.max(size.x,size.z,.001));
@@ -204,11 +270,11 @@ export default function ChessBoard3D({fen,selected,legal,lastMove,motion,theme,u
             }catch{ /* A damaged optional model never blocks chess gameplay. */ }
           }
           if(alive)setStatus('Library '+theme+': '+loaded+'/12 models; missing models use fallback');
-        }catch{if(alive)setStatus('Asset library not installed. Procedural 3D mode remains available.');}
+        }catch{if(alive)setStatus('Asset library not installed. Bundled low-poly mode remains available.');}
       }
     };
     init().catch(()=>{if(alive)setStatus('3D initialization failed. Switch to 2D board.');});
     return()=>{alive=false;cleanup();};
-  },[theme,useLibraryAssets,flipped,reducedMotion]);
+  },[theme,boardSkin,useLibraryAssets,flipped,reducedMotion]);
   return <div className="board3d" role="group" aria-label="Interactive 3D chess board"><div className="board3d-canvas" ref={mount}/><span className="board3d-status" role="status">{status}</span></div>;
 }

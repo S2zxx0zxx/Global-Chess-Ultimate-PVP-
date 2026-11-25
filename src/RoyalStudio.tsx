@@ -1,3 +1,4 @@
+import { BOARD_VARIANTS, NEW_MODELS, type BoardSkin, type ThreeTheme } from './chess-cosmetics';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { MatchRecord, PlayMode } from './game';
 import { loadJSON, saveJSON } from './game';
@@ -31,12 +32,12 @@ type Props = {
   hints: boolean;
   flipped: boolean;
   toggleSetting: (key: 'reducedMotion' | 'hints' | 'flipped', value: boolean) => void;
-  modelTheme: 'deco' | 'bauhaus' | 'scifi' | 'egypt' | 'classic';
-  setModelTheme: (theme: 'deco' | 'bauhaus' | 'scifi' | 'egypt' | 'classic') => void;
+  modelTheme: ThreeTheme;
+  setModelTheme: (theme: ThreeTheme) => void;
   feedbackPrefs:FeedbackPrefs;
   setFeedbackPrefs:(p:FeedbackPrefs)=>void;
   previewSound:()=>void;
-  onSkinChange: (skin: 'wood' | 'ivory' | 'onyx' | 'stone') => void;
+  onSkinChange: (skin: BoardSkin) => void;
 };
 const BUTTONS = {
   home: '⌂', modes: '♘', events: '♛', club: '♟', shop: '♜', back: '‹',
@@ -65,6 +66,7 @@ const SKINS=[
   {id:'ivory',label:'Royal Ivory',note:'Ivory and walnut · available'},
   {id:'onyx',label:'Royal Ebony',note:'Obsidian and stone · available'},
   {id:'stone',label:'Stone Palace',note:'Soft stone board · available'},
+  ...BOARD_VARIANTS,
 ] as const;
 const MODELS=[
   {id:'deco',name:'Art Deco',notes:'High-detail optional 3D library'},
@@ -72,6 +74,7 @@ const MODELS=[
   {id:'scifi',name:'Sci-fi',notes:'Futurist optional 3D library'},
   {id:'egypt',name:'Egyptian',notes:'Historical optional 3D library'},
   {id:'classic',name:'ChessSet Classic',notes:'FBX and PBR materials'},
+  ...NEW_MODELS,
 ] as const;
 const STORE_KEY = 'gcu.royal-ui.v1';
 type LocalUi = {skin:typeof SKINS[number]['id'];haptics:boolean;contrast:boolean;readIds:string[];completedIntro:boolean;avatar:'king'|'knight'|'queen';frame:'gold'|'bronze'|'onyx'};
@@ -150,7 +153,7 @@ export default function RoyalStudio({screen,navigate,openPage,begin,guest,saveGu
     <span className={'rv-skin-preview rv-skin-'+skin.id}><span className="rv-mini-chess">♜ ♞ ♛ ♚</span></span><strong>{skin.label}</strong><small>{local.skin===skin.id?'✓ Selected':'Apply'}</small>
   </button>)}</div>;
   const renderModels=()=> <div className="rv-grid rv-skins">{MODELS.map(item=><button type="button" className={'rv-model'+(modelTheme===item.id?' selected':'')} key={item.id} onClick={()=>{setModelTheme(item.id);setToast('3D style selected. Available models load on demand when 3D board is enabled.');}}>
-    <span className="rv-model-knight"><img src="/art/sheet-gold-knight.svg" alt=""/></span><strong>{item.name}</strong><small>{modelTheme===item.id?'✓ Selected':'Select style'}</small>
+    <span className="rv-model-knight"><img src="/art/sheet-gold-knight.svg" alt=""/></span><strong>{item.name}</strong><small>{modelTheme===item.id?'✓ Selected':'Select style'}</small><small>{item.notes}</small>
   </button>)}</div>;
   const actionFeedback=()=>{if(!feedback.trim()){setToast('Write your feedback first.');return;}navigator.clipboard?.writeText(feedback).then(()=>setToast('Feedback copied. No message was sent.')).catch(()=>setToast('Copy unavailable. Select and copy your feedback manually.'));};
   const accountSave=()=>{const next=draftName.trim();if(next){saveGuest(next);setToast('Local display name saved on this device.');}else setToast('Enter a display name.');};

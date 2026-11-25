@@ -27,3 +27,26 @@ test('selection is transient, turn/seat/revision checked and rejects invalid squ
  assert.equal(validatedSelection(result.next,'w',cmd),null);
  assert.equal(validatedSelection(result.next,'b',{...cmd,revision:1,square:'e7'})?.square,'e7');
 });
+
+import {VOXEL_SOURCE,voxelSurface} from '../src/voxel-models.ts';
+import {BOARD_VARIANTS,NEW_MODELS} from '../src/chess-cosmetics.ts';
+test('all eight source board palettes and four additional FBX families are unique',()=>{
+ assert.equal(BOARD_VARIANTS.length,8);assert.equal(new Set(BOARD_VARIANTS.map(v=>v.id)).size,8);
+ assert.equal(NEW_MODELS.filter(v=>v.id.startsWith('premium-')).length,4);
+ for(const v of BOARD_VARIANTS){assert.notEqual(v.light,v.dark);assert.match(v.border,/^#[a-f0-9]{6}$/);}
+});
+test('all six bundled source voxel meshes preserve exact source surface area and volume',()=>{
+ for(const kind of Object.keys(VOXEL_SOURCE)){
+  const mesh=voxelSurface(kind),source=VOXEL_SOURCE[kind];
+  assert.equal(mesh.area,source.area);assert.equal(mesh.voxels,source.voxels);
+  assert.ok(mesh.triangles>0&&mesh.triangles<1200);
+  assert.equal(mesh.positions.length,mesh.normals.length);
+  let area=0;
+  for(let i=0;i<mesh.positions.length;i+=9){
+   const a=mesh.positions.slice(i,i+3),b=mesh.positions.slice(i+3,i+6),c=mesh.positions.slice(i+6,i+9),n=mesh.normals.slice(i,i+3);
+   const u=b.map((x,j)=>x-a[j]),v=c.map((x,j)=>x-a[j]),cross=[u[1]*v[2]-u[2]*v[1],u[2]*v[0]-u[0]*v[2],u[0]*v[1]-u[1]*v[0]];
+   assert.ok(cross.reduce((s,x,j)=>s+x*n[j],0)>0);area+=Math.hypot(...cross)/2;
+  }
+  assert.ok(Math.abs(area*100-source.area)<1e-6);
+ }
+});
