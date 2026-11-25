@@ -11,7 +11,8 @@
     "verify": "npm run test && npm run check:worker && npm run build",
     "assets:verify": "node scripts/verify-assets.mjs",
     "assets:verify:strict": "node scripts/verify-assets.mjs --strict",
-    "check:worker": "esbuild server/src/index.js --bundle --platform=browser --format=esm --external:cloudflare:workers --outfile=dist-worker/match-worker.mjs"
+    "check:worker": "esbuild server/src/index.js --bundle --platform=browser --format=esm --external:cloudflare:workers --outfile=dist-worker/match-worker.mjs",
+    "assets:verify:five": "node scripts/verify-five-assets.mjs"
   },
   "dependencies": {
     "chess.js": "1.4.0",

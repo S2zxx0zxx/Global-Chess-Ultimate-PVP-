@@ -520,3 +520,21 @@ h1,h2,h3{font-family:var(--font-title);font-weight:600}
 .reduce-motion .result-card,.reduce-motion .promotion-modal,.reduce-motion .result-overlay,.reduce-motion .modal-mask,.reduce-motion .result-card:before,.reduce-motion .result-card:after{animation:none!important}
 @media(prefers-reduced-motion:reduce){.result-card,.promotion-modal,.result-overlay,.modal-mask,.result-card:before,.result-card:after{animation:none!important}}
 .rv-setting input[type=range]{max-width:42%;accent-color:#d4a95b}
+
+.gcu-opening{color:#f2d49c;font-size:.8rem;margin:4px auto 8px;text-align:center;line-height:1.4}.square.gcu-opponent-selected{outline:3px solid #ce933b;outline-offset:-4px;z-index:1}
+
+.app[data-board-skin="bg-black-tan"] .square.light{background:#d7b991}.app[data-board-skin="bg-black-tan"] .square.dark{background:#313335}.app[data-board-skin="bg-black-tan"] .board-surround{border-color:#313335;box-shadow:0 0 0 1px #d7b991,0 5px 23px #0008}.rv-skin-bg-black-tan{border-color:#313335;background-color:#d7b991;background-image:conic-gradient(#d7b991 25%,#313335 0 50%,#d7b991 0 75%,#313335 0);background-size:32px 32px}
+
+.app[data-board-skin="bg-black-white"] .square.light{background:#cfcbc8}.app[data-board-skin="bg-black-white"] .square.dark{background:#313335}.app[data-board-skin="bg-black-white"] .board-surround{border-color:#313335;box-shadow:0 0 0 1px #cfcbc8,0 5px 23px #0008}.rv-skin-bg-black-white{border-color:#313335;background-color:#cfcbc8;background-image:conic-gradient(#cfcbc8 25%,#313335 0 50%,#cfcbc8 0 75%,#313335 0);background-size:32px 32px}
+
+.app[data-board-skin="bg-brown-tan"] .square.light{background:#d7b991}.app[data-board-skin="bg-brown-tan"] .square.dark{background:#4e2e1f}.app[data-board-skin="bg-brown-tan"] .board-surround{border-color:#4e2e1f;box-shadow:0 0 0 1px #d7b991,0 5px 23px #0008}.rv-skin-bg-brown-tan{border-color:#4e2e1f;background-color:#d7b991;background-image:conic-gradient(#d7b991 25%,#4e2e1f 0 50%,#d7b991 0 75%,#4e2e1f 0);background-size:32px 32px}
+
+.app[data-board-skin="bg-brown-white"] .square.light{background:#cfcbc8}.app[data-board-skin="bg-brown-white"] .square.dark{background:#4e2e1f}.app[data-board-skin="bg-brown-white"] .board-surround{border-color:#4e2e1f;box-shadow:0 0 0 1px #cfcbc8,0 5px 23px #0008}.rv-skin-bg-brown-white{border-color:#4e2e1f;background-color:#cfcbc8;background-image:conic-gradient(#cfcbc8 25%,#4e2e1f 0 50%,#cfcbc8 0 75%,#4e2e1f 0);background-size:32px 32px}
+
+.app[data-board-skin="bg-red-tan"] .square.light{background:#d7b991}.app[data-board-skin="bg-red-tan"] .square.dark{background:#5c1616}.app[data-board-skin="bg-red-tan"] .board-surround{border-color:#5c1616;box-shadow:0 0 0 1px #d7b991,0 5px 23px #0008}.rv-skin-bg-red-tan{border-color:#5c1616;background-color:#d7b991;background-image:conic-gradient(#d7b991 25%,#5c1616 0 50%,#d7b991 0 75%,#5c1616 0);background-size:32px 32px}
+
+.app[data-board-skin="bg-red-white"] .square.light{background:#cfcbc8}.app[data-board-skin="bg-red-white"] .square.dark{background:#5c1616}.app[data-board-skin="bg-red-white"] .board-surround{border-color:#5c1616;box-shadow:0 0 0 1px #cfcbc8,0 5px 23px #0008}.rv-skin-bg-red-white{border-color:#5c1616;background-color:#cfcbc8;background-image:conic-gradient(#cfcbc8 25%,#5c1616 0 50%,#cfcbc8 0 75%,#5c1616 0);background-size:32px 32px}
+
+.app[data-board-skin="bg-tan-black"] .square.light{background:#d7b991}.app[data-board-skin="bg-tan-black"] .square.dark{background:#313335}.app[data-board-skin="bg-tan-black"] .board-surround{border-color:#d7b991;box-shadow:0 0 0 1px #313335,0 5px 23px #0008}.rv-skin-bg-tan-black{border-color:#d7b991;background-color:#d7b991;background-image:conic-gradient(#d7b991 25%,#313335 0 50%,#d7b991 0 75%,#313335 0);background-size:32px 32px}
+
+.app[data-board-skin="bg-white-black"] .square.light{background:#cfcbc8}.app[data-board-skin="bg-white-black"] .square.dark{background:#313335}.app[data-board-skin="bg-white-black"] .board-surround{border-color:#cfcbc8;box-shadow:0 0 0 1px #313335,0 5px 23px #0008}.rv-skin-bg-white-black{border-color:#cfcbc8;background-color:#cfcbc8;background-image:conic-gradient(#cfcbc8 25%,#313335 0 50%,#cfcbc8 0 75%,#313335 0);background-size:32px 32px}

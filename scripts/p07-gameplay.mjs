@@ -35,11 +35,12 @@ try{
    const special=[['castle','r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1','e1','g1','O-O'],['ep','4k3/8/8/3pP3/8/8/8/4K3 w - d6 0 1','e5','d6','exd6'],['promotion','1r5k/P7/8/8/8/8/8/7K w - - 0 1','a7','b8','axb8=N']];
    for(const [name,f,from,to,san] of special){g=new Chess(f);await setup(g);await drag(from,to);if(name==='promotion'){await page.getByRole('button',{name:'CANCEL PROMOTION'}).click();assert.equal(await fen(),g.fen());await drag(from,to);await page.getByRole('button',{name:'Promote to knight'}).click();}g.move(san);await waitFen(g);}
    // Actual WebGL renderer: project canonical square centers and click canvas.
-   g=new Chess('4k3/8/8/3q4/8/3R4/8/4K3 w - - 0 1');await setup(g,false,true);await page.getByRole('button',{name:'3D BOARD'}).click();await page.getByText('3D board active · procedural chess pieces').waitFor({timeout:20000});
+   g=new Chess('4k3/8/8/3q4/8/3R4/8/4K3 w - - 0 1');await setup(g,false,true);await page.getByRole('button',{name:'3D BOARD'}).click();await page.getByText('3D board active · bundled Kytric low-poly pieces').waitFor({timeout:20000});
+   assert.equal(await page.locator('.board3d-canvas').getAttribute('data-bundled-models'),'12');
    const canvas=page.locator('.board3d-canvas canvas');await canvas.scrollIntoViewIfNeeded();const box=await canvas.boundingBox();const camera=new THREE.PerspectiveCamera(44,box.width/box.height,.1,80);camera.position.set(8.6,12,9);camera.lookAt(0,0,0);camera.updateMatrixWorld();
    const click3=async(s,y)=>{const v=new THREE.Vector3('abcdefgh'.indexOf(s[0])-3.5,y,8-Number(s[1])-3.5).project(camera);await page.mouse.click(box.x+(v.x+1)*box.width/2,box.y+(1-v.y)*box.height/2);};
    await click3('d3',.4);await click3('d5',.4);g.move('Rxd5');await waitFen(g);
-   await page.getByRole('button',{name:'Open match settings'}).click();await page.getByRole('button',{name:/Flip board/}).click();await page.getByText('3D board active · procedural chess pieces').waitFor();await page.getByRole('button',{name:'2D BOARD'}).click();assert.equal(await page.locator('[data-square]').first().getAttribute('data-square'),'h1');await waitFen(g);
+   await page.getByRole('button',{name:'Open match settings'}).click();await page.getByRole('button',{name:/Flip board/}).click();await page.getByText('3D board active · bundled Kytric low-poly pieces').waitFor();await page.getByRole('button',{name:'2D BOARD'}).click();assert.equal(await page.locator('[data-square]').first().getAttribute('data-square'),'h1');await waitFen(g);
    await page.screenshot({path:'reports/p07-screenshots/special-360.png',fullPage:true});
    results.push({specialMoves:true,pointerCancel:true,offboard:true,resize:true,touch:true,webglCapture:true,cameraFlip:true});
   }

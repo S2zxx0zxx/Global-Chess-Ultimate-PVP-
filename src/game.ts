@@ -58,8 +58,8 @@ export function validStoredValue(key:string,v:unknown):boolean{
  case STORAGE_KEYS.guest:return typeof v==='string'&&v.trim().length>0&&v.length<=100;
  case STORAGE_KEYS.history:return Array.isArray(v)&&v.every(record);
  case STORAGE_KEYS.lastMatch:return v===null||obj(v)&&typeof v.fen==='string'&&(v.pgn===undefined||typeof v.pgn==='string')&&one(v.mode,['local','computer','puzzle'])&&typeof v.active==='boolean'&&(v.seconds===undefined||pair(v.seconds))&&(v.remainingMs===undefined||pair(v.remainingMs))&&bool(v.timed);
- case STORAGE_KEYS.settings:return obj(v)&&bool(v.flipped)&&bool(v.reducedMotion)&&bool(v.hints)&&bool(v.useLibraryAssets)&&(v.modelTheme===undefined||one(v.modelTheme,['deco','bauhaus','scifi','egypt','classic']));
- case 'gcu.royal-ui.v1':return obj(v)&&bool(v.completedIntro)&&bool(v.haptics)&&bool(v.contrast)&&(v.readIds===undefined||strings(v.readIds))&&(v.skin===undefined||one(v.skin,['wood','ivory','onyx','stone']))&&(v.avatar===undefined||one(v.avatar,['king','knight','queen']))&&(v.frame===undefined||one(v.frame,['gold','bronze','onyx']));
+ case STORAGE_KEYS.settings:return obj(v)&&bool(v.flipped)&&bool(v.reducedMotion)&&bool(v.hints)&&bool(v.useLibraryAssets)&&(v.modelTheme===undefined||one(v.modelTheme,['deco','bauhaus','scifi','egypt','classic','voxel','voxel-wood','premium-low','premium-low-fantasy','premium-high','premium-high-fantasy']));
+ case 'gcu.royal-ui.v1':return obj(v)&&bool(v.completedIntro)&&bool(v.haptics)&&bool(v.contrast)&&(v.readIds===undefined||strings(v.readIds))&&(v.skin===undefined||one(v.skin,['wood','ivory','onyx','stone','bg-black-tan','bg-black-white','bg-brown-tan','bg-brown-white','bg-red-tan','bg-red-white','bg-tan-black','bg-white-black']))&&(v.avatar===undefined||one(v.avatar,['king','knight','queen']))&&(v.frame===undefined||one(v.frame,['gold','bronze','onyx']));
  case 'gcu.puzzles.solved.v1':return strings(v);
  default:return true;
  }
