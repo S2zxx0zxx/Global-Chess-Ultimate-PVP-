@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Chess, type Square } from 'chess.js';
+import { identifyOpening } from './openings';
 
 type Seat = 'w' | 'b';
 type Session = { roomId: string; token: string; side: Seat };
@@ -26,6 +27,8 @@ export default function PrivateOnline(){
   const [code,setCode]=useState(()=>new URLSearchParams(location.search).get('room')?.toUpperCase()||'');
   const [state,setState]=useState<RoomState|null>(null);
   const [selected,setSelected]=useState<Square|null>(null);
+  const [opponentSelection,setOpponentSelection]=useState<{square:Square;revision:number}|null>(null);
+  const latestState=useRef<RoomState|null>(null);
   const [status,setStatus]=useState(ENDPOINT?'Create a room or enter your friend invite code.':'Online service has not been deployed. Local chess still works.');
   const [busy,setBusy]=useState(false);
   const [connected,setConnected]=useState(false);
@@ -67,7 +70,7 @@ export default function PrivateOnline(){
     let stopped=false,attempt=0,reconnect:ReturnType<typeof setTimeout>|null=null;
     const connect=()=>{
       if(stopped)return;
-      setState(null);setConnected(false);
+      latestState.current=null;setState(null);setSelected(null);setOpponentSelection(null);setConnected(false);
       const url=ENDPOINT.replace(/^http/,'ws')+'/api/rooms/'+session.roomId+'/socket';
       const ws=new WebSocket(url,['gcu-v1','seat.'+session.token]);
       socket.current=ws;
@@ -76,14 +79,15 @@ export default function PrivateOnline(){
         if(stopped||socket.current!==ws)return;
         try{
           const body=JSON.parse(event.data);
-          if(body.type==='state'){if(!validState(body,session.side)){setState(null);setStatus('Invalid match state from server');return;}setState(old=>old&&old.revision>body.revision?old:body);setSelected(null);}
+          if(body.type==='state'){if(!validState(body,session.side)){latestState.current=null;setState(null);setOpponentSelection(null);setStatus('Invalid match state from server');return;}if(latestState.current&&latestState.current.revision>body.revision)return;latestState.current=body;setState(body);setSelected(null);setOpponentSelection(null);}
+          else if(body.type==='selection'){const current=latestState.current;if(!current||current.status!=='active'||current.revision!==body.revision||body.side===(session.side)||body.side!==current.turn)return;if(body.square===null){setOpponentSelection(null);return;}if(typeof body.square==='string'&&/^[a-h][1-8]$/.test(body.square)&&new Chess(current.fen).get(body.square as Square)?.color===body.side)setOpponentSelection({square:body.square as Square,revision:body.revision});}
           else if(body.type==='error')setStatus('Server: '+String(body.error));
         }catch{setStatus('Invalid message from match server');}
       };
       ws.onerror=()=>{if(!stopped&&socket.current===ws)setStatus('Room connection interrupted.');};
       ws.onclose=()=>{
         if(stopped||socket.current!==ws)return;
-        setState(null);setConnected(false);
+        latestState.current=null;setState(null);setSelected(null);setOpponentSelection(null);setConnected(false);
         if(!stopped&&attempt<8){attempt++;reconnect=setTimeout(connect,Math.min(15000,500*2**attempt));}
         else if(!stopped)setStatus('Reconnect limit reached. Reopen the room to retry.');
       };
@@ -103,9 +107,11 @@ export default function PrivateOnline(){
     if(!ready)return;
     if(selected&&legal.includes(square)){submit(selected,square);return;}
     const piece=game.get(square);
-    setSelected(piece&&piece.color===session?.side?square:null);
+    const next=piece&&piece.color===session?.side&&selected!==square?square:null;
+    setSelected(next);
+    if(state&&socket.current?.readyState===WebSocket.OPEN)socket.current.send(JSON.stringify({type:'selection',square:next,revision:state.revision}));
   };
-  const abandon=()=>{socket.current?.close();socket.current=null;writeSession(null);setSession(null);setState(null);setSelected(null);setConnected(false);history.replaceState(null,'',location.pathname);setStatus('Left private room.');};
+  const abandon=()=>{socket.current?.close();socket.current=null;writeSession(null);setSession(null);latestState.current=null;setState(null);setSelected(null);setOpponentSelection(null);setConnected(false);history.replaceState(null,'',location.pathname);setStatus('Left private room.');};
   const share=async()=>{if(!session)return;try{await navigator.clipboard.writeText(location.origin+location.pathname+'?room='+session.roomId);setStatus('Invite link copied. Your private seat token is never included.');}catch{setStatus('Copy unavailable. Share room code '+session.roomId);}};
   const ranks=session?.side==='b'?[...SQUARES].reverse():SQUARES;
   return <section className="private-online">
@@ -121,14 +127,15 @@ export default function PrivateOnline(){
           {ranks.map((square,i)=>{
             const piece=game.get(square),row=Math.floor(i/8),col=i%8;
             const isLight=(FILES.indexOf(square[0])+(8-Number(square[1])))%2===0;
-            return <button type="button" key={square} role="gridcell" onClick={()=>choose(square)} disabled={!ready} aria-selected={selected===square} aria-label={square+(piece?' '+(piece.color==='w'?'White':'Black')+' '+piece.type:' empty')} className={'square '+(isLight?'light':'dark')+(selected===square?' selected':'')}>
+            return <button type="button" key={square} role="gridcell" onClick={()=>choose(square)} disabled={!ready} aria-selected={selected===square} aria-label={square+(piece?' '+(piece.color==='w'?'White':'Black')+' '+piece.type:' empty')} className={'square '+(isLight?'light':'dark')+(selected===square?' selected':'')+(opponentSelection?.revision===state.revision&&opponentSelection.square===square?' gcu-opponent-selected':'')}>
               {piece&&<img alt="" draggable={false} className="piece-img" src={'/pieces/'+piece.color+'-'+piece.type+'.svg'}/>}
               {legal.includes(square)&&<span className={piece?'legal-capture':'legal-dot'}/>}
               {col===0&&<span className="rank-label">{square[1]}</span>}{row===7&&<span className="file-label">{square[0]}</span>}
             </button>;
           })}
         </div></div>
-        <div className="private-moves">{game.history().join(' · ')||'No moves yet'}</div>
+        {opponentSelection?.revision===state.revision&&<p className="gcu-opening" role="status">Opponent selected {opponentSelection.square}</p>}
+        {(()=>{const replay=new Chess();try{if(state.pgn)replay.loadPgn(state.pgn);const opening=identifyOpening(replay);return <>{opening&&<p className="gcu-opening">{opening.eco} · {opening.name}</p>}<div className="private-moves">{replay.history().join(' · ')||'No moves yet'}</div></>;}catch{return null;}})()}
       </>}
     </>}
     <p role="status" className="private-connection-status">{status}</p>

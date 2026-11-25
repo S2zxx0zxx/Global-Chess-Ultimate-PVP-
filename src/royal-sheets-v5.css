@@ -520,3 +520,5 @@ h1,h2,h3{font-family:var(--font-title);font-weight:600}
 .reduce-motion .result-card,.reduce-motion .promotion-modal,.reduce-motion .result-overlay,.reduce-motion .modal-mask,.reduce-motion .result-card:before,.reduce-motion .result-card:after{animation:none!important}
 @media(prefers-reduced-motion:reduce){.result-card,.promotion-modal,.result-overlay,.modal-mask,.result-card:before,.result-card:after{animation:none!important}}
 .rv-setting input[type=range]{max-width:42%;accent-color:#d4a95b}
+
+.gcu-opening{color:#f2d49c;font-size:.8rem;margin:4px auto 8px;text-align:center;line-height:1.4}.square.gcu-opponent-selected{outline:3px solid #ce933b;outline-offset:-4px;z-index:1}

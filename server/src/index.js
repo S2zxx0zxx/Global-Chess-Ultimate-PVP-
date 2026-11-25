@@ -1,5 +1,6 @@
 import { DurableObject } from 'cloudflare:workers';
 import { applyMove, initialMatch, publicMatchState } from './rules.mjs';
+import { validatedSelection } from './selection.mjs';
 
 const ROOM = /^[A-Z0-9]{12}$/;
 const token = () => {
@@ -135,6 +136,13 @@ export class MatchRoom extends DurableObject {
     if (events > 15) { socket.close(1008, 'Rate limit'); return; }
     socket.serializeAttachment({ ...attachment, windowAt: sameWindow ? attachment.windowAt : now, events });
     const seat = attachment.side;
+    if(command?.type==='selection'){
+      const current=await this.read();
+      if(!current||current.expiresAt<=now)return socket.close(1008,'Expired room');
+      const message=validatedSelection(current,seat,command);
+      if(message)this.sendSelection(message);
+      return;
+    }
     const transaction = await this.ctx.storage.transaction(async storage => {
       const current = await storage.get('match');
       if (!current || !seat || current.expiresAt <= Date.now()) return { expired: true };
@@ -150,6 +158,23 @@ export class MatchRoom extends DurableObject {
       return;
     }
     if (transaction.updated) await this.broadcast(transaction.updated);
+  }
+  sendSelection(message) {
+    for(const peer of this.ctx.getWebSockets()){
+      try{const side=peer.deserializeAttachment()?.side;if((side==='w'||side==='b')&&side!==message.side)peer.send(JSON.stringify(message));}catch{}
+    }
+  }
+  async webSocketClose(socket,code,reason,wasClean) {
+    const side=socket.deserializeAttachment()?.side;
+    const current=await this.read();
+    if(current&&(side==='w'||side==='b'))this.sendSelection({type:'selection',side,revision:current.revision,square:null});
+    try{socket.close(code,reason);}catch{}
+  }
+  async webSocketError(socket) {
+    const side=socket.deserializeAttachment()?.side;
+    const current=await this.read();
+    if(current&&(side==='w'||side==='b'))this.sendSelection({type:'selection',side,revision:current.revision,square:null});
+    try{socket.close(1011,'Connection interrupted');}catch{}
   }
   async alarm() {
     for (const socket of this.ctx.getWebSockets()) {

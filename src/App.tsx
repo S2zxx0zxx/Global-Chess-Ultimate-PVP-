@@ -10,6 +10,7 @@ import { legalHint } from './match-analysis';
 import ReviewPractice from './ReviewPractice';
 import { committedEvents, endedEvent, dropAllowed, type GameplayEvent, type MoveCommitted } from './gameplay-events';
 import { useBoardDrag } from './use-board-drag';
+import { identifyOpening } from './openings';
 import { FeedbackController, FEEDBACK_KEY, normalizeFeedback, type FeedbackPrefs } from './gameplay-feedback';
 import { computerJob, normalizeComputer, otherSide, undoCount, DEFAULT_COMPUTER, PRESETS, type ComputerOptions } from './computer-mode';
 
@@ -470,6 +471,7 @@ export default function App() {
               <button type="button" className={!view3D?'active':''} onClick={()=>{resetMotion();setView3D(false);}} aria-pressed={!view3D}>2D BOARD</button>
               <button type="button" className={view3D?'active':''} onClick={()=>{resetMotion();setView3D(true);}} aria-pressed={view3D}>3D BOARD</button>
             </div>
+          {mode!=='puzzle'&&(()=>{const opening=identifyOpening(game.current);return opening&&<p className="gcu-opening" data-opening={opening.eco}>{opening.eco} · {opening.name}</p>;})()}
           {view3D ? <Suspense fallback={<div className="board3d-loading" role="status">Loading 3D renderer…</div>}><ChessBoard3D fen={fen} selected={selected} legal={settings.hints ? legal : []} lastMove={lastMove} motion={motion} theme={settings.modelTheme || "deco"} useLibraryAssets={Boolean(settings.useLibraryAssets)} flipped={settings.flipped} reducedMotion={settings.reducedMotion} onSquare={onSquare}/></Suspense> : <div className="board-surround">
             <div ref={drag.ref} {...drag.handlers} className="board gcu-drag-board" role="grid" aria-label="Chess board. Select a piece then a destination, or drag a piece." data-event-id={motion?.eventId} data-ended-event={terminalEvent?.eventId} data-reduced-motion={settings.reducedMotion}>
               {Array.from({ length: 64 }, (_, idx) => {
