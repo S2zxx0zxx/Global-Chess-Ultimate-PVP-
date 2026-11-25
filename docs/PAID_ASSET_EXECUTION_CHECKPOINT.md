@@ -111,18 +111,18 @@ Performance protocol (provisional design targets, not measured): fixed seed and 
 | GCU-P07-T06 | VERIFIED | Canonical capture/check/turn events and visual highlight paths verified; full CI 45514085088 SUCCESS |
 | GCU-P07-T07 | VERIFIED | Software WebGL selection/capture/flip verified; procedural fallback retained; full CI 45514085088 SUCCESS |
 | GCU-P07-T08 | VERIFIED | 320/360/414/768 portrait and 896 landscape, keyboard and overflow verified; full CI 45514085088 SUCCESS |
-| GCU-P08-T01 | PLANNED | Not started; previous phase gate required |
-| GCU-P08-T02 | PLANNED | Not started; previous phase gate required |
-| GCU-P08-T03 | PLANNED | Not started; previous phase gate required |
-| GCU-P08-T04 | PLANNED | Not started; previous phase gate required |
-| GCU-P08-T05 | PLANNED | Not started; previous phase gate required |
-| GCU-P08-T06 | PLANNED | Not started; previous phase gate required |
-| GCU-P08-T07 | PLANNED | Not started; previous phase gate required |
-| GCU-P08-T08 | PLANNED | Not started; previous phase gate required |
-| GCU-P08-T09 | PLANNED | Not started; previous phase gate required |
-| GCU-P08-T10 | PLANNED | Not started; previous phase gate required |
-| GCU-P08-T11 | PLANNED | Not started; previous phase gate required |
-| GCU-P08-T12 | PLANNED | Not started; previous phase gate required |
+| GCU-P08-T01 | VERIFIED | Binary GameManager array length six; five MP3 unique; slot 5 resolved; separate AudioSource mapping |
+| GCU-P08-T02 | VERIFIED | Private-only boundary documented; no proprietary bytes committed |
+| GCU-P08-T03 | PARTIAL | All five decoded, measured and mapped; subjective listening and approval not verified; all paid clips excluded |
+| GCU-P08-T04 | IMPLEMENTED_PENDING_VERIFY | Original bounded audio controller and tests submitted |
+| GCU-P08-T05 | IMPLEMENTED_PENDING_VERIFY | Canonical cues and deduplication submitted |
+| GCU-P08-T06 | IMPLEMENTED_PENDING_VERIFY | Persistent independent gains/mute/haptics submitted |
+| GCU-P08-T07 | IMPLEMENTED_PENDING_VERIFY | Three clips/two controllers decoded; original transitions submitted |
+| GCU-P08-T08 | VERIFIED | All 14 mapped and evaluated; low-resolution/license gate excludes optional paid skins; original defaults preserved |
+| GCU-P08-T09 | VERIFIED | All 13 other PNGs and two prefabs evaluated; excluded raw branding/bloat |
+| GCU-P08-T10 | VERIFIED | Both scenes and all 15 settings inspected; web-specific adaptation documented |
+| GCU-P08-T11 | IMPLEMENTED_PENDING_VERIFY | Safe share/clipboard and unavailable rating submitted |
+| GCU-P08-T12 | IMPLEMENTED_PENDING_VERIFY | Public packaging guard and production offline test submitted |
 | GCU-P09-T01 | PLANNED | Not started; previous phase gate required |
 | GCU-P09-T02 | PLANNED | Not started; previous phase gate required |
 | GCU-P09-T03 | PLANNED | Not started; previous phase gate required |
@@ -263,3 +263,7 @@ Exact head 708902a4a89612edb696ef7f1384632dc7ce61af: dedicated [P07 run 45512134
 ## P07 final acceptance — PASS
 
 Latest exact tested ledger head 599580a7b12fb1def3a79cc9c32cf14b3f0dfbd4, full CI [45514085088](https://github.com/S2zxx0zxx/Global-Chess-Ultimate-PVP-/actions/runs/45514085088) SUCCESS: all P01–P07 tests, builds, browser/profile stages and artifact uploads success. Dedicated 45512134588 on runtime head 708902a4a89612edb696ef7f1384632dc7ce61af passed all five viewports and special-move/touch/WebGL fixtures; artifact 14975838519. Prior full run failure retained above, no bypass or deadline change. All eight P07 tasks closed within simulated browser scope; physical Android remains P09. 62/84 dispositions closed. P08 authorized after P07 acceptance, original package and master plan hashes matched. No raw paid content distribution; P09 not authorized. Main unchanged, no PR/merge.
+
+## P08 implementation checkpoint — GATE OPEN
+
+P07 full rerun 45512134485 attempt 2 SUCCESS and ledger-head CI 45514085088 SUCCESS. P08 opened exact archive and plan; parsed binary serialized metadata, PPtrs, clips/controller timing and settings. Detailed source-backed evaluation docs/P08_AUDIO_ASSETS.md. 5 MP3 decode success and 27 PNG review; no subjective listening performed, proprietary media excluded under P00 restrictions. T03 remains PARTIAL, public build uses original effects. New code and tests pending CI. No P09 or main merge. No paid file raw or derivative copied into repo.

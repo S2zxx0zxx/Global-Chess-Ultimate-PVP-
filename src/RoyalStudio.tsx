@@ -3,6 +3,8 @@ import type { MatchRecord, PlayMode } from './game';
 import { loadJSON, saveJSON } from './game';
 import RoyalIcon from './RoyalIcon';
 import RoyalTutorial from './RoyalTutorial';
+import { FEEDBACK_KEY, type FeedbackPrefs } from './gameplay-feedback';
+import { shareGame, VERIFIED_STORE_URL } from './share-game';
 import { PRESETS, THINKING_CHOICES, COMPUTER_PREF_KEY, normalizeComputer, winForHuman, type ComputerOptions, type Difficulty } from './computer-mode';
 
 export const ROYAL_SCREEN_GROUPS = {
@@ -31,6 +33,9 @@ type Props = {
   toggleSetting: (key: 'reducedMotion' | 'hints' | 'flipped', value: boolean) => void;
   modelTheme: 'deco' | 'bauhaus' | 'scifi' | 'egypt' | 'classic';
   setModelTheme: (theme: 'deco' | 'bauhaus' | 'scifi' | 'egypt' | 'classic') => void;
+  feedbackPrefs:FeedbackPrefs;
+  setFeedbackPrefs:(p:FeedbackPrefs)=>void;
+  previewSound:()=>void;
   onSkinChange: (skin: 'wood' | 'ivory' | 'onyx' | 'stone') => void;
 };
 const BUTTONS = {
@@ -93,7 +98,7 @@ const descriptions: Record<RoyalScreen,string>={
 };
 export { descriptions as ROYAL_SCREEN_DESCRIPTIONS };
 
-export default function RoyalStudio({screen,navigate,openPage,begin,guest,saveGuest,history,solved,reducedMotion,hints,flipped,toggleSetting,modelTheme,setModelTheme,onSkinChange}:Props) {
+export default function RoyalStudio({screen,navigate,openPage,begin,guest,saveGuest,history,solved,reducedMotion,hints,flipped,toggleSetting,modelTheme,setModelTheme,onSkinChange,feedbackPrefs,setFeedbackPrefs,previewSound}:Props) {
   const [local,setLocal]=useState<LocalUi>(loadUi);
   const [draftName,setDraftName]=useState(guest);
   const [feedback,setFeedback]=useState('');
@@ -138,8 +143,7 @@ export default function RoyalStudio({screen,navigate,openPage,begin,guest,saveGu
   const unread=events.filter(event=>!local.readIds.includes(event.id)).length;
   const navigateTo=(page:RoyalScreen)=>{setToast('');navigate(page);};
   useEffect(()=>{if(toast){const t=setTimeout(()=>setToast(''),5500);return()=>clearTimeout(t);}},[toast]);
-  const useHaptics=()=>{if(local.haptics&&'vibrate' in navigator)navigator.vibrate(15);};
-  const start=()=>{useHaptics();if(mode==='online')openPage('online');else begin(mode,minutes==='10',computer);};
+  const start=()=>{if(mode==='online')openPage('online');else begin(mode,minutes==='10',computer);};
   const link=(name:RoyalScreen, icon:SymbolName, label:string, detail:string)=> <Tile title={label} detail={detail} icon={icon} onClick={()=>navigateTo(name)}/>;
   const renderMissions=(items=missionList)=><div className="rv-list">{items.map(item=><article key={item.name} className="rv-progress-card"><div className="rv-progress-copy"><strong>{item.name}</strong><span>{Math.min(item.value,item.total)}/{item.total}</span></div><p>{item.desc}</p><Bar value={item.value} total={item.total}/>{item.value>=item.total&&<small className="rv-complete">✓ Completed from real local activity</small>}</article>)}</div>;
   const renderSkins=()=> <div className="rv-grid rv-skins">{SKINS.map(skin=><button type="button" className={'rv-skin'+(local.skin===skin.id?' selected':'')} key={skin.id} onClick={()=>setSkin(skin.id)} aria-pressed={local.skin===skin.id}>
@@ -150,7 +154,7 @@ export default function RoyalStudio({screen,navigate,openPage,begin,guest,saveGu
   </button>)}</div>;
   const actionFeedback=()=>{if(!feedback.trim()){setToast('Write your feedback first.');return;}navigator.clipboard?.writeText(feedback).then(()=>setToast('Feedback copied. No message was sent.')).catch(()=>setToast('Copy unavailable. Select and copy your feedback manually.'));};
   const accountSave=()=>{const next=draftName.trim();if(next){saveGuest(next);setToast('Local display name saved on this device.');}else setToast('Enter a display name.');};
-  const resetData=()=>{if(!window.confirm('Delete local chess history, puzzles, profile and preferences from this browser? This cannot be undone.'))return;['gcu.guest.v1','gcu.lastMatch.v1','gcu.history.v1','gcu.settings.v1','gcu.puzzles.solved.v1',STORE_KEY,COMPUTER_PREF_KEY,'gcu.analysis-cache.v1','gcu.review-practice.v1','gcu.private-room.v1'].forEach(key=>{try{localStorage.removeItem(key);sessionStorage.removeItem(key);}catch{}});window.location.reload();};
+  const resetData=()=>{if(!window.confirm('Delete local chess history, puzzles, profile and preferences from this browser? This cannot be undone.'))return;['gcu.guest.v1','gcu.lastMatch.v1','gcu.history.v1','gcu.settings.v1','gcu.puzzles.solved.v1',STORE_KEY,FEEDBACK_KEY,COMPUTER_PREF_KEY,'gcu.analysis-cache.v1','gcu.review-practice.v1','gcu.private-room.v1'].forEach(key=>{try{localStorage.removeItem(key);sessionStorage.removeItem(key);}catch{}});window.location.reload();};
 
   let content:ReactNode=null;
   switch(screen) {
@@ -356,13 +360,18 @@ export default function RoyalStudio({screen,navigate,openPage,begin,guest,saveGu
       content=<><Header eyebrow="GAME ACTIVITY" title="Notifications" icon="notifications" subtitle="Only real events derived from your local chess history are displayed."/><Action secondary onClick={()=>save({...local,readIds:events.map(e=>e.id)})}>MARK ALL AS READ ({unread})</Action>{events.length===0?<Empty symbol="notifications" title="You're all caught up" text="Complete a match or puzzle to produce a local activity item."/>:<div className="rv-list">{events.map(event=><article className={'rv-notice-item'+(!local.readIds.includes(event.id)?' unread':'')} key={event.id}><span className="rv-bell">♛</span><div><strong>{event.kind}</strong><p>{event.label}</p><small>{event.date?new Date(event.date).toLocaleDateString():'Saved locally'}</small></div></article>)}</div>}</>;
       break;
     case 'settings':
-      content=<><Header eyebrow="PREFERENCES" title="Settings" icon="settings" subtitle="All controls either update real local preferences or clearly identify unavailable services."/><div className="rv-list">{link('account','profile','Account','Guest name and local data')}{link('appearance','settings','Appearance','Board, piece skins, contrast')}{link('sound','settings','Sound & Haptics','Vibration support; voice excluded')}{link('language','settings','Language','Current localization availability')}{link('accessibility','settings','Accessibility','Motion, visibility and legal hints')}{link('privacy','shield','Privacy & Security','Delete or export your local records')}{link('help','info','Help Center','Instructions and troubleshooting')}{link('feedback','info','Feedback','Prepare a copyable feedback message')}{link('about','info','About','Game build and independent identity')}<Tile icon="settings" title="Advanced Game Settings" detail="Preserved 3D library and piece controls" onClick={()=>openPage('settings')}/></div></>;
+      content=<><Header eyebrow="PREFERENCES" title="Settings" icon="settings" subtitle="All controls either update real local preferences or clearly identify unavailable services."/><div className="rv-list">{link('account','profile','Account','Guest name and local data')}{link('appearance','settings','Appearance','Board, piece skins, contrast')}{link('sound','settings','Sound & Haptics','Offline effects, volume and optional vibration')}{link('language','settings','Language','Current localization availability')}{link('accessibility','settings','Accessibility','Motion, visibility and legal hints')}{link('privacy','shield','Privacy & Security','Delete or export your local records')}{link('help','info','Help Center','Instructions and troubleshooting')}{link('feedback','info','Feedback','Prepare a copyable feedback message')}{link('about','info','About','Game build and independent identity')}<Tile icon="settings" title="Advanced Game Settings" detail="Preserved 3D library and piece controls" onClick={()=>openPage('settings')}/></div></>;
       break;
     case 'appearance':
       content=<><Header eyebrow="VISUAL SYSTEM" title="Appearance" icon="settings" subtitle="Change the real CSS chessboard palette or the optional 3D model family."/><Section title="Board Palettes">{renderSkins()}</Section><Section title="3D Pieces">{renderModels()}</Section></>;
       break;
     case 'sound':
-      content=<><Header eyebrow="SENSORY SETTINGS" title="Sound & Haptics" icon="settings" subtitle="No microphone, voice, chat recording or spoken audio is included."/><div className="rv-setting"><div><strong>Haptic Feedback</strong><small>Use supported device vibration on selected controls</small></div><input type="checkbox" checked={local.haptics} disabled={!('vibrate' in navigator)} onChange={e=>save({...local,haptics:e.target.checked})}/></div><div className="rv-note">Chess piece sound effects and background music are not included in this build. Their switches remain absent rather than pretending to work.</div></>;
+      content=<><Header eyebrow="SENSORY SETTINGS" title="Sound & Haptics" icon="settings" subtitle="Original offline chess effects. No microphone, voice or background music."/>
+        <label className="rv-setting"><span><strong>Sound effects</strong><small>Enable original pick, move, capture, check and result cues</small></span><input type="checkbox" checked={feedbackPrefs.sound} onChange={e=>setFeedbackPrefs({...feedbackPrefs,sound:e.target.checked})}/></label>
+        <label className="rv-setting"><span><strong>Board sound volume</strong><small>{Math.round(feedbackPrefs.volume*100)}%</small></span><input aria-label="Board sound volume" type="range" min="0" max="1" step=".05" value={feedbackPrefs.volume} onChange={e=>setFeedbackPrefs({...feedbackPrefs,volume:Number(e.target.value)})}/></label>
+        <label className="rv-setting"><span><strong>Result sound volume</strong><small>{Math.round(feedbackPrefs.resultVolume*100)}%</small></span><input aria-label="Result sound volume" type="range" min="0" max="1" step=".05" value={feedbackPrefs.resultVolume} onChange={e=>setFeedbackPrefs({...feedbackPrefs,resultVolume:Number(e.target.value)})}/></label>
+        <label className="rv-setting"><span><strong>Haptic Feedback</strong><small>Optional vibration, suppressed when reduced motion is active</small></span><input type="checkbox" checked={feedbackPrefs.haptics} disabled={typeof navigator.vibrate!=='function'} onChange={e=>setFeedbackPrefs({...feedbackPrefs,haptics:e.target.checked})}/></label>
+        <Action onClick={previewSound}>TEST SOUND</Action><div className="rv-note">Sound requires a user gesture and browser audio support. Silence is the safe fallback.</div></>;
       break;
     case 'language':
       content=<><Header eyebrow="LANGUAGE & REGION" title="Language" icon="settings" subtitle="Only the English interface is translated across current screens."/><div className="rv-panel rv-form"><label htmlFor="rv-language">APPLICATION LANGUAGE</label><select id="rv-language" value="en" onChange={()=>{}}><option value="en">English — Active</option></select><p>Hindi, Urdu, Bengali, Tamil and Telugu require complete translations and QA before they can be enabled.</p></div></>;
@@ -405,7 +414,7 @@ export default function RoyalStudio({screen,navigate,openPage,begin,guest,saveGu
       content=<><Header eyebrow="FEEDBACK SYSTEM" title="Alerts & Confirmations" icon="notifications" subtitle="Real interactions return actionable status and require consent for destructive operations."/><div className="rv-list"><Tile icon="review" title="View recent match status" detail="Opens saved result, if one exists" onClick={()=>navigateTo('match-result')}/><Tile icon="shield" title="Delete local data" detail="Requires explicit confirmation" onClick={resetData}/><Tile icon="settings" title="Saved board settings" detail="Opens the active appearance controls" onClick={()=>navigateTo('appearance')}/></div></>;
       break;
     case 'about':
-      content=<><Header eyebrow="THE DESIGN SYSTEM" title="Global Chess Ultimate" icon="info" subtitle="Independent playable web beta with original Global Chess Ultimate branding."/><div className="rv-panel"><h2>Design System · v3</h2><p>Deep brown/black surfaces, royal gold accents, ivory typography, 8-point spacing, 16-pixel card radius, original chess SVGs, no neon and no gradient chrome.</p><p>{ROYAL_SCREEN_COUNT} mapped reference screens across onboarding, chess, community, seasons, progress and settings.</p><p>Not yet released: server-backed social systems, subscriptions, ranked matchmaking, Android signed AAB and GPU/device certification.</p></div><Section title="All Design Screens" note="Navigation and component inspection"><div className="rv-screen-index">{Object.entries(ROYAL_SCREEN_GROUPS).map(([group,screens])=><details key={group}><summary>{group.toUpperCase()} · {screens.length} screens</summary><div>{screens.map(route=><button type="button" onClick={()=>navigateTo(route as RoyalScreen)} key={route}>{route.replace(/-/g,' ')}</button>)}</div></details>)}</div></Section></>;
+      content=<><Header eyebrow="THE DESIGN SYSTEM" title="Global Chess Ultimate" icon="info" subtitle="Independent playable web beta with original Global Chess Ultimate branding."/><div className="rv-panel"><h2>Design System · v3</h2><p>Deep brown/black surfaces, royal gold accents, ivory typography, 8-point spacing, 16-pixel card radius, original chess SVGs, no neon and no gradient chrome.</p><p>{ROYAL_SCREEN_COUNT} mapped reference screens across onboarding, chess, community, seasons, progress and settings.</p><p>Not yet released: server-backed social systems, subscriptions, ranked matchmaking, Android signed AAB and GPU/device certification.</p></div><Action onClick={()=>{void shareGame(navigator,location.origin).then(result=>setToast(result==='shared'?'Shared.':result==='copied'?'Game link copied.':result==='cancelled'?'Share cancelled.':'Share unavailable.'));}}>SHARE GAME</Action><div className="rv-note">{VERIFIED_STORE_URL?'Store listing available':'Rate app unavailable until an official store listing is verified.'}</div><Section title="All Design Screens" note="Navigation and component inspection"><div className="rv-screen-index">{Object.entries(ROYAL_SCREEN_GROUPS).map(([group,screens])=><details key={group}><summary>{group.toUpperCase()} · {screens.length} screens</summary><div>{screens.map(route=><button type="button" onClick={()=>navigateTo(route as RoyalScreen)} key={route}>{route.replace(/-/g,' ')}</button>)}</div></details>)}</div></Section></>;
       break;
   }
 

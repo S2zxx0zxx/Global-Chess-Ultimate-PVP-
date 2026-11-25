@@ -38,6 +38,15 @@ jobs:
         run: node --experimental-strip-types scripts/p06-analysis.mjs
       - name: P07 gameplay input and motion
         run: node scripts/p07-gameplay.mjs
+      - name: P08 packaging guard
+        run: node scripts/p08-packaging.mjs
+      - name: P08 offline audio feedback
+        run: node scripts/p08-feedback.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: p08-feedback
+          path: reports/p08-feedback.json
+          if-no-files-found: error
       - uses: actions/upload-artifact@v4
         with:
           name: p07-gameplay

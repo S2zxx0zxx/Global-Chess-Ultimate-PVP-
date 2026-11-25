@@ -10,6 +10,7 @@ import { legalHint } from './match-analysis';
 import ReviewPractice from './ReviewPractice';
 import { committedEvents, endedEvent, dropAllowed, type GameplayEvent, type MoveCommitted } from './gameplay-events';
 import { useBoardDrag } from './use-board-drag';
+import { FeedbackController, FEEDBACK_KEY, normalizeFeedback, type FeedbackPrefs } from './gameplay-feedback';
 import { computerJob, normalizeComputer, otherSide, undoCount, DEFAULT_COMPUTER, PRESETS, type ComputerOptions } from './computer-mode';
 
 const ChessBoard3D = lazy(() => import('./ChessBoard3D'));
@@ -55,6 +56,19 @@ export default function App() {
   const [selected, setSelected] = useState<Square | null>(null);
   const [promotion, setPromotion] = useState<Promotion | null>(null);
   const [settings, setSettings] = useState<Settings>(() => loadJSON(STORAGE_KEYS.settings, DEFAULT_SETTINGS));
+  const [feedbackPrefs,setFeedbackPrefs]=useState(()=>normalizeFeedback(loadJSON(FEEDBACK_KEY,null),loadJSON<{haptics?:boolean}>('gcu.royal-ui.v1',{}).haptics===true));
+  const sensory=useRef<FeedbackController|null>(null);
+  const reducedRef=useRef(settings.reducedMotion);reducedRef.current=settings.reducedMotion;
+  useEffect(()=>{
+    const f=new FeedbackController(undefined,undefined,()=>reducedRef.current||window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    sensory.current=f;
+    const gesture=(e:Event)=>{if(e.isTrusted)void f.unlock();};
+    const hide=()=>{if(document.hidden)f.stop();};
+    window.addEventListener('pointerdown',gesture,true);window.addEventListener('keydown',gesture,true);document.addEventListener('visibilitychange',hide);
+    return()=>{window.removeEventListener('pointerdown',gesture,true);window.removeEventListener('keydown',gesture,true);document.removeEventListener('visibilitychange',hide);f.dispose();sensory.current=null;};
+  },[]);
+  useEffect(()=>{sensory.current?.configure(feedbackPrefs);},[feedbackPrefs]);
+  const updateFeedback=(value:FeedbackPrefs)=>{const p=normalizeFeedback(value);setFeedbackPrefs(p);sensory.current?.configure(p);if(p.sound)void sensory.current?.unlock();if(!saveJSON(FEEDBACK_KEY,p))setStorageWarning(true);};
   const [guest, setGuest] = useState(() => {
     const saved=loadJSON<string>(STORAGE_KEYS.guest,randomGuest());
     const autoName=/^Royal Guest (\d{4})$/.exec(saved);
@@ -81,7 +95,7 @@ export default function App() {
   const [captureEffect,setCaptureEffect]=useState<{id:string;square:Square}|null>(null);
   const eventRevision=useRef(0);
   const motion=moveEvents.find((e):e is MoveCommitted=>e.kind==='MoveCommitted');
-  const publishMove=(m:Move,source:'human'|'computer')=>setMoveEvents(committedEvents(game.current,m,aiGameId.current,++eventRevision.current,source));
+  const publishMove=(m:Move,source:'human'|'computer')=>{const events=committedEvents(game.current,m,aiGameId.current,++eventRevision.current,source);setMoveEvents(events);sensory.current?.commit(events);};
   const resetMotion=()=>{setMoveEvents([]);setTerminalEvent(null);setCaptureEffect(null);};
   useEffect(()=>{const c=moveEvents.find(e=>e.kind==='Capture');if(!c||settings.reducedMotion){setCaptureEffect(null);return;}setCaptureEffect({id:c.eventId,square:c.destination});const timer=window.setTimeout(()=>setCaptureEffect(null),600);return()=>window.clearTimeout(timer);},[moveEvents,settings.reducedMotion]);
 
@@ -101,7 +115,7 @@ export default function App() {
   const recordEnd = (outcome: GameResult, currentMode: PlayMode) => {
     if (endedRef.current) return;
     endedRef.current = true;
-    setTerminalEvent(endedEvent(aiGameId.current,++eventRevision.current,outcome));
+    const event=endedEvent(aiGameId.current,++eventRevision.current,outcome);setTerminalEvent(event);sensory.current?.finish(event);
     invalidateAI();
     const id = Date.now() + '-' + Math.random().toString(36).slice(2, 7);
     const item: MatchRecord = { id, endedAt: new Date().toISOString(), mode: currentMode, result: outcome, pgn: game.current.pgn(), moves: game.current.history().length, ...(currentMode==='computer'?{playerSide:computerRef.current.playerSide,difficulty:computerRef.current.difficulty}:{}) };
@@ -128,7 +142,7 @@ export default function App() {
     if (outcome && currentMode !== 'puzzle') recordEnd(outcome, currentMode);
   };
   const start = (nextMode: PlayMode, timed = false, puzzle: Puzzle = currentPuzzle, options:ComputerOptions=computerRef.current) => {
-    invalidateAI(); aiGameId.current='game-'+searchId();eventRevision.current=0;resetMotion();
+    invalidateAI(); aiGameId.current='game-'+searchId();eventRevision.current=0;resetMotion();sensory.current?.begin(aiGameId.current,true);
     pausedRef.current=false;setAIStatus('');setResignDialog(false);
     if(nextMode==='computer'){const c=normalizeComputer(options);computerRef.current=c;setComputer(c);setSettings(s=>({...s,flipped:c.playerSide==='b'}));}
     if (nextMode === 'puzzle') setCurrentPuzzle(puzzle);
@@ -161,7 +175,7 @@ export default function App() {
       const restored = new Chess();
       if (old.pgn) restored.loadPgn(old.pgn);
       else restored.load(old.fen);
-      invalidateAI(); aiGameId.current='game-'+searchId();eventRevision.current=0;resetMotion();
+      invalidateAI(); aiGameId.current='game-'+searchId();eventRevision.current=0;resetMotion();sensory.current?.begin(aiGameId.current,false);
       if(restored.fen()!==old.fen||restored.isGameOver())throw Error('Invalid or ended saved match');
       const c=normalizeComputer(old.computer??{difficulty:'easy',playerSide:'w'});computerRef.current=c;setComputer(c);
       if(old.mode==='computer')setSettings(s=>({...s,flipped:c.playerSide==='b'}));
@@ -226,12 +240,12 @@ export default function App() {
       execute(selected, square);
       return;
     }
-    if (piece && piece.color === turn) { setSelected(square); setMessage(''); }
+    if (piece && piece.color === turn) { if(selected!==square)sensory.current?.preview('pick');setSelected(square); setMessage(''); }
     else setSelected(null);
   };
 
   const canDrag=page==='game'&&!view3D&&active&&!endResult&&!endedRef.current&&!pausedRef.current&&!menu&&!resignDialog&&!drawDialog&&!promotion&&!puzzleDone&&!gameOver&&(mode!=='computer'||turn!==botSide);
-  const drag=useBoardDrag({token:aiGameId.current+':'+aiEpoch.current+':'+fen+':'+page+':'+view3D,flipped:settings.flipped,enabled:canDrag,reducedMotion:settings.reducedMotion,tap:onSquare,piece:s=>{const p=game.current.get(s);return p?.color===game.current.turn()?p.color+'-'+p.type:null;},drop:(from,to)=>{
+  const drag=useBoardDrag({token:aiGameId.current+':'+aiEpoch.current+':'+fen+':'+page+':'+view3D,flipped:settings.flipped,enabled:canDrag,reducedMotion:settings.reducedMotion,tap:onSquare,onPick:()=>sensory.current?.preview('pick'),onInvalid:()=>sensory.current?.preview('invalid'),piece:s=>{const p=game.current.get(s);return p?.color===game.current.turn()?p.color+'-'+p.type:null;},drop:(from,to)=>{
     if(!canDrag||pausedRef.current||endedRef.current||!to||!dropAllowed(game.current,from,to))return false;
     const moves=game.current.moves({square:from,verbose:true}).filter(m=>m.to===to);
     if(moves.some(m=>m.promotion)){setSelected(from);setPromotion({from,to});return true;}
@@ -317,6 +331,7 @@ export default function App() {
     });
   };
   const pauseMatch=()=>{
+    sensory.current?.stop();
     invalidateAI();setAIStatus('');
     if(!pausedRef.current&&clockEnabled&&active&&!endedRef.current&&mode!=='puzzle'){
       const t=advanceClock(clockRef.current,Date.now());clockRef.current=t.state;
@@ -367,7 +382,7 @@ export default function App() {
     invalidateAI();
     let changed = false;
     for (let i = 0; i < rewind; i++) changed = Boolean(game.current.undo()) || changed;
-    if (changed) { resetMotion();setAIStatus('');clockRef.current = { ...clockRef.current, turn: game.current.turn(), lastAt: Date.now() }; setEndResult(null); refresh(mode); }
+    if (changed) { sensory.current?.stop();resetMotion();setAIStatus('');clockRef.current = { ...clockRef.current, turn: game.current.turn(), lastAt: Date.now() }; setEndResult(null); refresh(mode); }
   };
   const saveAndExit = () => {
     invalidateAI();
@@ -437,6 +452,9 @@ export default function App() {
           modelTheme={settings.modelTheme || 'deco'}
           setModelTheme={theme => setSettings(prev => ({...prev,modelTheme:theme}))}
           onSkinChange={skin => setBoardSkin(skin)}
+          feedbackPrefs={feedbackPrefs}
+          setFeedbackPrefs={updateFeedback}
+          previewSound={()=>{void sensory.current?.unlock();sensory.current?.sample();}}
         />}
 
         {page === 'game' && <>

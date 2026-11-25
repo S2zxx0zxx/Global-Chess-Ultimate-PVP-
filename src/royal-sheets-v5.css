@@ -513,3 +513,10 @@ h1,h2,h3{font-family:var(--font-title);font-weight:600}
 /* Keep the board above fixed navigation in short landscape viewports. */
 @media (orientation:landscape) and (max-height:560px){.royal-match-panel .board-surround{width:min(100%,calc(100dvh - 110px),575px)}.royal-match-panel .board3d{height:min(70dvh,575px)}}
 .gcu-drag-board .square img,.gcu-drag-board .square span{pointer-events:none}
+
+/* P08: short nonblocking web transitions; no imported Unity clip. */
+@keyframes gcu-panel-enter{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.royal-match-panel,.result-card,.promotion-modal{animation:gcu-panel-enter .18s ease-out both}
+.reduce-motion .royal-match-panel,.reduce-motion .result-card,.reduce-motion .promotion-modal,.reduce-motion .result-overlay,.reduce-motion .modal-mask,.reduce-motion .result-card:before,.reduce-motion .result-card:after{animation:none!important}
+@media(prefers-reduced-motion:reduce){.royal-match-panel,.result-card,.promotion-modal,.result-overlay,.modal-mask,.result-card:before,.result-card:after{animation:none!important}}
+.rv-setting input[type=range]{max-width:42%;accent-color:#d4a95b}

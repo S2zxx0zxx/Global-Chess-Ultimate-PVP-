@@ -1,7 +1,7 @@
 import {useEffect,useRef,useState,type PointerEvent,type MouseEvent,type KeyboardEvent} from 'react';
 import type {Square} from 'chess.js';
 import {squareAt,squareCenter,sameRect,type Rect} from './gameplay-events';
-type Config={token:string;flipped:boolean;enabled:boolean;reducedMotion:boolean;piece:(s:Square)=>string|null;tap:(s:Square)=>void;drop:(from:Square,to:Square|null)=>boolean};
+type Config={token:string;flipped:boolean;enabled:boolean;reducedMotion:boolean;piece:(s:Square)=>string|null;tap:(s:Square)=>void;onPick?:()=>void;onInvalid?:()=>void;drop:(from:Square,to:Square|null)=>boolean};
 type Drag={pointer:number;source:Square;piece:string;token:string;rect:Rect;flipped:boolean;startX:number;startY:number;dragging:boolean;target:HTMLElement};
 type Ghost={source:Square;piece:string;x:number;y:number;size:number;returning:boolean};
 export function useBoardDrag(config:Config){
@@ -43,7 +43,7 @@ export function useBoardDrag(config:Config){
   const d=held.current,c=current.current;if(!d||d.pointer!==e.pointerId)return;
   if(!c.enabled||c.token!==d.token||c.flipped!==d.flipped||!ref.current||!sameRect(d.rect,ref.current.getBoundingClientRect())){cancel();return;}
   if(!d.dragging&&Math.hypot(e.clientX-d.startX,e.clientY-d.startY)<6)return;
-  d.dragging=true;suppress.current=true;e.preventDefault();
+  if(!d.dragging)c.onPick?.();d.dragging=true;suppress.current=true;e.preventDefault();
   setGhost({source:d.source,piece:d.piece,x:e.clientX-d.rect.left,y:e.clientY-d.rect.top,size:d.rect.width/8,returning:false});
  };
  const pointerUp=(e:PointerEvent<HTMLDivElement>)=>{
@@ -54,7 +54,7 @@ export function useBoardDrag(config:Config){
   const hit=document.elementFromPoint(e.clientX,e.clientY)?.closest<HTMLElement>('[data-square]');
   const actual=hit&&ref.current?.contains(hit)&&hit.dataset.square===to?to:null;
   if(!d.dragging){if(valid&&actual===d.source)c.tap(d.source);cancel();return;}
-  const accepted=Boolean(valid&&actual&&c.drop(d.source,actual));cancel(!accepted);
+  const accepted=Boolean(valid&&actual&&c.drop(d.source,actual));if(valid&&!accepted)c.onInvalid?.();cancel(!accepted);
  };
  const clickCapture=(e:MouseEvent<HTMLDivElement>)=>{if(suppress.current&&e.detail!==0){e.preventDefault();e.stopPropagation();suppress.current=false;}};
  const keyDown=(e:KeyboardEvent<HTMLDivElement>)=>{
