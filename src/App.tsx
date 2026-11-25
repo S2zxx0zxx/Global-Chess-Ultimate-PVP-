@@ -55,7 +55,7 @@ export default function App() {
   const [active, setActive] = useState(false);
   const [selected, setSelected] = useState<Square | null>(null);
   const [promotion, setPromotion] = useState<Promotion | null>(null);
-  const [settings, setSettings] = useState<Settings>(() => loadJSON(STORAGE_KEYS.settings, DEFAULT_SETTINGS));
+  const [settings, setSettings] = useState<Settings>(() => ({...DEFAULT_SETTINGS,...loadJSON<Partial<Settings>>(STORAGE_KEYS.settings,{})}));
   const [feedbackPrefs,setFeedbackPrefs]=useState(()=>normalizeFeedback(loadJSON(FEEDBACK_KEY,null),loadJSON<{haptics?:boolean}>('gcu.royal-ui.v1',{}).haptics===true));
   const sensory=useRef<FeedbackController|null>(null);
   const reducedRef=useRef(settings.reducedMotion);reducedRef.current=settings.reducedMotion;

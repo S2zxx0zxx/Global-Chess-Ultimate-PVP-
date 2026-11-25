@@ -113,7 +113,7 @@ export default function RoyalStudio({screen,navigate,openPage,begin,guest,saveGu
   const [tournamentTab,setTournamentTab]=useState<'all'|'live'|'upcoming'|'finished'>('all');
   const [missionTab,setMissionTab]=useState<'daily'|'weekly'|'achievements'>('daily');
   const [toast,setToast]=useState('');
-  const save=(next:LocalUi)=>{setLocal(next);saveJSON(STORE_KEY,next);};
+  const save=(next:LocalUi)=>{setLocal(next);if(!saveJSON(STORE_KEY,next))setToast('Preferences could not be saved; existing data is retained.');};
   const setSkin=(skin:LocalUi['skin'])=>{save({...local,skin});onSkinChange(skin);setToast('Board appearance saved. New matches use the selected skin.');};
   const avatarOptions=[{id:'king',label:'Royal King',file:'k'},{id:'knight',label:'Knight',file:'n'},{id:'queen',label:'Royal Queen',file:'q'}] as const;
   const frameOptions=[{id:'gold',label:'Royal Gold'},{id:'bronze',label:'Classic Bronze'},{id:'onyx',label:'Stone Onyx'}] as const;
@@ -154,7 +154,7 @@ export default function RoyalStudio({screen,navigate,openPage,begin,guest,saveGu
   </button>)}</div>;
   const actionFeedback=()=>{if(!feedback.trim()){setToast('Write your feedback first.');return;}navigator.clipboard?.writeText(feedback).then(()=>setToast('Feedback copied. No message was sent.')).catch(()=>setToast('Copy unavailable. Select and copy your feedback manually.'));};
   const accountSave=()=>{const next=draftName.trim();if(next){saveGuest(next);setToast('Local display name saved on this device.');}else setToast('Enter a display name.');};
-  const resetData=()=>{if(!window.confirm('Delete local chess history, puzzles, profile and preferences from this browser? This cannot be undone.'))return;['gcu.guest.v1','gcu.lastMatch.v1','gcu.history.v1','gcu.settings.v1','gcu.puzzles.solved.v1',STORE_KEY,FEEDBACK_KEY,COMPUTER_PREF_KEY,'gcu.analysis-cache.v1','gcu.review-practice.v1','gcu.private-room.v1'].forEach(key=>{try{localStorage.removeItem(key);sessionStorage.removeItem(key);}catch{}});window.location.reload();};
+  const resetData=()=>{if(!window.confirm('Delete local chess history, puzzles, profile and preferences from this browser? This cannot be undone.'))return;['gcu.guest.v1','gcu.lastMatch.v1','gcu.history.v1','gcu.settings.v1','gcu.puzzles.solved.v1',STORE_KEY,FEEDBACK_KEY,COMPUTER_PREF_KEY,'gcu.analysis-cache.v1','gcu.review-practice.v1','gcu.private-room.v1'].forEach(key=>{try{localStorage.removeItem(key);localStorage.removeItem(key+'.recovery.v1');sessionStorage.removeItem(key);}catch{}});window.location.reload();};
 
   let content:ReactNode=null;
   switch(screen) {
