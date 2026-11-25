@@ -1,0 +1,28 @@
+name: AD-10 pinned Spine evaluation toolchain
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/ad10-spine.yml'
+      - 'scripts/ad10_*'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  retrieve:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Retrieve pinned evaluation package
+        run: |
+          mkdir "$RUNNER_TEMP/ad10"
+          cd "$RUNNER_TEMP/ad10"
+          npm pack --ignore-scripts @esotericsoftware/spine-core@4.2.120
+          node -e 'const fs=require("fs"), c=require("crypto"), a=require("assert/strict");const f=fs.readdirSync(".").find(n=>n.endsWith(".tgz"));a.equal("sha512-"+c.createHash("sha512").update(fs.readFileSync(f)).digest("base64"),"sha512-X62MPnfiZTWok4Wk5Q5DqaAUBUFypKpb94IVd1W/j4eLHhg0HH3tve4HvIlkgxDpls2NokHaAtzjxX12rJknOA==");console.log("Pinned package integrity PASS")'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ad10-pinned-spine-core-evaluation
+          path: ${{ runner.temp }}/ad10/*.tgz
+          if-no-files-found: error
