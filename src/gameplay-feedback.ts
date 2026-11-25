@@ -24,7 +24,7 @@ export function synthesize(cue:Cue,rate=24000):Float32Array{
   const t=i/(n-1),f=s.freq+(s.end-s.freq)*t;
   phase+=2*Math.PI*f/rate;random=(Math.imul(random,1664525)+1013904223)>>>0;
   const noise=(random/4294967296)*2-1,envelope=Math.min(1,i/(rate*.004))*Math.pow(1-t,2);
-  out[i]=.38*envelope*((1-s.mix)*Math.sin(phase)+s.mix*noise);
+  out[i]=i===0||i===n-1?0:.38*envelope*((1-s.mix)*Math.sin(phase)+s.mix*noise);
  }
  return out;
 }
