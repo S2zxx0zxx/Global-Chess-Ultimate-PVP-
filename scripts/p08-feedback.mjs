@@ -17,7 +17,7 @@ try{
   await page.getByLabel(/Sound effects/).check();await page.getByRole('button',{name:'TEST SOUND'}).click();await page.waitForFunction(n=>window.__feedback.starts>n,initial);
   await page.getByRole('button',{name:/⌂ Home/}).click();await page.getByRole('button',{name:/Classic Chess/i}).first().click();await page.getByRole('button',{name:/START MATCH/}).click();
   const snap=()=>page.evaluate(()=>JSON.parse(localStorage.getItem('gcu.lastMatch.v1')));
-  await page.waitForFunction(()=>window.__feedback.starts>=initial+2);await delay(350);const base=await page.evaluate(()=>window.__feedback.starts);
+  await page.waitForFunction(n=>window.__feedback.starts>=n+2,initial);await delay(350);const base=await page.evaluate(()=>window.__feedback.starts);
   await page.getByRole('gridcell',{name:/^e2:/}).click();await delay(120);await page.getByRole('gridcell',{name:/^e4:/}).click();await page.waitForFunction(()=>JSON.parse(localStorage.getItem('gcu.lastMatch.v1')).fen.split(' ')[1]==='b');
   await page.waitForFunction(n=>window.__feedback.starts>=n+2,base);await delay(250);assert.equal(await page.evaluate(()=>window.__feedback.starts),base+2);
   await page.getByRole('button',{name:/^↶ UNDO/}).click();await delay(200);assert.equal(await page.evaluate(()=>window.__feedback.starts),base+2);
