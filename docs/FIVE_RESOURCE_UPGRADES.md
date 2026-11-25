@@ -17,3 +17,5 @@ A branch-only, write-scoped acquisition workflow attempts the creator's normal f
 
 ## Follow-up evidence
 First exact-source acquisition failed at the download row selector before any archive was downloaded (run 45548524436). The selector now uses the exact filename and a unique visible Download control in its nearest ancestor without any other archive, with the original filename, archive hash and all four FBX hashes still enforced. No purchase or alternate source is attempted. Latest prior commit cf8083d passed npm run verify and the new eight-board/two-voxel browser acceptance stage in run 45548529050. Full regression and actual premium rendering still require completion.
+
+Two-browser selection acceptance harness uses the exact Worker implementation via esbuild with a minimal in-memory Durable Object storage/socket shim and separate Chromium clients via Playwright WebSocket interception. Tests select/deselect, wrong ownership, stale revision, normal moves, opening recognition for both clients, disconnect cleanup, and zero selection persistence writes. This does not replace hosted Cloudflare or physical-device acceptance.

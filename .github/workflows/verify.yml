@@ -23,6 +23,8 @@ jobs:
       - name: Five approved resource upgrades browser acceptance
         run: |
           if node scripts/verify-five-assets.mjs; then node scripts/five-resource-browser.mjs --premium; else node scripts/five-resource-browser.mjs; fi
+      - name: Two-client selection protocol and UI acceptance (local transport)
+        run: node scripts/five-selection-browser.mjs
       - name: P02 worker browser baseline
         run: node scripts/p02-worker-baseline.mjs
       - name: P03 paired advanced search
