@@ -22,10 +22,23 @@ try{
  await page.goto(source+'/purchase',{waitUntil:'domcontentloaded',timeout:45000});
  await page.getByText('No thanks, just take me to the downloads',{exact:true}).click({timeout:20000});
  const filename=page.getByText('Chess Sets FBX.rar',{exact:true});await filename.waitFor({timeout:30000});
- const row=page.locator('.upload').filter({hasText:'Chess Sets FBX.rar'});
- if(await row.count()!==1)throw Error('Cannot uniquely identify official FBX archive row');
- const downloadPromise=page.waitForEvent('download',{timeout:60000});
- await row.getByText('Download',{exact:true}).click({timeout:20000});
+ // The creator download page may have nested .upload wrappers or a different row class.
+ // Walk only the visible filename's ancestors; stop before another archive is included.
+ const target=await filename.evaluate(el=>{
+  for(let row=el;row&&row!==document.body;row=row.parentElement){
+   const text=row.innerText||'';
+   if(text.includes('Chess Sets Blender.rar'))break;
+   const controls=[...row.querySelectorAll('a,button,input[type=button],input[type=submit]')].filter(a=>{
+    const label=(a.innerText||a.value||a.getAttribute('aria-label')||'').trim();
+    return /^Download$/i.test(label)&&a.getClientRects().length>0;
+   });
+   if(controls.length===1){controls[0].setAttribute('data-gcu-exact-fbx','true');return true;}
+  }
+  return false;
+ });
+ if(!target)throw Error('Cannot identify unique visible Download control for exact FBX filename; no download attempted');
+ const downloadPromise=page.waitForEvent('download',{timeout:90000});
+ await page.locator('[data-gcu-exact-fbx=true]').click({timeout:20000});
  const download=await downloadPromise;
  if(download.suggestedFilename()!=='Chess Sets FBX.rar')throw Error('Unexpected filename');
  await download.saveAs('/tmp/gcu-five-assets/source.rar');
