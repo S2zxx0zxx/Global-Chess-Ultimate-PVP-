@@ -1,7 +1,7 @@
 const BUILD_VERSION='__GCU_BUILD_VERSION__';
 const PREFIX='global-chess-ultimate-';
 const CACHE=PREFIX+'release-'+BUILD_VERSION;
-const CORE=['/','/manifest.webmanifest','/icon.svg','/art/sheet-gold-knight.svg','/art/sheet-reward-chest.svg','/offline-manifest.json'];
+const CORE=['/','/manifest.webmanifest','/icon.svg','/art/sheet-gold-knight.svg','/art/sheet-reward-chest.svg','/offline-manifest.json','/THIRD_PARTY_NOTICES.txt'];
 const validPath=p=>typeof p==='string'&&/^\/(assets|pieces|art)\/[a-zA-Z0-9_.-]+$/.test(p);
 self.addEventListener('install',event=>event.waitUntil((async()=>{
  const response=await fetch('/offline-manifest.json',{cache:'no-store'});

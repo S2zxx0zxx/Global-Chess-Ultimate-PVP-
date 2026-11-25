@@ -12,7 +12,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - run: npm install --no-audit --no-fund
+      - run: npm ci --no-audit --no-fund
       - run: node --experimental-strip-types --test tests/p08-feedback.test.mjs
       - run: npm run build
       - run: node scripts/p08-packaging.mjs
