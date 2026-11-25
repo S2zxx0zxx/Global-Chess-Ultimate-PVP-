@@ -1,0 +1,37 @@
+name: AD-09 Spine runtime preparation
+on:
+  pull_request:
+    paths:
+      - 'scripts/ad09_*'
+      - '.github/workflows/ad09-spine.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  atlas-fixture:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Pin and inspect isolated runtime
+        run: |
+          mkdir "$RUNNER_TEMP/ad09"
+          cd "$RUNNER_TEMP/ad09"
+          npm init -y
+          npm view @esotericsoftware/spine-core@4.2.120 version dist.integrity dist.tarball --json > registry-metadata.json
+          npm install --ignore-scripts --no-audit --no-fund --save-exact @esotericsoftware/spine-core@4.2.120
+          node -e 'const assert=require("node:assert/strict"); const p=require("./node_modules/@esotericsoftware/spine-core/package.json");const l=require("./package-lock.json");assert.equal(p.version,"4.2.120");const m=require("./registry-metadata.json");assert.equal(l.packages["node_modules/@esotericsoftware/spine-core"].integrity,m["dist.integrity"]);console.log(p.version)'
+          cp node_modules/@esotericsoftware/spine-core/LICENSE runtime-LICENSE
+      - name: Verify runtime atlas fixture
+        run: node scripts/ad09_runtime_probe.mjs "$RUNNER_TEMP/ad09/node_modules/@esotericsoftware/spine-core/dist/index.js"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ad09-runtime-metadata
+          path: |
+            ${{ runner.temp }}/ad09/registry-metadata.json
+            ${{ runner.temp }}/ad09/package-lock.json
+            ${{ runner.temp }}/ad09/runtime-LICENSE
+          if-no-files-found: error
