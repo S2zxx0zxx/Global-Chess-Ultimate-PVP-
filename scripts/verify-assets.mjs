@@ -9,7 +9,7 @@ let manifest;
 try { manifest = JSON.parse(await readFile(manifestPath, 'utf8')); }
 catch {
   if (strict) { console.error('Asset manifest missing. Install optional art archive under public/assets.'); process.exit(1); }
-  console.info('Optional 3D asset archive not installed (2D and procedural 3D remain available).');
+  console.info('Optional 3D asset archive not installed (2D and bundled low-poly 3D remain available).');
   process.exit(0);
 }
 if (!Array.isArray(manifest.files) || manifest.schemaVersion !== 1) {

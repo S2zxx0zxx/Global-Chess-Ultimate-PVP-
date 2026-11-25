@@ -99,6 +99,7 @@ export default function ChessBoard3D({fen,selected,legal,lastMove,motion,theme,b
         root.scale.setScalar(scale);root.position.set(-center.x*scale,-bounds.min.y*scale,-center.z*scale);return root;
       };
       const voxelMats={w:new THREE.MeshStandardMaterial({color:theme==='voxel-wood'?0xd7b991:0xcfcbc8,roughness:.85}),b:new THREE.MeshStandardMaterial({color:theme==='voxel-wood'?0x4e2e1f:0x313335,roughness:.85})};
+      let bundledCount=0;
       for(const type of Object.keys(names)){
         let geometry:THREE.BufferGeometry|undefined;
         try{const data=voxelSurface(type as VoxelKind);geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(data.positions,3));geometry.setAttribute('normal',new THREE.Float32BufferAttribute(data.normals,3));}catch{}
@@ -107,7 +108,7 @@ export default function ChessBoard3D({fen,selected,legal,lastMove,motion,theme,b
           try{
             if(!geometry)throw Error('Voxel unavailable');
             const mesh=new THREE.Mesh(geometry,voxelMats[color]);if(color==='b')mesh.rotation.y=Math.PI;
-            model=normalize(mesh,type);
+            model=normalize(mesh,type);bundledCount++;
           }catch{model=makeFallback(type,color);}
           prototypes.set(color+type,model);ownResources.add(model);
         }
@@ -191,7 +192,8 @@ export default function ChessBoard3D({fen,selected,legal,lastMove,motion,theme,b
       };
       animate();
       cleanup=()=>{cancelAnimationFrame(frame);updateRef.current=null;observer.disconnect();renderer.domElement.removeEventListener('pointerdown',click);disposeTree([scene,...ownResources]);renderer.dispose();renderer.forceContextLoss();renderer.domElement.remove();};
-      setStatus('3D board active · bundled Kytric low-poly pieces');
+      host.dataset.bundledModels=String(bundledCount);
+      setStatus(bundledCount===12?'3D board active · bundled Kytric low-poly pieces':'3D board active · emergency fallback in use');
       if(isVoxel(theme))return;
       if(isPremium(theme)){
         try{
@@ -212,7 +214,7 @@ export default function ChessBoard3D({fen,selected,legal,lastMove,motion,theme,b
           }
           if(prepared.size!==12)throw Error('Incomplete premium set');
           for(const [key,model] of prepared)prototypes.set(key,model);
-          redraw(true);setStatus('Original FBX · '+theme+' · 12 piece prototypes loaded');
+          host.dataset.premiumModels=String(prepared.size);redraw(true);setStatus('Original FBX · '+theme+' · 12 piece prototypes loaded');
         }catch{if(alive)setStatus('Optional premium FBX pack unavailable or invalid · bundled low-poly pieces active');}
         return;
       }
