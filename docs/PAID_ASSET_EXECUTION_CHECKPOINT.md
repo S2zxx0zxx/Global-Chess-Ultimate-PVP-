@@ -103,14 +103,14 @@ Performance protocol (provisional design targets, not measured): fixed seed and 
 | GCU-P06-T06 | VERIFIED | Sequential 12-ply batch, actual 1/1 fixture review; versioned 48-entry/256000-char cache and cancellation tests passed |
 | GCU-P06-T07 | VERIFIED | Legal academy hint d3 to d5 and correct move check offline; original five puzzles preserved; online module unchanged |
 | GCU-P06-T08 | VERIFIED | Actual review UI saved practice candidate both viewports; legal/dedup/corrupt storage tests passed, no seeded fallback needed |
-| GCU-P07-T01 | IMPLEMENTED_PENDING_VERIFY | Exact-head P07 tests/browser evidence pending |
-| GCU-P07-T02 | IMPLEMENTED_PENDING_VERIFY | Exact-head P07 tests/browser evidence pending |
-| GCU-P07-T03 | IMPLEMENTED_PENDING_VERIFY | Exact-head P07 tests/browser evidence pending |
-| GCU-P07-T04 | IMPLEMENTED_PENDING_VERIFY | Exact-head P07 tests/browser evidence pending |
-| GCU-P07-T05 | IMPLEMENTED_PENDING_VERIFY | Exact-head P07 tests/browser evidence pending |
-| GCU-P07-T06 | IMPLEMENTED_PENDING_VERIFY | Exact-head P07 tests/browser evidence pending |
-| GCU-P07-T07 | IMPLEMENTED_PENDING_VERIFY | Exact-head P07 tests/browser evidence pending |
-| GCU-P07-T08 | IMPLEMENTED_PENDING_VERIFY | Exact-head P07 tests/browser evidence pending |
+| GCU-P07-T01 | VERIFIED | Canonical committed event tests and actual event ID verified; full CI 45514085088 SUCCESS |
+| GCU-P07-T02 | VERIFIED | Pointer-based legal drag across five viewports; simulated touch at 360px; full CI 45514085088 SUCCESS |
+| GCU-P07-T03 | VERIFIED | Invalid/enemy/offboard drops and cancellation/resize verified; geometry guards; full CI 45514085088 SUCCESS |
+| GCU-P07-T04 | VERIFIED | Castling, EP, cancelled/underpromotion canonical PGN/FEN verified; full CI 45514085088 SUCCESS |
+| GCU-P07-T05 | VERIFIED | Event-driven slide and reduced motion, invalid return verified; full CI 45514085088 SUCCESS |
+| GCU-P07-T06 | VERIFIED | Canonical capture/check/turn events and visual highlight paths verified; full CI 45514085088 SUCCESS |
+| GCU-P07-T07 | VERIFIED | Software WebGL selection/capture/flip verified; procedural fallback retained; full CI 45514085088 SUCCESS |
+| GCU-P07-T08 | VERIFIED | 320/360/414/768 portrait and 896 landscape, keyboard and overflow verified; full CI 45514085088 SUCCESS |
 | GCU-P08-T01 | PLANNED | Not started; previous phase gate required |
 | GCU-P08-T02 | PLANNED | Not started; previous phase gate required |
 | GCU-P08-T03 | PLANNED | Not started; previous phase gate required |
@@ -259,3 +259,7 @@ Exact source hashes match P00; inspected PieceMover.cs lines 26–79 (fixed-coor
 ### P07 dedicated browser acceptance passed; full regression gate remains open
 
 Exact head 708902a4a89612edb696ef7f1384632dc7ce61af: dedicated [P07 run 45512134588](https://github.com/S2zxx0zxx/Global-Chess-Ultimate-PVP-/actions/runs/45512134588) SUCCESS, job 138862259722, [report and screenshots artifact 14975838519](https://github.com/S2zxx0zxx/Global-Chess-Ultimate-PVP-/actions/runs/45512134588/artifacts/14975838519). Chromium 141.0.7390.37 production build: drag, invalid-drop and enemy rejection, keyboard, flipped board, reduced motion and no horizontal overflow at 320x700, 360x800, 414x896, 768x1024, 896x414. Additional 360px checks: castling/EP/promotion, pointer cancel, offboard, resize, actual simulated touch, software WebGL capture and camera flip passed. Full [regression run 45512134485](https://github.com/S2zxx0zxx/Global-Chess-Ultimate-PVP-/actions/runs/45512134485) attempt 1 FAILURE: 70/70 tests, build, P01/P02/P03 browser and P04 fixed-depth profile passed; P04 browser benchmark received legal deadline fallback (optimized, 1620.5 ms round trip, depth 0) instead of completed search. Root cause not established; later steps skipped. Requested failed-job rerun on identical code, no weakened threshold or runtime edits. Do not infer PASS from dedicated P07 alone. P07 task rows remain pending full acceptance; 54/84 prior dispositions closed; P08 not started. Main unchanged. Check attempt 2 and its logs before final task signoff. Physical Android release verification remains P09.
+
+## P07 final acceptance — PASS
+
+Latest exact tested ledger head 599580a7b12fb1def3a79cc9c32cf14b3f0dfbd4, full CI [45514085088](https://github.com/S2zxx0zxx/Global-Chess-Ultimate-PVP-/actions/runs/45514085088) SUCCESS: all P01–P07 tests, builds, browser/profile stages and artifact uploads success. Dedicated 45512134588 on runtime head 708902a4a89612edb696ef7f1384632dc7ce61af passed all five viewports and special-move/touch/WebGL fixtures; artifact 14975838519. Prior full run failure retained above, no bypass or deadline change. All eight P07 tasks closed within simulated browser scope; physical Android remains P09. 62/84 dispositions closed. P08 authorized after P07 acceptance, original package and master plan hashes matched. No raw paid content distribution; P09 not authorized. Main unchanged, no PR/merge.
