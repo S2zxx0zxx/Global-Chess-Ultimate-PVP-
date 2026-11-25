@@ -3,6 +3,9 @@ import type { MatchRecord, PlayMode } from './game';
 import { loadJSON, saveJSON } from './game';
 import RoyalIcon from './RoyalIcon';
 import RoyalTutorial from './RoyalTutorial';
+import { FEEDBACK_KEY, type FeedbackPrefs } from './gameplay-feedback';
+import { shareGame, VERIFIED_STORE_URL } from './share-game';
+import { PRESETS, THINKING_CHOICES, COMPUTER_PREF_KEY, normalizeComputer, winForHuman, type ComputerOptions, type Difficulty } from './computer-mode';
 
 export const ROYAL_SCREEN_GROUPS = {
   journey: ['splash', 'welcome', 'onboard-play', 'onboard-learn', 'tutorial', 'sign-in', 'register'],
@@ -19,7 +22,7 @@ type Props = {
   screen: RoyalScreen;
   navigate: (screen: RoyalScreen) => void;
   openPage: (page: RealPage) => void;
-  begin: (mode: PlayMode, timed: boolean) => void;
+  begin: (mode: PlayMode, timed: boolean, options?:ComputerOptions) => void;
   guest: string;
   saveGuest: (value: string) => void;
   history: MatchRecord[];
@@ -30,6 +33,9 @@ type Props = {
   toggleSetting: (key: 'reducedMotion' | 'hints' | 'flipped', value: boolean) => void;
   modelTheme: 'deco' | 'bauhaus' | 'scifi' | 'egypt' | 'classic';
   setModelTheme: (theme: 'deco' | 'bauhaus' | 'scifi' | 'egypt' | 'classic') => void;
+  feedbackPrefs:FeedbackPrefs;
+  setFeedbackPrefs:(p:FeedbackPrefs)=>void;
+  previewSound:()=>void;
   onSkinChange: (skin: 'wood' | 'ivory' | 'onyx' | 'stone') => void;
 };
 const BUTTONS = {
@@ -92,12 +98,14 @@ const descriptions: Record<RoyalScreen,string>={
 };
 export { descriptions as ROYAL_SCREEN_DESCRIPTIONS };
 
-export default function RoyalStudio({screen,navigate,openPage,begin,guest,saveGuest,history,solved,reducedMotion,hints,flipped,toggleSetting,modelTheme,setModelTheme,onSkinChange}:Props) {
+export default function RoyalStudio({screen,navigate,openPage,begin,guest,saveGuest,history,solved,reducedMotion,hints,flipped,toggleSetting,modelTheme,setModelTheme,onSkinChange,feedbackPrefs,setFeedbackPrefs,previewSound}:Props) {
   const [local,setLocal]=useState<LocalUi>(loadUi);
   const [draftName,setDraftName]=useState(guest);
   const [feedback,setFeedback]=useState('');
   const [lookup,setLookup]=useState('');
   const [mode,setMode]=useState<'local'|'computer'|'online'>('local');
+  const [computer,setComputer]=useState(()=>normalizeComputer(loadJSON(COMPUTER_PREF_KEY,null)));
+  const updateComputer=(next:ComputerOptions)=>{const c=normalizeComputer(next);setComputer(c);if(!saveJSON(COMPUTER_PREF_KEY,c))setToast('Preferences could not be saved on this device.');};
   const [minutes,setMinutes]=useState<'untimed'|'10'>('untimed');
   const [leaderboardTab,setLeaderboardTab]=useState<'global'|'country'|'friends'>('global');
   const [profileTab,setProfileTab]=useState<'overview'|'stats'|'avatars'|'frames'>('overview');
@@ -105,7 +113,7 @@ export default function RoyalStudio({screen,navigate,openPage,begin,guest,saveGu
   const [tournamentTab,setTournamentTab]=useState<'all'|'live'|'upcoming'|'finished'>('all');
   const [missionTab,setMissionTab]=useState<'daily'|'weekly'|'achievements'>('daily');
   const [toast,setToast]=useState('');
-  const save=(next:LocalUi)=>{setLocal(next);saveJSON(STORE_KEY,next);};
+  const save=(next:LocalUi)=>{setLocal(next);if(!saveJSON(STORE_KEY,next))setToast('Preferences could not be saved; existing data is retained.');};
   const setSkin=(skin:LocalUi['skin'])=>{save({...local,skin});onSkinChange(skin);setToast('Board appearance saved. New matches use the selected skin.');};
   const avatarOptions=[{id:'king',label:'Royal King',file:'k'},{id:'knight',label:'Knight',file:'n'},{id:'queen',label:'Royal Queen',file:'q'}] as const;
   const frameOptions=[{id:'gold',label:'Royal Gold'},{id:'bronze',label:'Classic Bronze'},{id:'onyx',label:'Stone Onyx'}] as const;
@@ -115,7 +123,7 @@ export default function RoyalStudio({screen,navigate,openPage,begin,guest,saveGu
     <span>♛</span><strong>{option.label}</strong><small>{local.frame===option.id?'✓ SELECTED':'CHOOSE'}</small></button>)}</div>;
   const doneIntro=()=>{save({...local,completedIntro:true});navigate('home');};
   const moves=history.reduce((acc,h)=>acc+h.moves,0);
-  const computerWins=history.filter(h=>h.mode==='computer'&&h.result==='white').length;
+  const computerWins=history.filter(h=>h.mode==='computer'&&winForHuman(h)).length;
   const achievementList=[
     {name:'First Match',desc:'Complete your first chess game',value:history.length,total:1},
     {name:'Win Streak',desc:'Win three computer games',value:computerWins,total:3},
@@ -135,8 +143,7 @@ export default function RoyalStudio({screen,navigate,openPage,begin,guest,saveGu
   const unread=events.filter(event=>!local.readIds.includes(event.id)).length;
   const navigateTo=(page:RoyalScreen)=>{setToast('');navigate(page);};
   useEffect(()=>{if(toast){const t=setTimeout(()=>setToast(''),5500);return()=>clearTimeout(t);}},[toast]);
-  const useHaptics=()=>{if(local.haptics&&'vibrate' in navigator)navigator.vibrate(15);};
-  const start=()=>{useHaptics();if(mode==='online')openPage('online');else begin(mode,minutes==='10'&&mode==='local');};
+  const start=()=>{if(mode==='online')openPage('online');else begin(mode,minutes==='10',computer);};
   const link=(name:RoyalScreen, icon:SymbolName, label:string, detail:string)=> <Tile title={label} detail={detail} icon={icon} onClick={()=>navigateTo(name)}/>;
   const renderMissions=(items=missionList)=><div className="rv-list">{items.map(item=><article key={item.name} className="rv-progress-card"><div className="rv-progress-copy"><strong>{item.name}</strong><span>{Math.min(item.value,item.total)}/{item.total}</span></div><p>{item.desc}</p><Bar value={item.value} total={item.total}/>{item.value>=item.total&&<small className="rv-complete">✓ Completed from real local activity</small>}</article>)}</div>;
   const renderSkins=()=> <div className="rv-grid rv-skins">{SKINS.map(skin=><button type="button" className={'rv-skin'+(local.skin===skin.id?' selected':'')} key={skin.id} onClick={()=>setSkin(skin.id)} aria-pressed={local.skin===skin.id}>
@@ -147,7 +154,7 @@ export default function RoyalStudio({screen,navigate,openPage,begin,guest,saveGu
   </button>)}</div>;
   const actionFeedback=()=>{if(!feedback.trim()){setToast('Write your feedback first.');return;}navigator.clipboard?.writeText(feedback).then(()=>setToast('Feedback copied. No message was sent.')).catch(()=>setToast('Copy unavailable. Select and copy your feedback manually.'));};
   const accountSave=()=>{const next=draftName.trim();if(next){saveGuest(next);setToast('Local display name saved on this device.');}else setToast('Enter a display name.');};
-  const resetData=()=>{if(!window.confirm('Delete local chess history, puzzles, profile and preferences from this browser? This cannot be undone.'))return;['gcu.guest.v1','gcu.lastMatch.v1','gcu.history.v1','gcu.settings.v1','gcu.puzzles.solved.v1',STORE_KEY,'gcu.private-room.v1'].forEach(key=>{try{localStorage.removeItem(key);sessionStorage.removeItem(key);}catch{}});window.location.reload();};
+  const resetData=()=>{if(!window.confirm('Delete local chess history, puzzles, profile and preferences from this browser? This cannot be undone.'))return;['gcu.guest.v1','gcu.lastMatch.v1','gcu.history.v1','gcu.settings.v1','gcu.puzzles.solved.v1',STORE_KEY,FEEDBACK_KEY,COMPUTER_PREF_KEY,'gcu.analysis-cache.v1','gcu.review-practice.v1','gcu.private-room.v1'].forEach(key=>{try{localStorage.removeItem(key);localStorage.removeItem(key+'.recovery.v1');sessionStorage.removeItem(key);}catch{}});window.location.reload();};
 
   let content:ReactNode=null;
   switch(screen) {
@@ -227,16 +234,21 @@ export default function RoyalStudio({screen,navigate,openPage,begin,guest,saveGu
         <div className="royal-modes-stack">
           <button type="button" onClick={()=>{setMode('local');setMinutes('untimed');navigateTo('match-setup');}}><span><img src="/art/sheet-gold-knight.svg" alt=""/></span><div><strong>Classic Chess</strong><small>Standard rules · No clock</small></div><RoyalIcon name="arrow"/></button>
           <button type="button" onClick={()=>{setMode('local');setMinutes('10');navigateTo('match-setup');}}><span><RoyalIcon name="time" size={34}/></span><div><strong>Quick Chess</strong><small>Fast &amp; exciting · 10 min</small></div><RoyalIcon name="arrow"/></button>
-          <button type="button" onClick={()=>{setMode('computer');setMinutes('untimed');navigateTo('match-setup');}}><span><img src="/pieces/b-n.svg" alt=""/></span><div><strong>VS. Computer</strong><small>Offline · Basic AI</small></div><RoyalIcon name="arrow"/></button>
+          <button type="button" onClick={()=>{setMode('computer');setMinutes('untimed');navigateTo('match-setup');}}><span><img src="/pieces/b-n.svg" alt=""/></span><div><strong>VS. Computer</strong><small>Offline · Four difficulty levels</small></div><RoyalIcon name="arrow"/></button>
           <button type="button" onClick={()=>navigateTo('matchmaking')}><span><RoyalIcon name="friends" size={35}/></span><div><strong>Online Match</strong><small>Private invites · Server required</small></div><RoyalIcon name="arrow"/></button>
           <button type="button" onClick={()=>{setMode('local');setMinutes('untimed');navigateTo('match-setup');}}><span><RoyalIcon name="friends" size={35}/></span><div><strong>Play With Friends</strong><small>Two players on one device</small></div><RoyalIcon name="arrow"/></button>
         </div></div>;
       break;
     case 'match-setup':
-      content=<><Header eyebrow="GAME CONFIGURATION" title="Match Setup" icon="play" subtitle="These controls change the real chess mode. Computer games do not claim unavailable time settings."/><div className="rv-panel rv-form">
+      content=<><Header eyebrow="GAME CONFIGURATION" title="Match Setup" icon="play" subtitle="Choose your side, computer search budget and optional local clock."/><div className="rv-panel rv-form">
         <label htmlFor="rv-mode">MODE</label><select id="rv-mode" value={mode} onChange={e=>setMode(e.target.value as typeof mode)}><option value="local">Two Players · Local</option><option value="computer">VS Computer · Offline</option><option value="online">Private Online</option></select>
-        <label htmlFor="rv-time">TIME CONTROL</label><select id="rv-time" value={mode==='computer'?'untimed':minutes} onChange={e=>setMinutes(e.target.value as typeof minutes)} disabled={mode==='computer'||mode==='online'}><option value="untimed">No clock</option><option value="10">10 min · Each side</option></select>
-        <div className="rv-note">The current computer opponent plays Black; local mode includes both sides. Rated match and player-side randomization require a live match server.</div>
+        <label htmlFor="rv-time">TIME CONTROL</label><select id="rv-time" value={minutes} onChange={e=>setMinutes(e.target.value as typeof minutes)} disabled={mode==='online'}><option value="untimed">No clock</option><option value="10">10 min · Each side</option></select>
+        {mode==='computer'&&<>
+        <label htmlFor="rv-difficulty">DIFFICULTY</label><select id="rv-difficulty" value={computer.difficulty} onChange={e=>{const difficulty=e.target.value as Difficulty;updateComputer({...computer,difficulty,thinkingMs:PRESETS[difficulty].timeMs});}}>{Object.entries(PRESETS).map(([id,p])=><option key={id} value={id}>{p.label} · up to {p.timeMs} ms</option>)}</select>
+        <label htmlFor="rv-side">YOUR SIDE</label><select id="rv-side" value={computer.playerSide} onChange={e=>updateComputer({...computer,playerSide:e.target.value==='b'?'b':'w'})}><option value="w">White</option><option value="b">Black</option></select>
+        <label htmlFor="rv-thinking">THINKING TIME CAP</label><select id="rv-thinking" value={computer.thinkingMs} onChange={e=>updateComputer({...computer,thinkingMs:Number(e.target.value)})}>{THINKING_CHOICES.filter(n=>n<=PRESETS[computer.difficulty].timeMs).map(n=><option key={n} value={n}>{n} ms</option>)}</select>
+        <div className="rv-note">Difficulty is a search budget, not an Elo rating. On slower devices the computer may return an earlier completed result.</div></>}
+        <div className="rv-note">Local clocks pause in match menus and when saved. Online clocks remain separate.</div>
         <Action onClick={start}>{mode==='online'?'OPEN PRIVATE ONLINE':'START MATCH'} ›</Action></div></>;
       break;
     case 'matchmaking':
@@ -348,13 +360,18 @@ export default function RoyalStudio({screen,navigate,openPage,begin,guest,saveGu
       content=<><Header eyebrow="GAME ACTIVITY" title="Notifications" icon="notifications" subtitle="Only real events derived from your local chess history are displayed."/><Action secondary onClick={()=>save({...local,readIds:events.map(e=>e.id)})}>MARK ALL AS READ ({unread})</Action>{events.length===0?<Empty symbol="notifications" title="You're all caught up" text="Complete a match or puzzle to produce a local activity item."/>:<div className="rv-list">{events.map(event=><article className={'rv-notice-item'+(!local.readIds.includes(event.id)?' unread':'')} key={event.id}><span className="rv-bell">♛</span><div><strong>{event.kind}</strong><p>{event.label}</p><small>{event.date?new Date(event.date).toLocaleDateString():'Saved locally'}</small></div></article>)}</div>}</>;
       break;
     case 'settings':
-      content=<><Header eyebrow="PREFERENCES" title="Settings" icon="settings" subtitle="All controls either update real local preferences or clearly identify unavailable services."/><div className="rv-list">{link('account','profile','Account','Guest name and local data')}{link('appearance','settings','Appearance','Board, piece skins, contrast')}{link('sound','settings','Sound & Haptics','Vibration support; voice excluded')}{link('language','settings','Language','Current localization availability')}{link('accessibility','settings','Accessibility','Motion, visibility and legal hints')}{link('privacy','shield','Privacy & Security','Delete or export your local records')}{link('help','info','Help Center','Instructions and troubleshooting')}{link('feedback','info','Feedback','Prepare a copyable feedback message')}{link('about','info','About','Game build and independent identity')}<Tile icon="settings" title="Advanced Game Settings" detail="Preserved 3D library and piece controls" onClick={()=>openPage('settings')}/></div></>;
+      content=<><Header eyebrow="PREFERENCES" title="Settings" icon="settings" subtitle="All controls either update real local preferences or clearly identify unavailable services."/><div className="rv-list">{link('account','profile','Account','Guest name and local data')}{link('appearance','settings','Appearance','Board, piece skins, contrast')}{link('sound','settings','Sound & Haptics','Offline effects, volume and optional vibration')}{link('language','settings','Language','Current localization availability')}{link('accessibility','settings','Accessibility','Motion, visibility and legal hints')}{link('privacy','shield','Privacy & Security','Delete or export your local records')}{link('help','info','Help Center','Instructions and troubleshooting')}{link('feedback','info','Feedback','Prepare a copyable feedback message')}{link('about','info','About','Game build and independent identity')}<Tile icon="settings" title="Advanced Game Settings" detail="Preserved 3D library and piece controls" onClick={()=>openPage('settings')}/></div></>;
       break;
     case 'appearance':
       content=<><Header eyebrow="VISUAL SYSTEM" title="Appearance" icon="settings" subtitle="Change the real CSS chessboard palette or the optional 3D model family."/><Section title="Board Palettes">{renderSkins()}</Section><Section title="3D Pieces">{renderModels()}</Section></>;
       break;
     case 'sound':
-      content=<><Header eyebrow="SENSORY SETTINGS" title="Sound & Haptics" icon="settings" subtitle="No microphone, voice, chat recording or spoken audio is included."/><div className="rv-setting"><div><strong>Haptic Feedback</strong><small>Use supported device vibration on selected controls</small></div><input type="checkbox" checked={local.haptics} disabled={!('vibrate' in navigator)} onChange={e=>save({...local,haptics:e.target.checked})}/></div><div className="rv-note">Chess piece sound effects and background music are not included in this build. Their switches remain absent rather than pretending to work.</div></>;
+      content=<><Header eyebrow="SENSORY SETTINGS" title="Sound & Haptics" icon="settings" subtitle="Original offline chess effects. No microphone, voice or background music."/>
+        <label className="rv-setting"><span><strong>Sound effects</strong><small>Enable original pick, move, capture, check and result cues</small></span><input type="checkbox" checked={feedbackPrefs.sound} onChange={e=>setFeedbackPrefs({...feedbackPrefs,sound:e.target.checked})}/></label>
+        <label className="rv-setting"><span><strong>Board sound volume</strong><small>{Math.round(feedbackPrefs.volume*100)}%</small></span><input aria-label="Board sound volume" type="range" min="0" max="1" step=".05" value={feedbackPrefs.volume} onChange={e=>setFeedbackPrefs({...feedbackPrefs,volume:Number(e.target.value)})}/></label>
+        <label className="rv-setting"><span><strong>Result sound volume</strong><small>{Math.round(feedbackPrefs.resultVolume*100)}%</small></span><input aria-label="Result sound volume" type="range" min="0" max="1" step=".05" value={feedbackPrefs.resultVolume} onChange={e=>setFeedbackPrefs({...feedbackPrefs,resultVolume:Number(e.target.value)})}/></label>
+        <label className="rv-setting"><span><strong>Haptic Feedback</strong><small>Optional vibration, suppressed when reduced motion is active</small></span><input type="checkbox" checked={feedbackPrefs.haptics} disabled={typeof navigator.vibrate!=='function'} onChange={e=>setFeedbackPrefs({...feedbackPrefs,haptics:e.target.checked})}/></label>
+        <Action onClick={previewSound}>TEST SOUND</Action><div className="rv-note">Sound requires a user gesture and browser audio support. Silence is the safe fallback.</div></>;
       break;
     case 'language':
       content=<><Header eyebrow="LANGUAGE & REGION" title="Language" icon="settings" subtitle="Only the English interface is translated across current screens."/><div className="rv-panel rv-form"><label htmlFor="rv-language">APPLICATION LANGUAGE</label><select id="rv-language" value="en" onChange={()=>{}}><option value="en">English — Active</option></select><p>Hindi, Urdu, Bengali, Tamil and Telugu require complete translations and QA before they can be enabled.</p></div></>;
@@ -377,7 +394,7 @@ export default function RoyalStudio({screen,navigate,openPage,begin,guest,saveGu
       content=<><Header eyebrow="ASSISTANCE" title="Help Center" icon="info" subtitle="Documented guidance for implemented features."/><div className="rv-list">{[
         ['How do I make a move?','Tap a piece, then a highlighted legal destination. Your move record updates after the move.'],
         ['Can I practice the rules interactively?','Open the five-step Move Tutorial from Onboarding or the Learn section.'],
-        ['How does computer chess work?','The offline opponent uses a simple chess.js-based move heuristic; it is not an expert chess engine.'],
+        ['How does computer chess work?','The offline opponent uses bounded search in a worker. Difficulty controls time and depth, not an Elo rating.'],
         ['How do I replay my games?','Finish a match and open History. Select REPLAY GAME, then navigate through moves.'],
         ['How do I use 3D models?','Open a match and select 3D BOARD. Installed optional 3D models are loaded on demand.'],
         ['Is online chess ready?','The private room backend must be deployed and configured before online friends can connect.'],
@@ -388,7 +405,7 @@ export default function RoyalStudio({screen,navigate,openPage,begin,guest,saveGu
       content=<><Header eyebrow="YOUR FEEDBACK" title="Feedback" icon="info" subtitle="Copy your message to share it. There is no connected support ticket endpoint."/><div className="rv-panel rv-form"><label htmlFor="rv-feedback">SUGGESTION / BUG REPORT</label><textarea rows={7} id="rv-feedback" value={feedback} onChange={e=>setFeedback(e.target.value)} placeholder="What should we improve?"/><Action onClick={actionFeedback}>COPY FEEDBACK</Action></div></>;
       break;
     case 'offline':
-      content=<><Header eyebrow="OFFLINE FIRST" title="Play Offline" icon="play" subtitle="Local chess, the basic computer opponent and cached training do not need a live multiplayer server."/><div className="rv-halo"><span>♜</span></div><Action onClick={()=>begin('computer',false)}>PLAY OFFLINE VS COMPUTER</Action><Action secondary onClick={()=>openPage('training')}>OPEN TRAINING</Action></>;
+      content=<><Header eyebrow="OFFLINE FIRST" title="Play Offline" icon="play" subtitle="Local chess, the basic computer opponent and cached training do not need a live multiplayer server."/><div className="rv-halo"><span>♜</span></div><Action onClick={()=>begin('computer',false,computer)}>PLAY OFFLINE VS COMPUTER</Action><Action secondary onClick={()=>openPage('training')}>OPEN TRAINING</Action></>;
       break;
     case 'empty-state':
       content=<><Header eyebrow="EMPTY STATE LIBRARY" title="No Games Yet" icon="review" subtitle="These designs are functional zero-data states; they do not populate fake matches."/><Empty symbol="review" title="Start your first game" text="Complete a match to populate history, progress, notifications and achievements."><Action onClick={()=>navigateTo('modes')}>PLAY NOW</Action></Empty></>;
@@ -397,7 +414,7 @@ export default function RoyalStudio({screen,navigate,openPage,begin,guest,saveGu
       content=<><Header eyebrow="FEEDBACK SYSTEM" title="Alerts & Confirmations" icon="notifications" subtitle="Real interactions return actionable status and require consent for destructive operations."/><div className="rv-list"><Tile icon="review" title="View recent match status" detail="Opens saved result, if one exists" onClick={()=>navigateTo('match-result')}/><Tile icon="shield" title="Delete local data" detail="Requires explicit confirmation" onClick={resetData}/><Tile icon="settings" title="Saved board settings" detail="Opens the active appearance controls" onClick={()=>navigateTo('appearance')}/></div></>;
       break;
     case 'about':
-      content=<><Header eyebrow="THE DESIGN SYSTEM" title="Global Chess Ultimate" icon="info" subtitle="Independent playable web beta with original Global Chess Ultimate branding."/><div className="rv-panel"><h2>Design System · v3</h2><p>Deep brown/black surfaces, royal gold accents, ivory typography, 8-point spacing, 16-pixel card radius, original chess SVGs, no neon and no gradient chrome.</p><p>{ROYAL_SCREEN_COUNT} mapped reference screens across onboarding, chess, community, seasons, progress and settings.</p><p>Not yet released: server-backed social systems, subscriptions, ranked matchmaking, Android signed AAB and GPU/device certification.</p></div><Section title="All Design Screens" note="Navigation and component inspection"><div className="rv-screen-index">{Object.entries(ROYAL_SCREEN_GROUPS).map(([group,screens])=><details key={group}><summary>{group.toUpperCase()} · {screens.length} screens</summary><div>{screens.map(route=><button type="button" onClick={()=>navigateTo(route as RoyalScreen)} key={route}>{route.replace(/-/g,' ')}</button>)}</div></details>)}</div></Section></>;
+      content=<><Header eyebrow="THE DESIGN SYSTEM" title="Global Chess Ultimate" icon="info" subtitle="Independent playable web beta with original Global Chess Ultimate branding."/><div className="rv-panel"><h2>Design System · v3</h2><p>Deep brown/black surfaces, royal gold accents, ivory typography, 8-point spacing, 16-pixel card radius, original chess SVGs, no neon and no gradient chrome.</p><p>{ROYAL_SCREEN_COUNT} mapped reference screens across onboarding, chess, community, seasons, progress and settings.</p><p>Not yet released: server-backed social systems, subscriptions, ranked matchmaking, Android signed AAB and GPU/device certification.</p></div><Action onClick={()=>{void shareGame(navigator,location.origin).then(result=>setToast(result==='shared'?'Shared.':result==='copied'?'Game link copied.':result==='cancelled'?'Share cancelled.':'Share unavailable.'));}}>SHARE GAME</Action><div className="rv-note">{VERIFIED_STORE_URL?'Store listing available':'Rate app unavailable until an official store listing is verified.'}</div><Section title="All Design Screens" note="Navigation and component inspection"><div className="rv-screen-index">{Object.entries(ROYAL_SCREEN_GROUPS).map(([group,screens])=><details key={group}><summary>{group.toUpperCase()} · {screens.length} screens</summary><div>{screens.map(route=><button type="button" onClick={()=>navigateTo(route as RoyalScreen)} key={route}>{route.replace(/-/g,' ')}</button>)}</div></details>)}</div></Section></>;
       break;
   }
 

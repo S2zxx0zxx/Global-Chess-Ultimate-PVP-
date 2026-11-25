@@ -5,7 +5,7 @@ on:
   pull_request:
 jobs:
   verify:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -13,8 +13,84 @@ jobs:
           node-version: "22"
           cache: npm
           cache-dependency-path: package.json
-      - run: npm install --no-audit --no-fund
+      - run: npm ci --no-audit --no-fund
       - run: npm run verify
+      - name: P01 browser baseline
+        run: |
+          npm install --no-save --package-lock=false --no-audit --no-fund playwright@1.56.1
+          npx playwright install chromium --with-deps
+          node scripts/p01-browser-baseline.mjs
+      - name: P02 worker browser baseline
+        run: node scripts/p02-worker-baseline.mjs
+      - name: P03 paired advanced search
+        run: node scripts/p03-advanced-benchmark.mjs
+      - name: P04 fixed-depth and bitboard profile
+        run: node --experimental-strip-types scripts/p04-search-profile.mjs
+      - name: P04 browser comparison
+        run: node scripts/p04-browser.mjs
+      - name: P05 difficulty and paired self-play
+        run: node --experimental-strip-types scripts/p05-difficulty.mjs
+      - name: P05 production offline lifecycle
+        run: node scripts/p05-offline.mjs
+      - name: P05 fault-injected lifecycle acceptance
+        run: node scripts/p05-lifecycle.mjs
+      - name: P06 offline match analysis
+        run: node --experimental-strip-types scripts/p06-analysis.mjs
+      - name: P07 gameplay input and motion
+        run: node scripts/p07-gameplay.mjs
+      - name: P08 packaging guard
+        run: node scripts/p08-packaging.mjs
+      - name: P08 offline audio feedback
+        run: node scripts/p08-feedback.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: p08-feedback
+          path: |
+            reports/p08-feedback.json
+            reports/p08-packaging.json
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: p07-gameplay
+          path: |
+            reports/p07-gameplay.json
+            reports/p07-screenshots/
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: p06-analysis
+          path: reports/p06-analysis.json
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: p05-computer-mode
+          path: |
+            reports/p05-difficulty.json
+            reports/p05-offline.json
+            reports/p05-lifecycle.json
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: p04-profile
+          path: |
+            reports/p04-search-profile.json
+            reports/p04-browser.json
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: p03-advanced-search
+          path: reports/p03-advanced-search.json
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: p02-worker-baseline
+          path: reports/p02-worker-baseline.json
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: p01-browser-baseline
+          path: reports/p01-browser-baseline.json
+          if-no-files-found: error
       - uses: actions/upload-artifact@v4
         with:
           name: global-chess-ultimate-preview

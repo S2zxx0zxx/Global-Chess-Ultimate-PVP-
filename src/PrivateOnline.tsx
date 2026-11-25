@@ -8,8 +8,17 @@ const KEY = 'gcu.private-room.v1';
 const ENDPOINT = (import.meta.env.VITE_CHESS_ROOM_API || '').replace(/\/+$/, '');
 const FILES = 'abcdefgh';
 const SQUARES = Array.from({length:64},(_,i)=>(FILES[i%8]+(8-Math.floor(i/8))) as Square);
+function validSession(v:unknown):v is Session{
+ if(!v||typeof v!=='object')return false;const s=v as Partial<Session>;
+ return typeof s.roomId==='string'&&/^[A-Z0-9]{12}$/.test(s.roomId)&&typeof s.token==='string'&&/^[0-9a-f]{64}$/.test(s.token)&&(s.side==='w'||s.side==='b');
+}
+function validState(v:unknown,side:Seat):v is RoomState{
+ if(!v||typeof v!=='object')return false;const s=v as Partial<RoomState>;
+ if(s.type!=='state'||s.side!==side||typeof s.fen!=='string'||typeof s.pgn!=='string'||s.pgn.length>200000||!Number.isSafeInteger(s.revision)||s.revision!<0||!['waiting','active','finished'].includes(s.status??'')||typeof s.isCheck!=='boolean'||typeof s.isGameOver!=='boolean')return false;
+ try{const g=new Chess();if(s.pgn)g.loadPgn(s.pgn);return g.fen()===s.fen&&g.turn()===s.turn&&g.isCheck()===s.isCheck&&g.isGameOver()===s.isGameOver;}catch{return false;}
+}
 const readSession = ():Session|null => {
-  try { const s = sessionStorage.getItem(KEY); return s ? JSON.parse(s) as Session : null; } catch { return null; }
+  try { const s = sessionStorage.getItem(KEY); if(!s)return null;const v=JSON.parse(s);return validSession(v)?v:null; } catch { return null; }
 };
 const writeSession=(value:Session|null)=>{try{if(value)sessionStorage.setItem(KEY,JSON.stringify(value));else sessionStorage.removeItem(KEY);}catch{}};
 export default function PrivateOnline(){
@@ -36,7 +45,7 @@ export default function PrivateOnline(){
     try{
       const result=await api('/api/rooms');
       const next:Session={roomId:result.roomId,token:result.token,side:'w'};
-      writeSession(next);setSession(next);setStatus('Room created. Share the code with your opponent.');
+      if(!validSession(next))throw Error('Invalid room response');writeSession(next);setState(null);setSession(next);setStatus('Room created. Share the code with your opponent.');
       history.replaceState(null,'',location.pathname+'?room='+result.roomId);
     }catch(e){setStatus(e instanceof Error?e.message:'Could not create room');}
     finally{setBusy(false);}
@@ -48,7 +57,7 @@ export default function PrivateOnline(){
     try{
       const result=await api('/api/rooms/'+normalized+'/join');
       const next:Session={roomId:normalized,token:result.token,side:result.seat};
-      writeSession(next);setSession(next);setStatus('Joining the room…');
+      if(!validSession(next))throw Error('Invalid room response');writeSession(next);setState(null);setSession(next);setStatus('Joining the room…');
       history.replaceState(null,'',location.pathname+'?room='+normalized);
     }catch(e){setStatus(e instanceof Error?e.message:'Could not join room');}
     finally{setBusy(false);}
@@ -58,20 +67,23 @@ export default function PrivateOnline(){
     let stopped=false,attempt=0,reconnect:ReturnType<typeof setTimeout>|null=null;
     const connect=()=>{
       if(stopped)return;
+      setState(null);setConnected(false);
       const url=ENDPOINT.replace(/^http/,'ws')+'/api/rooms/'+session.roomId+'/socket';
       const ws=new WebSocket(url,['gcu-v1','seat.'+session.token]);
       socket.current=ws;
-      ws.onopen=()=>{setConnected(true);setStatus('Connected to secure private room');attempt=0;};
+      ws.onopen=()=>{if(stopped||socket.current!==ws)return;setConnected(true);setStatus('Connected to secure private room');attempt=0;};
       ws.onmessage=event=>{
+        if(stopped||socket.current!==ws)return;
         try{
           const body=JSON.parse(event.data);
-          if(body.type==='state'){setState(body as RoomState);setSelected(null);}
+          if(body.type==='state'){if(!validState(body,session.side)){setState(null);setStatus('Invalid match state from server');return;}setState(old=>old&&old.revision>body.revision?old:body);setSelected(null);}
           else if(body.type==='error')setStatus('Server: '+String(body.error));
         }catch{setStatus('Invalid message from match server');}
       };
-      ws.onerror=()=>setStatus('Room connection interrupted.');
+      ws.onerror=()=>{if(!stopped&&socket.current===ws)setStatus('Room connection interrupted.');};
       ws.onclose=()=>{
-        setConnected(false);
+        if(stopped||socket.current!==ws)return;
+        setState(null);setConnected(false);
         if(!stopped&&attempt<8){attempt++;reconnect=setTimeout(connect,Math.min(15000,500*2**attempt));}
         else if(!stopped)setStatus('Reconnect limit reached. Reopen the room to retry.');
       };

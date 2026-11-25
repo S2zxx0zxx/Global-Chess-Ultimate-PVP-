@@ -22,11 +22,11 @@ test('three design sheets have distinct interactive flows and overlays',()=>{
  for(const m of ['royal-hub','royal-modes-stack','tutorial','tournaments','bracket','achievements','shop','inventory','notifications','feedback'])assert.ok(studio.includes(m),'Missing '+m);
  for(const m of ['royal-match-top','royal-match-status','royal-match-actions','royal-emote-picker','royal-draw-dialog','royal-match-history','promotion','endResult','showGameMenu','resignDialog'])assert.ok(game.includes(m),'Missing '+m);
  for(const m of ['e2','e4','g1','f3','f1','c4','chess.move','royal-tutorial-board'])assert.ok(tutorial.includes(m),'Missing tutorial '+m);
- for(const m of ['royal-analysis-panel','setPlaying','chooseComputerMove','material','replay-controls'])assert.ok(replay.includes(m),'Missing replay '+m);
+ for(const m of ['royal-analysis-panel','setPlaying','AnalysisSession','material','replay-controls'])assert.ok(replay.includes(m),'Missing replay '+m);
 });
 test('Sheet 02 timing and actions remain real, not decorative',()=>{
- assert.match(game,/if\(!menu\)clockRef\.current/);
- assert.match(game,/if \(!clockEnabled \|\| !active \|\| page !== 'game' \|\| endResult \|\| mode === 'puzzle' \|\| menu\) return;/);
+ assert.match(game,/if\(pausedRef\.current\)clockRef\.current/);
+ assert.match(game,/if \(!clockEnabled \|\| !active \|\| page !== 'game' \|\| endResult \|\| mode === 'puzzle' \|\| menu \|\| resignDialog \|\| drawDialog\) return;/);
  assert.match(game,/recordEnd\('draw', mode\)/);
  assert.match(game,/onClick=\{offerDraw\}/);
  assert.match(game,/onClick=\{resign\}/);

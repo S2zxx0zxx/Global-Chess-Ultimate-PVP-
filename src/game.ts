@@ -2,7 +2,7 @@ import { Chess, type Move, type Square } from 'chess.js';
 
 export type PlayMode = 'local' | 'computer' | 'puzzle';
 export type GameResult = 'white' | 'black' | 'draw' | 'timeout-white' | 'timeout-black';
-export type MatchRecord = { id: string; endedAt: string; mode: PlayMode; result: GameResult; pgn: string; moves: number };
+export type MatchRecord = { id: string; endedAt: string; mode: PlayMode; result: GameResult; pgn: string; moves: number; playerSide?:'w'|'b'; difficulty?:'easy'|'medium'|'hard'|'expert' };
 export const STORAGE_KEYS = {
   guest: 'gcu.guest.v1',
   lastMatch: 'gcu.lastMatch.v1',
@@ -46,13 +46,47 @@ export function resultOf(game: Chess): GameResult | null {
   if (game.isGameOver()) return 'draw';
   return null;
 }
-export function loadJSON<T>(key: string, fallback: T): T {
-  try { const value = localStorage.getItem(key); return value ? JSON.parse(value) as T : fallback; }
-  catch { return fallback; }
+// Untrusted storage can contain valid JSON with the wrong shape.
+const obj=(v:unknown):v is Record<string,unknown>=>v!==null&&typeof v==='object'&&!Array.isArray(v);
+const one=(v:unknown,a:string[])=>typeof v==='string'&&a.includes(v);
+const strings=(v:unknown)=>Array.isArray(v)&&v.every(x=>typeof x==='string');
+const bool=(v:unknown)=>v===undefined||typeof v==='boolean';
+const pair=(v:unknown)=>Array.isArray(v)&&v.length===2&&v.every(n=>typeof n==='number'&&Number.isFinite(n)&&n>=0);
+const record=(v:unknown)=>obj(v)&&typeof v.id==='string'&&typeof v.endedAt==='string'&&Number.isFinite(Date.parse(v.endedAt))&&one(v.mode,['local','computer','puzzle'])&&one(v.result,['white','black','draw','timeout-white','timeout-black'])&&typeof v.pgn==='string'&&typeof v.moves==='number'&&Number.isSafeInteger(v.moves)&&v.moves>=0;
+export function validStoredValue(key:string,v:unknown):boolean{
+ switch(key){
+ case STORAGE_KEYS.guest:return typeof v==='string'&&v.trim().length>0&&v.length<=100;
+ case STORAGE_KEYS.history:return Array.isArray(v)&&v.every(record);
+ case STORAGE_KEYS.lastMatch:return v===null||obj(v)&&typeof v.fen==='string'&&(v.pgn===undefined||typeof v.pgn==='string')&&one(v.mode,['local','computer','puzzle'])&&typeof v.active==='boolean'&&(v.seconds===undefined||pair(v.seconds))&&(v.remainingMs===undefined||pair(v.remainingMs))&&bool(v.timed);
+ case STORAGE_KEYS.settings:return obj(v)&&bool(v.flipped)&&bool(v.reducedMotion)&&bool(v.hints)&&bool(v.useLibraryAssets)&&(v.modelTheme===undefined||one(v.modelTheme,['deco','bauhaus','scifi','egypt','classic']));
+ case 'gcu.royal-ui.v1':return obj(v)&&bool(v.completedIntro)&&bool(v.haptics)&&bool(v.contrast)&&(v.readIds===undefined||strings(v.readIds))&&(v.skin===undefined||one(v.skin,['wood','ivory','onyx','stone']))&&(v.avatar===undefined||one(v.avatar,['king','knight','queen']))&&(v.frame===undefined||one(v.frame,['gold','bronze','onyx']));
+ case 'gcu.puzzles.solved.v1':return strings(v);
+ default:return true;
+ }
 }
-export function saveJSON(key: string, data: unknown): boolean {
-  try { localStorage.setItem(key, JSON.stringify(data)); return true; }
-  catch { return false; }
+export function loadJSON<T>(key:string,fallback:T):T {
+ try{
+  const raw=localStorage.getItem(key);if(raw===null)return fallback;
+  const v:unknown=JSON.parse(raw);if(validStoredValue(key,v))return v as T;
+  if(key===STORAGE_KEYS.history&&Array.isArray(v))return v.filter(record) as T;
+  if(key==='gcu.puzzles.solved.v1'&&Array.isArray(v))return v.filter(x=>typeof x==='string') as T;
+  return fallback;
+ }catch{return fallback;}
+}
+export function saveJSON(key:string,data:unknown):boolean{
+ try{
+  if(!validStoredValue(key,data))return false;
+  const old=localStorage.getItem(key);
+  if(old!==null){
+   let valid=false;try{valid=validStoredValue(key,JSON.parse(old));}catch{}
+   if(!valid){
+    const backup=key+'.recovery.v1',previous=localStorage.getItem(backup);
+    if(previous!==null&&previous!==old)return false;
+    if(previous===null)localStorage.setItem(backup,old);
+   }
+  }
+  localStorage.setItem(key,JSON.stringify(data));return true;
+ }catch{return false;}
 }
 export function shortResult(result: GameResult): string {
   return result === 'draw' ? '½–½' : result.startsWith('timeout') ? 'Time expired' : result === 'white' ? '1–0' : '0–1';

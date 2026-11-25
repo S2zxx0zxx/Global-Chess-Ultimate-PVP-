@@ -494,3 +494,29 @@ h1,h2,h3{font-family:var(--font-title);font-weight:600}
 .royal-inventory-summary span{flex:1;color:#e4d0af;font-size:12px}
 .royal-inventory-summary strong{font:650 12px var(--font-title);color:#f5daab;text-align:right}
 @media(max-width:360px){.royal-profile-photo{flex-basis:63px;width:63px;height:65px}.royal-profile-photo img{height:54px;width:54px}.royal-profile-identity strong{font-size:16px}.royal-avatar-picker button,.royal-frame-picker button{min-height:137px}.royal-frame-picker span{height:63px;width:63px}}
+
+/* P06 bounded analysis panel. */
+.analysis-eval{height:14px;border:1px solid #9e743e;border-radius:4px;background:#171717;overflow:hidden}.analysis-eval>div{height:100%;background:#f6ead4}.replay-square.analysis-from{box-shadow:inset 0 0 0 3px #b89727}.replay-square.analysis-to{box-shadow:inset 0 0 0 4px #39734a}.analysis-review{display:grid;gap:7px}.analysis-review progress{width:100%;accent-color:#c8a05e}.analysis-row{display:flex;gap:5px;flex-wrap:wrap}.analysis-row button{background:#3d271b;color:#f5d4a1;border:1px solid #936c42;border-radius:5px;padding:7px}.royal-analysis-panel p{font-size:12px;overflow-wrap:anywhere}.royal-analysis-panel select{max-width:100%;padding:9px;color:#fbe9c7;background:#372419;border:1px solid #936c42}
+
+/* P07: visual state follows canonical committed move events; drag is only a preview. */
+.gcu-drag-board{position:relative;touch-action:none;user-select:none;overflow:hidden}
+.gcu-drag-board .square{touch-action:none;overflow:visible}
+.gcu-drag-board .square.last-move .piece-img{animation:none}
+.gcu-drag-board .square .drag-source{opacity:0}
+.gcu-drag-board .square:focus-visible{outline:3px solid #fff1a4;outline-offset:-3px;z-index:8}
+.gcu-drag-ghost{position:absolute;z-index:20;pointer-events:none;transform:translate(-50%,-50%);object-fit:contain;filter:drop-shadow(0 5px 4px #0008)}
+.gcu-drag-ghost.returning{transition:left .14s ease-out,top .14s ease-out}
+@keyframes gcu-committed-slide{from{transform:translate(var(--move-x),var(--move-y));z-index:7}to{transform:translate(0,0)}}
+.gcu-drag-board[data-reduced-motion=true] .piece-img,.gcu-drag-board[data-reduced-motion=true] .gcu-drag-ghost{animation:none!important;transition:none!important}
+@media(prefers-reduced-motion:reduce){.gcu-drag-board .piece-img,.gcu-drag-ghost{animation:none!important;transition:none!important}}
+
+/* Keep the board above fixed navigation in short landscape viewports. */
+@media (orientation:landscape) and (max-height:560px){.royal-match-panel .board-surround{width:min(100%,calc(100dvh - 110px),575px)}.royal-match-panel .board3d{height:min(70dvh,575px)}}
+.gcu-drag-board .square img,.gcu-drag-board .square span{pointer-events:none}
+
+/* P08: short nonblocking web transitions; no imported Unity clip. */
+@keyframes gcu-panel-enter{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.result-card,.promotion-modal{animation:gcu-panel-enter .18s ease-out both}
+.reduce-motion .result-card,.reduce-motion .promotion-modal,.reduce-motion .result-overlay,.reduce-motion .modal-mask,.reduce-motion .result-card:before,.reduce-motion .result-card:after{animation:none!important}
+@media(prefers-reduced-motion:reduce){.result-card,.promotion-modal,.result-overlay,.modal-mask,.result-card:before,.result-card:after{animation:none!important}}
+.rv-setting input[type=range]{max-width:42%;accent-color:#d4a95b}

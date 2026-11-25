@@ -1,17 +1,34 @@
-const CACHE = 'global-chess-ultimate-v5-sheets-2';
-const CORE = ['/', '/manifest.webmanifest', '/icon.svg', '/art/sheet-gold-knight.svg', '/art/sheet-reward-chest.svg'];
-self.addEventListener('install', event => { event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE))); self.skipWaiting(); });
-self.addEventListener('activate', event => { event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))); self.clients.claim(); });
-self.addEventListener('fetch', event => {
-  const url = new URL(event.request.url);
-  if (event.request.method !== 'GET' || url.origin !== self.location.origin) return;
-  // Keep optional premium GLB/FBX art outside runtime cache: it can exceed 100 MiB.
-  // Critical: Vite uses /assets/ for hashed JS/CSS too; those MUST remain cacheable for offline PWA.
-  const optional3D = /^\/assets\/(?:models|chessset|humanoid|previews)\//.test(url.pathname)
-    || url.pathname === '/assets/asset-manifest.json';
-  if (optional3D) return;
-  event.respondWith(fetch(event.request).then(response => {
-    if (response.ok) { const copy = response.clone(); caches.open(CACHE).then(cache => cache.put(event.request, copy)); }
-    return response;
-  }).catch(async () => (await caches.match(event.request)) || (event.request.mode === 'navigate' ? caches.match('/') : Response.error())));
+const BUILD_VERSION='__GCU_BUILD_VERSION__';
+const PREFIX='global-chess-ultimate-';
+const CACHE=PREFIX+'release-'+BUILD_VERSION;
+const CORE=['/','/manifest.webmanifest','/icon.svg','/art/sheet-gold-knight.svg','/art/sheet-reward-chest.svg','/offline-manifest.json','/THIRD_PARTY_NOTICES.txt'];
+const validPath=p=>typeof p==='string'&&/^\/(assets|pieces|art)\/[a-zA-Z0-9_.-]+$/.test(p);
+self.addEventListener('install',event=>event.waitUntil((async()=>{
+ const response=await fetch('/offline-manifest.json',{cache:'no-store'});
+ if(!response.ok)throw Error('Precache manifest unavailable');
+ const m=await response.json();
+ if(m.version!==BUILD_VERSION||!/^[a-f0-9]{16}$/.test(m.version)||!Array.isArray(m.files)||!m.files.some(p=>/^\/assets\/engine\.worker-.*\.js$/.test(p))||m.files.some(p=>!validPath(p)))throw Error('Invalid precache manifest');
+ const cache=await caches.open(CACHE);
+ try{await cache.addAll([...new Set([...CORE,...m.files])].map(p=>new Request(new URL(p,self.location.origin),{cache:'reload'})));}
+ catch(e){await caches.delete(CACHE);throw e;}
+ // No skipWaiting: existing tabs keep their matching shell and chunks.
+})()));
+self.addEventListener('activate',event=>event.waitUntil((async()=>{
+ // Normal activation waits until prior controlled clients have closed.
+ for(const key of await caches.keys())if(key.startsWith(PREFIX)&&key!==CACHE)await caches.delete(key);
+ await self.clients.claim();
+})()));
+self.addEventListener('fetch',event=>{
+ const request=event.request,url=new URL(request.url);
+ if(request.method!=='GET'||url.origin!==self.location.origin)return;
+ const navigation=request.mode==='navigate'&&url.pathname==='/';
+ const staticFile=CORE.includes(url.pathname)||validPath(url.pathname);
+ if(!navigation&&!staticFile)return;
+ event.respondWith((async()=>{
+  const cache=await caches.open(CACHE);
+  const cached=await cache.match(navigation?'/':request,{ignoreSearch:navigation});
+  if(cached)return cached;
+  // No runtime cache writes or dynamic API shell substitution.
+  try{return await fetch(request);}catch{return Response.error();}
+ })());
 });

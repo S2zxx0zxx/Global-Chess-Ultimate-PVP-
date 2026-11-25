@@ -1,0 +1,28 @@
+name: P07 gameplay acceptance
+on:
+  push:
+    branches: ["feat/paid-asset-engine-integration"]
+    paths: ["src/App.tsx","src/use-board-drag.ts","src/gameplay-events.ts","src/ChessBoard3D.tsx","src/royal-sheets-v5.css","scripts/p07-gameplay.mjs",".github/workflows/p07-gameplay.yml"]
+jobs:
+  gameplay:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm ci --no-audit --no-fund
+      - run: npm run build
+      - run: |
+          npm install --no-save --package-lock=false --no-audit --no-fund playwright@1.56.1
+          npx playwright install chromium --with-deps
+      - run: node scripts/p07-gameplay.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: p07-gameplay-diagnostics
+          path: |
+            reports/p07-gameplay.json
+            reports/p07-screenshots/
+          if-no-files-found: warn

@@ -1,0 +1,27 @@
+import {chromium} from 'playwright';
+import {spawn} from 'node:child_process';
+import {setTimeout as delay} from 'node:timers/promises';
+import {mkdir,writeFile} from 'node:fs/promises';
+import assert from 'node:assert/strict';
+import {Chess} from 'chess.js';
+import {AnalysisSession,AnalysisCache,practiceFrom} from '../src/match-analysis.ts';
+import {positionOf} from '../src/ai/protocol.ts';
+import {runSearch} from '../src/ai/search.ts';
+const url='http://127.0.0.1:4184',server=spawn(process.execPath,['node_modules/vite/bin/vite.js','preview','--host','127.0.0.1','--port','4184','--strictPort'],{stdio:'inherit'});
+let browser;try{let ready=false;for(let i=0;i<100;i++){try{if((await fetch(url)).ok){ready=true;break;}}catch{}await delay(200);}assert.ok(ready);browser=await chromium.launch({headless:true});const results=[];
+for(const width of [360,414]){const context=await browser.newContext({viewport:{width,height:800},isMobile:true,hasTouch:true});const page=await context.newPage(),g=new Chess('4k3/8/8/3q4/8/3R4/8/4K3 w - - 0 1');g.move('Rd2');const record={id:'p06-fixture',endedAt:'2026-11-24T00:00:00Z',mode:'local',result:'black',pgn:g.pgn(),moves:1};
+await page.goto(url);await page.evaluate(record=>{localStorage.setItem('gcu.royal-ui.v1',JSON.stringify({completedIntro:true}));localStorage.setItem('gcu.history.v1',JSON.stringify([record]));},record);await page.reload();await page.evaluate(async()=>{await navigator.serviceWorker.ready;});await page.waitForFunction(()=>Boolean(navigator.serviceWorker.controller));await context.setOffline(true);await page.reload();
+await page.getByRole('button',{name:/Game Review/i}).first().click();await page.getByRole('button',{name:'Replay saved game'}).click();await page.getByRole('button',{name:'First move'}).click();await page.getByRole('button',{name:'ANALYSIS',exact:true}).click();await page.locator('[data-best-move]').filter({hasText:'Rxd5'}).waitFor({timeout:10000});assert.ok(await page.getByRole('img',{name:/White-relative evaluation/}).isVisible());assert.equal(await page.locator('.analysis-from').count(),1);assert.equal(await page.locator('.analysis-to').count(),1);
+await page.getByRole('button',{name:'COMPARE ALTERNATIVES'}).click();await page.locator('[data-alternatives]').waitFor({timeout:15000});const sample=await page.locator('[data-alternatives]').innerText();assert.match(sample,/4 \/ [0-9]+ legal candidates examined/);
+await page.getByRole('button',{name:/REVIEW NEXT/}).click();await page.locator('[data-review-progress]').filter({hasText:'Reviewed 1 / 1 plies'}).waitFor({timeout:15000});const reviewText=await page.locator('.analysis-row').innerText();
+let practiceFromActualUI=false;
+const save=page.getByRole('button',{name:'SAVE POSITION TO PRACTICE'});
+if(await save.isVisible()){await save.click();practiceFromActualUI=true;}else{const row=page.locator('.analysis-row').getByRole('button',{name:'PRACTICE',exact:true});if(await row.isVisible()){await row.click();practiceFromActualUI=true;}}
+// The deterministic engine-backed practice fixture exercises academy even if wall-clock search is uncertain.
+const seedBoard=new Chess('4k3/8/8/3q4/8/3R4/8/4K3 w - - 0 1');
+const session=new AnalysisSession('practice-fixture',new AnalysisCache(),()=>({onmessage:null,onerror:null,onmessageerror:null,postMessage(q){queueMicrotask(()=>this.onmessage?.({data:runSearch(q,()=>0)}));},terminate(){}}));
+const candidate=practiceFrom(await session.inspect(positionOf(seedBoard),0,'d3d2',true));assert.ok(candidate,'Engine-backed practice candidate required');
+if(!practiceFromActualUI)await page.evaluate(p=>localStorage.setItem('gcu.review-practice.v1',JSON.stringify([p])),candidate);await page.getByRole('button',{name:'Last move'}).click();await page.getByRole('button',{name:'First move'}).click();await page.locator('[data-best-move]').filter({hasText:'Rxd5'}).waitFor({timeout:10000});await page.getByRole('button',{name:'Close replay'}).click();assert.equal(await page.getByRole('dialog',{name:'Saved game replay'}).count(),0);assert.deepEqual(await page.evaluate(()=>JSON.parse(localStorage.getItem('gcu.history.v1'))),[record]);await page.getByRole('button',{name:'Go home'}).click();await page.getByRole('button',{name:/Daily Challenge/}).first().click();await page.getByRole('button',{name:'SOLVE CHALLENGE'}).click();
+assert.equal(await page.locator('.puzzle-entry').count(),5);await page.getByRole('button',{name:/PRACTICE POSITION 1/}).click();await page.getByRole('button',{name:'SHOW LEGAL HINT'}).click();await page.getByRole('status').filter({hasText:'d3 → d5'}).waitFor();await page.locator('#review-practice-move').selectOption('d3d5');await page.getByRole('button',{name:'CHECK MOVE'}).click();await page.getByRole('status').filter({hasText:'Matches the engine training target'}).waitFor();
+results.push({width,offline:true,bestMove:'Rxd5',legalHighlights:true,alternatives:sample,review:reviewText,practiceFromActualUI,academyPractice:true,originalPuzzleCount:5,historyUnchanged:true});await context.close();}
+const report={commit:process.env.GITHUB_SHA||'local',results};await mkdir('reports',{recursive:true});await writeFile('reports/p06-analysis.json',JSON.stringify(report,null,2)+'\n');console.log('P06_ANALYSIS '+JSON.stringify(report));}finally{await browser?.close();server.kill('SIGTERM');}

@@ -1,0 +1,22 @@
+name: P04 thirty minute memory soak
+on:
+  push:
+    branches: ["feat/paid-asset-engine-integration"]
+    paths: ["src/ai/**", "scripts/p04-memory-soak.mjs", ".github/workflows/p04-soak.yml"]
+jobs:
+  soak:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm ci --no-audit --no-fund
+      - run: node --expose-gc --experimental-strip-types scripts/p04-memory-soak.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: p04-memory-soak
+          path: reports/p04-memory-soak.json
+          if-no-files-found: error

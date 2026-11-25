@@ -1,0 +1,32 @@
+name: Release dependency and asset audit
+on:
+  push:
+    branches: ["feat/paid-asset-engine-integration"]
+    paths: ["package.json","package-lock.json","server/package.json","server/package-lock.json","scripts/release-audit.mjs",".github/workflows/release-audit.yml"]
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm ci --no-audit --no-fund
+      - run: node scripts/release-audit.mjs
+      - name: Capture exact dependency lock
+        run: |
+          mkdir -p reports
+          cp package-lock.json reports/package-lock.json
+          node -e 'const s=require("fs").readFileSync("package-lock.json","utf8");for(let i=0;i<s.length;i+=2000) console.log("GCU_LOCK "+JSON.stringify(s.slice(i,i+2000)))'
+      - name: npm audit
+        run: |
+          npm audit --json > reports/npm-audit.json || status=$?
+          node -e 'const a=require("./reports/npm-audit.json");console.log("GCU_NPM_AUDIT "+JSON.stringify({metadata:a.metadata,vulnerabilities:a.vulnerabilities,error:a.error}));if(!a.metadata)process.exit(1)'
+          exit "${status:-0}"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: release-dependency-audit
+          path: reports/
+          if-no-files-found: error

@@ -1,0 +1,30 @@
+name: P08 audio and packaging acceptance
+on:
+  push:
+    branches: ["feat/paid-asset-engine-integration"]
+    paths: ["src/gameplay-feedback.ts","src/share-game.ts","src/App.tsx","src/RoyalStudio.tsx","src/use-board-drag.ts","src/royal-sheets-v5.css","scripts/p08-*.mjs","tests/p08-feedback.test.mjs",".github/workflows/p08-feedback.yml"]
+jobs:
+  feedback:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm ci --no-audit --no-fund
+      - run: node --experimental-strip-types --test tests/p08-feedback.test.mjs
+      - run: npm run build
+      - run: node scripts/p08-packaging.mjs
+      - run: |
+          npm install --no-save --package-lock=false --no-audit --no-fund playwright@1.56.1
+          npx playwright install chromium --with-deps
+      - run: node scripts/p08-feedback.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: p08-acceptance
+          path: |
+            reports/p08-packaging.json
+            reports/p08-feedback.json
+          if-no-files-found: error
