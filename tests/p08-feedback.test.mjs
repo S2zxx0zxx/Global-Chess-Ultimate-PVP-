@@ -35,3 +35,15 @@ test('P08 share is canonical origin only, cancel never silently copies, no fake 
  assert.equal(await shareGame({share:async()=>{throw {name:'AbortError'};},clipboard:{writeText:async()=>{throw Error('must not copy');}}},'https://example.com'),'cancelled');
  assert.equal(await shareGame({},'https://example.com'),'unavailable');
 });
+
+test('P08 unlock pending cues bounded to newest and uses current gain',async()=>{
+ let release;const calls=[];const f=new FeedbackController(()=>({unlock:()=>new Promise(r=>release=r),play:(c,g)=>{calls.push([c,g]);return true;},stop(){},dispose(){}}));
+ f.configure(normalizeFeedback({sound:true,volume:.3}));const p=f.unlock();f.begin('g',true);for(let i=0;i<1000;i++)f.preview('pick');f.preview('invalid');f.configure(normalizeFeedback({sound:true,volume:.8}));release(true);await p;assert.deepEqual(calls,[['invalid',.8]]);f.dispose();
+});
+test('P08 WebAudio port enforces voice cap, release and disposal',async()=>{
+ const old=globalThis.AudioContext;let closed=0,stops=0;const sources=[];
+ class FakeContext{state='running';destination={};createBuffer(c,n){const a=new Float32Array(n);return {getChannelData:()=>a};}createBufferSource(){const s={connect(){},disconnect(){},start(){},stop(){stops++;},onended:null};sources.push(s);return s;}createGain(){return {gain:{value:0},connect(){},disconnect(){}};}async close(){closed++;}}
+ globalThis.AudioContext=FakeContext;
+ try{const p=new WebAudioPort();assert.ok(await p.unlock());assert.ok(p.play('move',.5));assert.ok(p.play('result',.5));assert.equal(p.play('pick',.5),false);sources[0].onended();assert.ok(p.play('pick',.5));p.dispose();assert.equal(stops,2);assert.equal(closed,1);assert.equal(p.play('move',.5),false);}
+ finally{if(old===undefined)delete globalThis.AudioContext;else globalThis.AudioContext=old;}
+});

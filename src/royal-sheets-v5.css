@@ -516,7 +516,7 @@ h1,h2,h3{font-family:var(--font-title);font-weight:600}
 
 /* P08: short nonblocking web transitions; no imported Unity clip. */
 @keyframes gcu-panel-enter{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
-.royal-match-panel,.result-card,.promotion-modal{animation:gcu-panel-enter .18s ease-out both}
-.reduce-motion .royal-match-panel,.reduce-motion .result-card,.reduce-motion .promotion-modal,.reduce-motion .result-overlay,.reduce-motion .modal-mask,.reduce-motion .result-card:before,.reduce-motion .result-card:after{animation:none!important}
-@media(prefers-reduced-motion:reduce){.royal-match-panel,.result-card,.promotion-modal,.result-overlay,.modal-mask,.result-card:before,.result-card:after{animation:none!important}}
+.result-card,.promotion-modal{animation:gcu-panel-enter .18s ease-out both}
+.reduce-motion .result-card,.reduce-motion .promotion-modal,.reduce-motion .result-overlay,.reduce-motion .modal-mask,.reduce-motion .result-card:before,.reduce-motion .result-card:after{animation:none!important}
+@media(prefers-reduced-motion:reduce){.result-card,.promotion-modal,.result-overlay,.modal-mask,.result-card:before,.result-card:after{animation:none!important}}
 .rv-setting input[type=range]{max-width:42%;accent-color:#d4a95b}

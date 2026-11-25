@@ -45,7 +45,9 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: p08-feedback
-          path: reports/p08-feedback.json
+          path: |
+            reports/p08-feedback.json
+            reports/p08-packaging.json
           if-no-files-found: error
       - uses: actions/upload-artifact@v4
         with:

@@ -64,11 +64,12 @@ export class FeedbackController{
  private port:AudioPort|null=null;
  private unlockJob:Promise<boolean>|null=null;
  private ready=false;private epoch=0;private gameId='';private revision=-1;
+ private pending:{cue:Cue;epoch:number;at:number}|null=null;
  private ended=false;private disposed=false;
  private readonly createPort:()=>AudioPort;
  private readonly vibrate:(ms:number)=>void;
  private readonly reduced:()=>boolean;
- constructor(createPort=()=>new WebAudioPort(),vibrate=(ms:number)=>{if(typeof navigator!=='undefined'&&typeof navigator.vibrate==='function')navigator.vibrate(ms);},reduced=()=>typeof matchMedia==='function'&&matchMedia('(prefers-reduced-motion: reduce)').matches){
+ constructor(createPort:()=>AudioPort=()=>new WebAudioPort(),vibrate:(ms:number)=>void=(ms:number)=>{if(typeof navigator!=='undefined'&&typeof navigator.vibrate==='function')navigator.vibrate(ms);},reduced=()=>typeof matchMedia==='function'&&matchMedia('(prefers-reduced-motion: reduce)').matches){
   this.createPort=createPort;this.vibrate=vibrate;this.reduced=reduced;
  }
  configure(prefs:FeedbackPrefs){this.prefs=normalizeFeedback(prefs);if(!this.prefs.sound){this.stop();this.ready=false;}}
@@ -78,7 +79,7 @@ export class FeedbackController{
   try{
    this.port??=this.createPort();
    const port=this.port;
-   this.unlockJob=Promise.resolve(port.unlock()).then(ok=>{this.ready=ok&&!this.disposed&&this.port===port&&this.prefs.sound;return this.ready;},()=>false).finally(()=>{this.unlockJob=null;});
+   this.unlockJob=Promise.resolve(port.unlock()).then(ok=>{this.ready=ok&&!this.disposed&&this.port===port&&this.prefs.sound;const pending=this.pending;this.pending=null;if(this.ready&&pending&&pending.epoch===this.epoch&&performance.now()-pending.at<=250)this.playReady(pending.cue);return this.ready;},()=>{this.pending=null;this.ready=false;return false;}).finally(()=>{this.unlockJob=null;});
    return this.unlockJob;
   }catch{return Promise.resolve(false);}
  }
@@ -86,10 +87,14 @@ export class FeedbackController{
   if(this.disposed)return;
   if(this.prefs.haptics){try{if(!this.reduced())this.vibrate(cue==='result'?25:cue==='capture'||cue==='check'?18:cue==='invalid'?8:10);}catch{}}
   if(!this.prefs.sound)return;
-  const epoch=this.epoch,gain=cue==='result'?this.prefs.resultVolume:this.prefs.volume;
-  const play=()=>{if(this.disposed||!this.prefs.sound||this.epoch!==epoch||!this.ready)return;try{this.port?.play(cue,gain);}catch{}};
-  if(this.ready)play();
-  else if(this.unlockJob)void this.unlockJob.then(ok=>{if(ok)play();});
+  if(this.ready)this.playReady(cue);
+  // Only the newest cue can wait for unlock. No unbounded promise callbacks or stale queued audio.
+  else if(this.unlockJob)this.pending={cue,epoch:this.epoch,at:performance.now()};
+ }
+ private playReady(cue:Cue){
+  if(this.disposed||!this.prefs.sound||!this.ready)return;
+  const gain=cue==='result'?this.prefs.resultVolume:this.prefs.volume;
+  try{this.port?.play(cue,gain);}catch{}
  }
  begin(id:string,announce:boolean){this.stop();this.gameId=id;this.revision=-1;this.ended=false;if(announce)this.emit('start');}
  commit(events:readonly GameplayEvent[]){
@@ -105,6 +110,6 @@ export class FeedbackController{
  }
  preview(cue:'pick'|'invalid'){if(this.gameId&&!this.ended)this.emit(cue);}
  sample(){this.emit('move');}
- stop(){this.epoch++;try{this.port?.stop();}catch{}}
+ stop(){this.epoch++;this.pending=null;try{this.port?.stop();}catch{}}
  dispose(){this.disposed=true;this.stop();try{this.port?.dispose();}catch{}this.port=null;}
 }

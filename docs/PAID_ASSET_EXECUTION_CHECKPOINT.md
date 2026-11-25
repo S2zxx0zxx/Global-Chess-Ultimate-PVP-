@@ -267,3 +267,7 @@ Latest exact tested ledger head 599580a7b12fb1def3a79cc9c32cf14b3f0dfbd4, full C
 ## P08 implementation checkpoint — GATE OPEN
 
 P07 full rerun 45512134485 attempt 2 SUCCESS and ledger-head CI 45514085088 SUCCESS. P08 opened exact archive and plan; parsed binary serialized metadata, PPtrs, clips/controller timing and settings. Detailed source-backed evaluation docs/P08_AUDIO_ASSETS.md. 5 MP3 decode success and 27 PNG review; no subjective listening performed, proprietary media excluded under P00 restrictions. T03 remains PARTIAL, public build uses original effects. New code and tests pending CI. No P09 or main merge. No paid file raw or derivative copied into repo.
+
+### P08 bounded audio and packaging hardening
+
+Follow-up bounds pending gesture-unlock audio to a single newest cue with 250ms expiry; no stale playback on stop or mute, test mock voice cap/disposal. Remove entrance transform on board container to keep P07 geometry stable. Public packaging audit checks archive and all 77 original payload hashes, writes report. Dedicated P08 browser workflow verifies real WebAudio schedule, mock haptics, independent gain and offline playback. No runtime engine changes or paid asset upload. T03 listening gate remains open.
