@@ -18,7 +18,11 @@ const peers=new Map();let writes=0;
 const storage={get:async k=>k==='match'?structuredClone(match):undefined,put:async(k,v)=>{assert.equal(k,'match');match=structuredClone(v);writes++;},transaction:async callback=>callback(storage)};
 const room=new MatchRoom({storage,getWebSockets:()=>[...peers.values()]},{});
 const url='http://127.0.0.1:4190';
-const server=spawn(process.execPath,['node_modules/vite/bin/vite.js','--host','127.0.0.1','--port','4190','--strictPort'],{env:{...process.env,VITE_CHESS_ROOM_API:url},stdio:'inherit'});
+// Use a real production build with endpoint baked in, then a strict local preview.
+// Vite dev readiness was returning a non-2xx response in CI.
+import {execFileSync} from 'node:child_process';
+execFileSync(process.execPath,['node_modules/vite/bin/vite.js','build','--outDir','dist-selection'],{env:{...process.env,VITE_CHESS_ROOM_API:url},stdio:'inherit'});
+const server=spawn(process.execPath,['node_modules/vite/bin/vite.js','preview','--outDir','dist-selection','--host','127.0.0.1','--port','4190','--strictPort'],{stdio:'inherit'});
 let browser;
 try{
  let ready=false;for(let i=0;i<100;i++){try{if((await fetch(url)).ok){ready=true;break;}}catch{}await delay(200);}assert.ok(ready);

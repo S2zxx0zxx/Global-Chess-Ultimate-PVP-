@@ -20,23 +20,46 @@ const browser=await chromium.launch({headless:true});
 try{
  const context=await browser.newContext({acceptDownloads:true});const page=await context.newPage();
  await page.goto(source+'/purchase',{waitUntil:'domcontentloaded',timeout:45000});
- await page.getByText('No thanks, just take me to the downloads',{exact:true}).click({timeout:20000});
- const filename=page.getByText('Chess Sets FBX.rar',{exact:true});await filename.waitFor({timeout:30000});
- // The creator download page may have nested .upload wrappers or a different row class.
- // Walk only the visible filename's ancestors; stop before another archive is included.
- const target=await filename.evaluate(el=>{
-  for(let row=el;row&&row!==document.body;row=row.parentElement){
-   const text=row.innerText||'';
-   if(text.includes('Chess Sets Blender.rar'))break;
-   const controls=[...row.querySelectorAll('a,button,input[type=button],input[type=submit]')].filter(a=>{
-    const label=(a.innerText||a.value||a.getAttribute('aria-label')||'').trim();
-    return /^Download$/i.test(label)&&a.getClientRects().length>0;
-   });
-   if(controls.length===1){controls[0].setAttribute('data-gcu-exact-fbx','true');return true;}
+ // Filename is also visible on the purchase page, so do not treat its presence
+ // as evidence of completed free download navigation.
+ const free=page.getByText(/No thanks,? just take me to the downloads/i);
+ await free.waitFor({state:'visible',timeout:30000});
+ await free.click({timeout:20000});
+ // Wait for an actual per-file download control, not the purchase page's file list.
+ // Support older and newer public itch UI variants, with exact filename matching.
+ const mark=()=>page.evaluate(()=>{
+  const want='Chess Sets FBX.rar',other='Chess Sets Blender.rar';
+  const visible=e=>e.getClientRects().length>0&&getComputedStyle(e).visibility!=='hidden';
+  const controls=[...document.querySelectorAll('a,button,input,[role=button],[data-upload_id],[data-upload-id],.download_btn')].filter(e=>{
+   if(!visible(e))return false;
+   const label=[e.innerText,e.getAttribute('aria-label'),e.getAttribute('title'),e.value].filter(Boolean).join(' ').trim();
+   return e.matches('.download_btn,[data-upload_id],[data-upload-id]')||/^Download(?:\s|$)/i.test(label);
+  });
+  for(const el of document.querySelectorAll('body *')){
+   if(!visible(el)||el.children.length!==0||el.textContent.trim()!==want)continue;
+   for(let row=el;row&&row!==document.body;row=row.parentElement){
+    if((row.innerText||'').includes(other))break;
+    const matches=controls.filter(c=>row.contains(c)&&c!==el);
+    // Nested icon/control wrappers are not separate actionable buttons.
+    const outer=matches.filter(c=>!matches.some(p=>p!==c&&p.contains(c)));
+    if(outer.length===1){
+     outer[0].setAttribute('data-gcu-exact-fbx','true');return true;
+    }
+   }
   }
   return false;
  });
- if(!target)throw Error('Cannot identify unique visible Download control for exact FBX filename; no download attempted');
+ let found=false;
+ for(let i=0;i<100;i++){
+  try{if(await mark()){found=true;break;}}catch(e){if(!/context|navigation/i.test(String(e)))throw e;}
+  await page.waitForTimeout(300);
+ }
+ if(!found){
+  // Diagnostics contain public labels and classes only, never hrefs/cookies or tokens.
+  const diagnostics=await page.evaluate(()=>[...document.querySelectorAll('a,button,[data-upload_id],.download_btn')].map(e=>({label:(e.innerText||e.getAttribute('aria-label')||'').trim().slice(0,100),className:typeof e.className==='string'?e.className.slice(0,150):'',uploadControl:e.hasAttribute('data-upload_id')})).filter(x=>/download/i.test(x.label+' '+x.className)).slice(0,25));
+  console.log('Public download controls '+JSON.stringify(diagnostics));
+  throw Error('Exact download control unavailable; use the original local ZIP installer instead');
+ }
  const downloadPromise=page.waitForEvent('download',{timeout:90000});
  await page.locator('[data-gcu-exact-fbx=true]').click({timeout:20000});
  const download=await downloadPromise;
