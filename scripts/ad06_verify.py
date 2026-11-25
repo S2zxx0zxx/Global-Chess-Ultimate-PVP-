@@ -10,6 +10,7 @@ def restored(v):
     if isinstance(v,dict): return {k:int(x) if k=='m_PathID' else restored(x) for k,x in v.items()}
     if isinstance(v,list): return [restored(x) for x in v]
     return v
+
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('decoded_zip',type=Path);p.add_argument('raw_zip',type=Path);p.add_argument('directory',type=Path);a=p.parse_args();d=a.directory;index=json.loads((d/'index.json').read_text());check(len(index)==106,'clip count'); totals=collections.Counter(); keys=set()
     with zipfile.ZipFile(a.decoded_zip) as z,zipfile.ZipFile(a.raw_zip) as rawzip:
