@@ -8,7 +8,7 @@ function prohibited(path) {
   const p=path.replaceAll('\\','/').toLowerCase();
   const parts=p.split('/');
   return /\.(apk|apks|xapk)$/.test(p) ||
-    parts.some(s=>s==='.apk-quarantine'||s==='chess_adoption_readiness'||s==='chess_audit_work'||s==='chess_ad03_private'||s==='chess_ad03_private_manifest.zip'||s==='chess_ad02_owner_authorized_inventory.csv'||s==='chess_ad04_private'||s==='chess_ad04_audio_readiness.zip'||s==='chess_ad05_private'||s==='chess_ad05_ogg_pack.zip'||s==='chess_ad05_wav_masters.zip'||s==='ad04_pinned_vgmstream.zip'||s==='chess_ad06_private'||s==='chess_ad06_normalized_animations.zip'||s==='chess_ad07_private'||s==='chess_ad07_binding_and_interpolation.zip'||
+    parts.some(s=>s==='.apk-quarantine'||s==='chess_adoption_readiness'||s==='chess_audit_work'||s==='chess_ad03_private'||s==='chess_ad03_private_manifest.zip'||s==='chess_ad02_owner_authorized_inventory.csv'||s==='chess_ad04_private'||s==='chess_ad04_audio_readiness.zip'||s==='chess_ad05_private'||s==='chess_ad05_ogg_pack.zip'||s==='chess_ad05_wav_masters.zip'||s==='ad04_pinned_vgmstream.zip'||s==='chess_ad06_private'||s==='chess_ad06_normalized_animations.zip'||s==='chess_ad07_private'||s==='chess_ad07_binding_and_interpolation.zip'||s==='chess_ad08_private'||s==='chess_ad08_spine_mapping.zip'||
       /^chess_(uiux_extracted_assets|boards_and_pieces|unity_raw_evidence|adoption_readiness_pack)\.zip$/.test(s)||
       /^chess_ad02_private_provenance\.csv$/.test(s)||
       /^chess_extracted_(boards|piece_themes)\.png$/.test(s)) ||
@@ -19,7 +19,7 @@ test('AD-02 quarantine tripwire rejects known reference paths',()=>{
     'public/assets/apk-adoption/piece.png','src/assets/apk-adoption/sound.ogg',
     '.apk-quarantine/audio.fsb','Chess_Adoption_Readiness/spine/a.skel',
     'docs/Chess_AD02_Private_Provenance.csv','public/Chess_Extracted_Boards.png',
-    'Chess_AD03_Private/dependency_edges.csv','public/Chess_AD03_Private_Manifest.zip','Chess_AD02_Owner_Authorized_Inventory.csv','Chess_AD04_Private/preflight.json','Chess_AD04_Audio_Readiness.zip','Chess_AD05_Private/converted/ogg/a.ogg','Chess_AD05_OGG_Pack.zip','Chess_AD05_WAV_Masters.zip','AD04_Pinned_vgmstream.zip','Chess_AD06_Private/normalized/clips/a.json','Chess_AD06_Normalized_Animations.zip','Chess_AD07_Private/results/bindings.json','Chess_AD07_Binding_And_Interpolation.zip'])
+    'Chess_AD03_Private/dependency_edges.csv','public/Chess_AD03_Private_Manifest.zip','Chess_AD02_Owner_Authorized_Inventory.csv','Chess_AD04_Private/preflight.json','Chess_AD04_Audio_Readiness.zip','Chess_AD05_Private/converted/ogg/a.ogg','Chess_AD05_OGG_Pack.zip','Chess_AD05_WAV_Masters.zip','AD04_Pinned_vgmstream.zip','Chess_AD06_Private/normalized/clips/a.json','Chess_AD06_Normalized_Animations.zip','Chess_AD07_Private/results/bindings.json','Chess_AD07_Binding_And_Interpolation.zip','Chess_AD08_Private/assets/payloads/a.skel','Chess_AD08_Spine_Mapping.zip'])
     assert.equal(prohibited(p),true,p);
   for(const p of ['docs/APK_ASSET_PROVENANCE.md','src/App.tsx','public/assets/asset-manifest.json',
     'public/assets/original/piece.svg','tests/apk-quarantine.test.mjs'])
