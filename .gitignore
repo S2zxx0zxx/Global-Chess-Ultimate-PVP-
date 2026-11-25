@@ -1,0 +1,12 @@
+# Local APK research quarantine only; keep outside checkout whenever possible.
+.apk-quarantine/
+Chess.apks
+Chess_UIUX_Extracted_Assets.zip
+Chess_Boards_and_Pieces.zip
+Chess_Unity_Raw_Evidence.zip
+Chess_Adoption_Readiness_Pack.zip
+Chess_Adoption_Readiness/
+Chess_AD02_Private_Provenance.csv
+Chess_Extracted_Boards.png
+Chess_Extracted_Piece_Themes.png
+chess_audit_work/
