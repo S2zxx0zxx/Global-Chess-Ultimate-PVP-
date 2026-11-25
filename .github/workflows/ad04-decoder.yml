@@ -1,0 +1,54 @@
+name: AD-04 pinned Vorbis decoder
+on:
+  pull_request:
+    paths:
+      - 'scripts/ad04_audio_preflight.py'
+      - '.github/workflows/ad04-decoder.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  decoder:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install build dependencies
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends cmake build-essential libogg-dev libvorbis-dev
+      - name: Checkout pinned decoder source
+        run: |
+          git init "$RUNNER_TEMP/vgmstream"
+          git -C "$RUNNER_TEMP/vgmstream" remote add origin https://github.com/vgmstream/vgmstream.git
+          git -C "$RUNNER_TEMP/vgmstream" fetch --depth 1 origin d9875b1fff307e4759dfb85e49e3d5e6fb196f7c
+          git -C "$RUNNER_TEMP/vgmstream" checkout --detach FETCH_HEAD
+          test "$(git -C "$RUNNER_TEMP/vgmstream" rev-parse HEAD)" = d9875b1fff307e4759dfb85e49e3d5e6fb196f7c
+      - name: Verify all four pinned setup codebooks
+        run: |
+          PYTHONPATH=scripts python3 -c 'import sys; from pathlib import Path; from ad04_audio_preflight import check_codebooks; check_codebooks(Path(sys.argv[1])); print("4/4 codebooks verified")' "$RUNNER_TEMP/vgmstream/src/coding/libs/vorbis_codebooks_fsb.h"
+      - name: Build Vorbis-enabled CLI
+        run: |
+          cmake -S "$RUNNER_TEMP/vgmstream" -B "$RUNNER_TEMP/vgmstream/build" -DCMAKE_BUILD_TYPE=Release -DBUILD_CLI=ON -DBUILD_AUDACIOUS=OFF -DBUILD_V123=OFF -DUSE_VORBIS=ON -DUSE_FFMPEG=OFF -DUSE_MPEG=OFF -DUSE_G7221=OFF -DUSE_G719=OFF -DUSE_ATRAC9=OFF -DUSE_SPEEX=OFF -DUSE_CELT=OFF
+          cmake --build "$RUNNER_TEMP/vgmstream/build" --parallel 2
+      - name: Collect toolchain evidence
+        run: |
+          mkdir -p "$RUNNER_TEMP/ad04-toolchain"
+          cp "$RUNNER_TEMP/vgmstream/build/cli/vgmstream-cli" "$RUNNER_TEMP/ad04-toolchain/"
+          cp "$RUNNER_TEMP/vgmstream/COPYING" "$RUNNER_TEMP/ad04-toolchain/VGMSTREAM-COPYING"
+          cp /usr/share/doc/libvorbis-dev/copyright "$RUNNER_TEMP/ad04-toolchain/VORBIS-NOTICE"
+          cp /usr/share/doc/libogg-dev/copyright "$RUNNER_TEMP/ad04-toolchain/OGG-NOTICE"
+          cd "$RUNNER_TEMP/ad04-toolchain"
+          set +e
+          ./vgmstream-cli -V > version.json 2> version.stderr
+          status=$?
+          set -e
+          test "$status" -eq 0 || test "$status" -eq 1
+          python3 -c 'import json; d=json.load(open("version.json")); assert isinstance(d, dict) and d'
+          printf "%s\n" "$status" > version-exit-code.txt
+          ldd ./vgmstream-cli > dependencies.txt
+          sha256sum vgmstream-cli > SHA256SUMS
+          printf '%s\n' d9875b1fff307e4759dfb85e49e3d5e6fb196f7c > SOURCE-COMMIT
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ad04-vgmstream-r2168-linux-x64
+          path: ${{ runner.temp }}/ad04-toolchain/
+          if-no-files-found: error

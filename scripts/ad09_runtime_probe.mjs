@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import {pathToFileURL} from 'node:url';
+const {TextureAtlas,FakeTexture}=await import(pathToFileURL(process.argv[2]).href);
+const text='page.png\nsize: 80,40\nfilter: Linear,Linear\npma: true\nrot\nbounds: 16,8,12,20\nrotate: 90\noffsets: 2,3,20,30\nplain\nbounds: 8,4,16,8\n';
+const atlas=new TextureAtlas(text);assert.equal(atlas.pages.length,1);
+const page=atlas.pages[0];assert.equal(page.width,80);assert.equal(page.height,40);assert.equal(page.pma,true);
+const rot=atlas.findRegion('rot');assert.deepEqual([rot.u,rot.v,rot.u2,rot.v2],[.2,.2,.45,.5]);assert.deepEqual([rot.degrees,rot.offsetX,rot.offsetY,rot.originalWidth,rot.originalHeight],[90,2,3,20,30]);
+const plain=atlas.findRegion('plain');assert.deepEqual([plain.u,plain.v,plain.u2,plain.v2],[.1,.1,.3,.3]);
+page.setTexture(new FakeTexture({width:64,height:64}));assert.deepEqual([page.width,page.height,rot.u,rot.v,rot.u2,rot.v2],[80,40,.2,.2,.45,.5]);
+console.log(JSON.stringify({status:'PASS',fixture:'declared-space UV survives actual texture size mismatch',version:'4.2.120'}));

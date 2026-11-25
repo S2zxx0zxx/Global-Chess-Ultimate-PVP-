@@ -1,0 +1,374 @@
+{
+  "reference_commit": "fa1e804ed5239367d089e5015ef997cf79b57b75",
+  "scope": "Read-only crosswalk of existing implementation; never executable dispatch. Partial/unavailable source actions require later explicit decisions. Source name length is 12 vs web input maxLength 25; original confirm selection differs from immediate commit; random side not provided by current selector. Do not map profile reset directly to full local data deletion. Current online chat, purchases, public matchmaking and ad rewards are not established. Existing canonical engine owns all game state.",
+  "actions": [
+    {
+      "id": "game.menu",
+      "path": "src/App.tsx",
+      "source_blob": "c9b2e9aa069270546f00bf27681bd58c89fe5743",
+      "line": 355,
+      "marker": "const showGameMenu",
+      "scope": "existing source-code anchor; not original callback equivalence or runtime integration"
+    },
+    {
+      "id": "game.hint",
+      "path": "src/App.tsx",
+      "source_blob": "c9b2e9aa069270546f00bf27681bd58c89fe5743",
+      "line": 310,
+      "marker": "const hint =",
+      "scope": "existing source-code anchor; not original callback equivalence or runtime integration"
+    },
+    {
+      "id": "game.undo",
+      "path": "src/App.tsx",
+      "source_blob": "c9b2e9aa069270546f00bf27681bd58c89fe5743",
+      "line": 377,
+      "marker": "const undo =",
+      "scope": "existing source-code anchor; not original callback equivalence or runtime integration"
+    },
+    {
+      "id": "game.local_emote_partial",
+      "path": "src/App.tsx",
+      "source_blob": "c9b2e9aa069270546f00bf27681bd58c89fe5743",
+      "line": 372,
+      "marker": "const sendLocalEmote",
+      "scope": "existing source-code anchor; not original callback equivalence or runtime integration"
+    },
+    {
+      "id": "game.save_exit",
+      "path": "src/App.tsx",
+      "source_blob": "c9b2e9aa069270546f00bf27681bd58c89fe5743",
+      "line": 387,
+      "marker": "const saveAndExit",
+      "scope": "existing source-code anchor; not original callback equivalence or runtime integration"
+    },
+    {
+      "id": "game.new",
+      "path": "src/App.tsx",
+      "source_blob": "c9b2e9aa069270546f00bf27681bd58c89fe5743",
+      "line": 144,
+      "marker": "const start =",
+      "scope": "existing source-code anchor; not original callback equivalence or runtime integration"
+    },
+    {
+      "id": "game.promote_q",
+      "path": "src/App.tsx",
+      "source_blob": "c9b2e9aa069270546f00bf27681bd58c89fe5743",
+      "line": 562,
+      "marker": "execute(from, to, type)",
+      "scope": "existing source-code anchor; not original callback equivalence or runtime integration"
+    },
+    {
+      "id": "game.promote_r",
+      "path": "src/App.tsx",
+      "source_blob": "c9b2e9aa069270546f00bf27681bd58c89fe5743",
+      "line": 562,
+      "marker": "execute(from, to, type)",
+      "scope": "existing source-code anchor; not original callback equivalence or runtime integration"
+    },
+    {
+      "id": "game.promote_b",
+      "path": "src/App.tsx",
+      "source_blob": "c9b2e9aa069270546f00bf27681bd58c89fe5743",
+      "line": 562,
+      "marker": "execute(from, to, type)",
+      "scope": "existing source-code anchor; not original callback equivalence or runtime integration"
+    },
+    {
+      "id": "game.promote_n",
+      "path": "src/App.tsx",
+      "source_blob": "c9b2e9aa069270546f00bf27681bd58c89fe5743",
+      "line": 562,
+      "marker": "execute(from, to, type)",
+      "scope": "existing source-code anchor; not original callback equivalence or runtime integration"
+    },
+    {
+      "id": "game.promotion_cancel",
+      "path": "src/App.tsx",
+      "source_blob": "c9b2e9aa069270546f00bf27681bd58c89fe5743",
+      "line": 562,
+      "marker": "CANCEL PROMOTION",
+      "scope": "existing source-code anchor; not original callback equivalence or runtime integration"
+    },
+    {
+      "id": "game.promotion_confirm_gap",
+      "path": "src/App.tsx",
+      "source_blob": "c9b2e9aa069270546f00bf27681bd58c89fe5743",
+      "line": 562,
+      "marker": "execute(from, to, type)",
+      "scope": "existing source-code anchor; not original callback equivalence or runtime integration"
+    },
+    {
+      "id": "game.context_confirmation",
+      "path": "src/App.tsx",
+      "source_blob": "c9b2e9aa069270546f00bf27681bd58c89fe5743",
+      "line": 367,
+      "marker": "const confirmDraw",
+      "scope": "existing source-code anchor; not original callback equivalence or runtime integration"
+    },
+    {
+      "id": "game.exit_confirmation_gap",
+      "path": "src/App.tsx",
+      "source_blob": "c9b2e9aa069270546f00bf27681bd58c89fe5743",
+      "line": 387,
+      "marker": "const saveAndExit",
+      "scope": "existing source-code anchor; not original callback equivalence or runtime integration"
+    },
+    {
+      "id": "game.board_guard_gap",
+      "path": "src/App.tsx",
+      "source_blob": "c9b2e9aa069270546f00bf27681bd58c89fe5743",
+      "line": 233,
+      "marker": "const onSquare",
+      "scope": "existing source-code anchor; not original callback equivalence or runtime integration"
+    },
+    {
+      "id": "game.board",
+      "path": "src/App.tsx",
+      "source_blob": "c9b2e9aa069270546f00bf27681bd58c89fe5743",
+      "line": 233,
+      "marker": "const onSquare",
+      "scope": "existing source-code anchor; not original callback equivalence or runtime integration"
+    },
+    {
+      "id": "game.board_view",
+      "path": "src/App.tsx",
+      "source_blob": "c9b2e9aa069270546f00bf27681bd58c89fe5743",
+      "line": 471,
+      "marker": "setView3D(true)",
+      "scope": "existing source-code anchor; not original callback equivalence or runtime integration"
+    },
+    {
+      "id": "game.chat_unavailable",
+      "path": "src/App.tsx",
+      "source_blob": "c9b2e9aa069270546f00bf27681bd58c89fe5743",
+      "line": 502,
+      "marker": "Online chat is unavailable",
+      "scope": "existing source-code anchor; not original callback equivalence or runtime integration"
+    },
+    {
+      "id": "studio.training",
+      "path": "src/App.tsx",
+      "source_blob": "c9b2e9aa069270546f00bf27681bd58c89fe5743",
+      "line": 527,
+      "marker": "page === 'training'",
+      "scope": "existing source-code anchor; not original callback equivalence or runtime integration"
+    },
+    {
+      "id": "studio.name",
+      "path": "src/RoyalStudio.tsx",
+      "source_blob": "793040b625a7f774bc4dd75601c212396184db47",
+      "line": 156,
+      "marker": "const accountSave",
+      "scope": "existing source-code anchor; not original callback equivalence or runtime integration"
+    },
+    {
+      "id": "studio.avatar",
+      "path": "src/RoyalStudio.tsx",
+      "source_blob": "793040b625a7f774bc4dd75601c212396184db47",
+      "line": 120,
+      "marker": "const renderAvatars",
+      "scope": "existing source-code anchor; not original callback equivalence or runtime integration"
+    },
+    {
+      "id": "studio.frame",
+      "path": "src/RoyalStudio.tsx",
+      "source_blob": "793040b625a7f774bc4dd75601c212396184db47",
+      "line": 122,
+      "marker": "const renderFrames",
+      "scope": "existing source-code anchor; not original callback equivalence or runtime integration"
+    },
+    {
+      "id": "studio.reset_scope_gap",
+      "path": "src/RoyalStudio.tsx",
+      "source_blob": "793040b625a7f774bc4dd75601c212396184db47",
+      "line": 157,
+      "marker": "const resetData",
+      "scope": "existing source-code anchor; not original callback equivalence or runtime integration"
+    },
+    {
+      "id": "studio.side",
+      "path": "src/RoyalStudio.tsx",
+      "source_blob": "793040b625a7f774bc4dd75601c212396184db47",
+      "line": 248,
+      "marker": "id=\"rv-side\"",
+      "scope": "existing source-code anchor; not original callback equivalence or runtime integration"
+    },
+    {
+      "id": "studio.random_side_gap",
+      "path": "src/RoyalStudio.tsx",
+      "source_blob": "793040b625a7f774bc4dd75601c212396184db47",
+      "line": 248,
+      "marker": "id=\"rv-side\"",
+      "scope": "existing source-code anchor; not original callback equivalence or runtime integration"
+    },
+    {
+      "id": "studio.start",
+      "path": "src/RoyalStudio.tsx",
+      "source_blob": "793040b625a7f774bc4dd75601c212396184db47",
+      "line": 146,
+      "marker": "const start=",
+      "scope": "existing source-code anchor; not original callback equivalence or runtime integration"
+    },
+    {
+      "id": "studio.elo_gap",
+      "path": "src/RoyalStudio.tsx",
+      "source_blob": "793040b625a7f774bc4dd75601c212396184db47",
+      "line": 247,
+      "marker": "id=\"rv-difficulty\"",
+      "scope": "existing source-code anchor; not original callback equivalence or runtime integration"
+    },
+    {
+      "id": "studio.start_mode_gap",
+      "path": "src/RoyalStudio.tsx",
+      "source_blob": "793040b625a7f774bc4dd75601c212396184db47",
+      "line": 242,
+      "marker": "case 'match-setup'",
+      "scope": "existing source-code anchor; not original callback equivalence or runtime integration"
+    },
+    {
+      "id": "studio.home",
+      "path": "src/RoyalStudio.tsx",
+      "source_blob": "793040b625a7f774bc4dd75601c212396184db47",
+      "line": 190,
+      "marker": "case 'home'",
+      "scope": "existing source-code anchor; not original callback equivalence or runtime integration"
+    },
+    {
+      "id": "studio.shop",
+      "path": "src/RoyalStudio.tsx",
+      "source_blob": "793040b625a7f774bc4dd75601c212396184db47",
+      "line": 332,
+      "marker": "case 'shop'",
+      "scope": "existing source-code anchor; not original callback equivalence or runtime integration"
+    },
+    {
+      "id": "studio.customize",
+      "path": "src/RoyalStudio.tsx",
+      "source_blob": "793040b625a7f774bc4dd75601c212396184db47",
+      "line": 334,
+      "marker": "case 'customize'",
+      "scope": "existing source-code anchor; not original callback equivalence or runtime integration"
+    },
+    {
+      "id": "studio.tutorial",
+      "path": "src/RoyalStudio.tsx",
+      "source_blob": "793040b625a7f774bc4dd75601c212396184db47",
+      "line": 180,
+      "marker": "case 'tutorial'",
+      "scope": "existing source-code anchor; not original callback equivalence or runtime integration"
+    },
+    {
+      "id": "studio.settings",
+      "path": "src/RoyalStudio.tsx",
+      "source_blob": "793040b625a7f774bc4dd75601c212396184db47",
+      "line": 362,
+      "marker": "case 'settings'",
+      "scope": "existing source-code anchor; not original callback equivalence or runtime integration"
+    },
+    {
+      "id": "studio.profile",
+      "path": "src/RoyalStudio.tsx",
+      "source_blob": "793040b625a7f774bc4dd75601c212396184db47",
+      "line": 307,
+      "marker": "case 'profile'",
+      "scope": "existing source-code anchor; not original callback equivalence or runtime integration"
+    },
+    {
+      "id": "studio.missions",
+      "path": "src/RoyalStudio.tsx",
+      "source_blob": "793040b625a7f774bc4dd75601c212396184db47",
+      "line": 282,
+      "marker": "case 'missions'",
+      "scope": "existing source-code anchor; not original callback equivalence or runtime integration"
+    },
+    {
+      "id": "studio.board_skin",
+      "path": "src/RoyalStudio.tsx",
+      "source_blob": "793040b625a7f774bc4dd75601c212396184db47",
+      "line": 117,
+      "marker": "const setSkin=",
+      "scope": "existing source-code anchor; not original callback equivalence or runtime integration"
+    },
+    {
+      "id": "studio.piece_skin_gap",
+      "path": "src/RoyalStudio.tsx",
+      "source_blob": "793040b625a7f774bc4dd75601c212396184db47",
+      "line": 152,
+      "marker": "const renderModels",
+      "scope": "existing source-code anchor; not original callback equivalence or runtime integration"
+    },
+    {
+      "id": "studio.privacy",
+      "path": "src/RoyalStudio.tsx",
+      "source_blob": "793040b625a7f774bc4dd75601c212396184db47",
+      "line": 379,
+      "marker": "case 'privacy'",
+      "scope": "existing source-code anchor; not original callback equivalence or runtime integration"
+    },
+    {
+      "id": "studio.feedback",
+      "path": "src/RoyalStudio.tsx",
+      "source_blob": "793040b625a7f774bc4dd75601c212396184db47",
+      "line": 404,
+      "marker": "case 'feedback'",
+      "scope": "existing source-code anchor; not original callback equivalence or runtime integration"
+    },
+    {
+      "id": "studio.language_gap",
+      "path": "src/RoyalStudio.tsx",
+      "source_blob": "793040b625a7f774bc4dd75601c212396184db47",
+      "line": 376,
+      "marker": "case 'language'",
+      "scope": "existing source-code anchor; not original callback equivalence or runtime integration"
+    },
+    {
+      "id": "studio.sound",
+      "path": "src/RoyalStudio.tsx",
+      "source_blob": "793040b625a7f774bc4dd75601c212396184db47",
+      "line": 370,
+      "marker": "feedbackPrefs.sound",
+      "scope": "existing source-code anchor; not original callback equivalence or runtime integration"
+    },
+    {
+      "id": "studio.haptic",
+      "path": "src/RoyalStudio.tsx",
+      "source_blob": "793040b625a7f774bc4dd75601c212396184db47",
+      "line": 373,
+      "marker": "feedbackPrefs.haptics",
+      "scope": "existing source-code anchor; not original callback equivalence or runtime integration"
+    },
+    {
+      "id": "studio.hints",
+      "path": "src/RoyalStudio.tsx",
+      "source_blob": "793040b625a7f774bc4dd75601c212396184db47",
+      "line": 389,
+      "marker": "title:'Legal Move Hints'",
+      "scope": "existing source-code anchor; not original callback equivalence or runtime integration"
+    },
+    {
+      "id": "studio.music_unavailable",
+      "path": "src/RoyalStudio.tsx",
+      "source_blob": "793040b625a7f774bc4dd75601c212396184db47",
+      "line": 369,
+      "marker": "No microphone, voice or background music",
+      "scope": "existing source-code anchor; not original callback equivalence or runtime integration"
+    },
+    {
+      "id": "studio.location_gap",
+      "path": "src/RoyalStudio.tsx",
+      "source_blob": "793040b625a7f774bc4dd75601c212396184db47",
+      "line": 379,
+      "marker": "case 'privacy'",
+      "scope": "existing source-code anchor; not original callback equivalence or runtime integration"
+    },
+    {
+      "id": "game.review",
+      "path": "src/ReplayViewer.tsx",
+      "source_blob": "cd1786a8847128f9b7fb893638086e643a62fef4",
+      "line": 99,
+      "marker": "aria-label=\"Previous move\"",
+      "scope": "existing source-code anchor; not original callback equivalence or runtime integration"
+    }
+  ]
+}

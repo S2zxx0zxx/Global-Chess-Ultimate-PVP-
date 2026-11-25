@@ -1,0 +1,18 @@
+#!/usr/bin/env python3
+"""Join form config to exact bundle path; targets are design candidates, not implemented routes."""
+import argparse, collections as C, json
+from pathlib import Path
+TARGETS={
+'UIMainForm':'RoyalStudio:home','UIGameForm':'App:game','UIEndGameForm':'App:training','UIFinishForm':'RoyalStudio:match-result','UISettingsForm':'RoyalStudio:settings','UIHelpForm':'RoyalStudio:help','UIProfileForm':'RoyalStudio:profile','UILanguageForm':'RoyalStudio:language','UIEndRewardForm':'RoyalStudio:achievements','UIBuyBagForm':'RoyalStudio:shop','UINoAdForm':'RoyalStudio:membership','UIShopRewardForm':'RoyalStudio:shop','UIIapForm':'RoyalStudio:shop','UIEloRateForm':'RoyalStudio:match-setup','UIChatForm':'no established equivalent','UIGuideForm':'RoyalStudio:tutorial','UITutorialForm':'RoyalStudio:tutorial','UIPromotionForm':'App:promotion dialog','UIReviewForm':'RoyalStudio:review','UIEndGameOpenForm':'App:training','UIKnockoutForm':'RoyalStudio:tournaments','UIKnockoutGuideForm':'RoyalStudio:tournament-detail','UIKnockoutRewardForm':'RoyalStudio:tournament-detail','UIKnockoutCollectForm':'RoyalStudio:inventory','UIKnockoutWinForm':'RoyalStudio:match-result','UIKnockoutTip':'RoyalStudio:tournament-detail','ThemePage':'RoyalStudio:customize','UIGameSetForm':'App:game / RoyalStudio:settings','UIEndGameReward':'App:training','UIRankBadgeForm':'RoyalStudio:profile','UISelColorForm':'RoyalStudio:match-setup','UIMatchForm':'RoyalStudio:matchmaking','UILaunchTypeForm':'RoyalStudio:modes','UILaunchMaskForm':'RoyalStudio:tutorial','UISevenDayTaskForm':'RoyalStudio:missions','UILoadingForm':'RoyalStudio:splash','UIExitForm':'App:game confirmation','UIConfirmForm':'App:game confirmation','UIRateUsForm':'RoyalStudio:feedback','UILimitedSaleForm':'RoyalStudio:shop','UIUpdateForm':'RoyalStudio:alerts'}
+def main():
+ p=argparse.ArgumentParser();p.add_argument('directory',type=Path);a=p.parse_args();d=a.directory
+ get=lambda n:json.loads((d/(n+'.json')).read_text()); cfg=get('configuration'); roots=get('roots');paths=get('container_paths');nodes=get('nodes');comps=get('components');edges=get('dependencies')
+ byid={r[1]:r for r in cfg['AssetsPath']['rows']};groups={r[1]:r for r in cfg['UIGroup']['rows']};byroot={tuple(r['root']):r for r in roots};rows=[]
+ for r in cfg['UIForm']['rows']:
+  _,id,desc,name,group,asset,multi,pause=r;path=byid[asset][3];hits=[x['target'] for x in paths if x['path'].casefold()==path.casefold()];assert group in groups
+  rows.append({'form_id':id,'name':name,'description':desc,'group':groups[group][3],'depth':int(groups[group][4]),'asset_id':asset,'path':path,'matches':hits,'root_matches':[x for x in hits if tuple(x) in byroot],'multi_instance':multi=='True','pause_covered':pause=='True','target_candidate':TARGETS.get(name,'no established equivalent'),'target_status':'design_candidate_not_integrated'})
+ assert len(rows)==46 and len({r['form_id'] for r in rows})==46
+ owners={tuple(n['source']) for n in nodes};assert all(tuple(c['owner']) in owners for c in comps)
+ summary={'forms':len(rows),'exact_path_found':sum(bool(r['matches']) for r in rows),'missing_paths':[r['name'] for r in rows if not r['matches']],'multiple_container_targets':[r['name'] for r in rows if len(r['matches'])>1],'target_candidates':sum(r['target_candidate']!='no established equivalent' for r in rows),'unresolved_dependency_occurrences':[r for r in edges if 'unresolved' in r['status']]}
+ (d/'form_crosswalk.json').write_text(json.dumps(rows,ensure_ascii=False,indent=2)+'\n');(d/'crosswalk_summary.json').write_text(json.dumps(summary,ensure_ascii=False,indent=2)+'\n');print({k:v for k,v in summary.items() if k!='unresolved_dependency_occurrences'})
+if __name__=='__main__':main()
